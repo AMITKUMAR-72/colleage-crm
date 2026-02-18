@@ -1,0 +1,126 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { 
+  Users, 
+  LayoutDashboard, 
+  UserSquare2, 
+  Settings, 
+  Calendar, 
+  ShieldCheck,
+  LogOut,
+  Menu,
+  X
+} from 'lucide-react';
+
+export default function Sidebar() {
+    const { role, logout } = useAuth();
+    const pathname = usePathname();
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    const navItems = [
+        { label: 'Admin Panel', href: '/admin', roles: ['ADMIN'], icon: ShieldCheck },
+        { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'], icon: LayoutDashboard },
+        { label: 'Lead Queue', href: '/counselor', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Users },
+        { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE', 'ADMIN'], icon: UserSquare2 },
+        { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
+        { label: 'Settings', href: '/settings', roles: ['ADMIN'], icon: Settings },
+    ];
+
+    const filteredItems = navItems.filter(item => item.roles.includes(role || ''));
+
+    const handleNavClick = () => {
+        setMobileOpen(false);
+    };
+
+    const sidebarContent = (
+        <>
+            <div className="p-6 md:p-8 border-b border-white/5 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-xl shadow-blue-900/40 ring-1 ring-white/20 shrink-0">
+                    R
+                </div>
+                <div>
+                    <span className="block font-black text-white leading-none text-lg">RAFFLES</span>
+                    <span className="text-[10px] text-blue-400 font-bold tracking-[0.3em] uppercase leading-none">Management</span>
+                </div>
+                {/* Mobile close button */}
+                <button 
+                    onClick={() => setMobileOpen(false)}
+                    className="ml-auto md:hidden p-1 text-slate-400 hover:text-white transition-colors"
+                >
+                    <X className="w-6 h-6" />
+                </button>
+            </div>
+            
+            <nav className="flex-1 p-4 space-y-1">
+                {filteredItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link 
+                            key={item.href} 
+                            href={item.href}
+                            onClick={handleNavClick}
+                            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${
+                                isActive 
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20' 
+                                : 'hover:bg-slate-800 hover:text-white'
+                            }`}
+                        >
+                            <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
+                            <span className="font-medium">{item.label}</span>
+                        </Link>
+                    );
+                })}
+            </nav>
+
+            <div className="p-4 border-t border-slate-800">
+                <button 
+                    onClick={() => { logout(); setMobileOpen(false); }}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-colors group"
+                >
+                    <LogOut className="w-5 h-5 text-slate-600 group-hover:text-rose-500" />
+                    <span className="font-medium">Sign Out</span>
+                </button>
+            </div>
+        </>
+    );
+
+    return (
+        <>
+            {/* Mobile hamburger trigger — rendered in DashboardLayout header */}
+            <button 
+                onClick={() => setMobileOpen(true)}
+                className="fixed top-4 left-4 z-40 md:hidden p-2 bg-slate-900/90 backdrop-blur-sm rounded-xl text-white shadow-lg border border-white/10"
+                aria-label="Open menu"
+            >
+                <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Mobile overlay */}
+            {mobileOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setMobileOpen(false)}
+                />
+            )}
+
+            {/* Mobile sidebar (slide-in) */}
+            <aside
+                className={`fixed left-0 top-0 h-screen w-72 glass-sidebar text-slate-300 flex flex-col z-50 transition-transform duration-300 ease-out md:hidden ${
+                    mobileOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
+            >
+                {sidebarContent}
+            </aside>
+
+            {/* Desktop sidebar (always visible) */}
+            <aside className="hidden md:flex w-64 glass-sidebar h-screen fixed left-0 top-0 text-slate-300 flex-col z-50">
+                {sidebarContent}
+            </aside>
+        </>
+    );
+}

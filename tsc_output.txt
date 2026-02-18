@@ -1,0 +1,25 @@
+﻿src/components/admin/CampaignManager.tsx(31,31): error TS2339: Property 'data' does not exist on type 'CampaignDTO[]'.
+src/components/admin/CampaignManager.tsx(32,34): error TS2339: Property 'data' does not exist on type 'AffiliateDTO[]'.
+src/components/admin/CampaignManager.tsx(42,60): error TS2554: Expected 1 arguments, but got 2.
+src/components/admin/CampaignManager.tsx(58,17): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'Partial<AffiliateDTO>'.
+src/components/admin/CampaignManager.tsx(122,52): error TS2339: Property 'type' does not exist on type 'CampaignDTO'.
+src/components/admin/CampaignManager.tsx(143,68): error TS2339: Property 'name' does not exist on type 'AffiliateDTO'.
+src/components/admin/CampaignManager.tsx(148,102): error TS2339: Property 'status' does not exist on type 'AffiliateDTO'.
+src/components/admin/CampaignManager.tsx(149,44): error TS2339: Property 'status' does not exist on type 'AffiliateDTO'.
+src/components/admin/CourseManager.tsx(24,35): error TS2339: Property 'data' does not exist on type 'CourseDTO[]'.
+src/components/admin/CourseManager.tsx(25,37): error TS2339: Property 'data' does not exist on type 'DepartmentDTO[]'.
+src/components/admin/CourseManager.tsx(26,26): error TS2339: Property 'data' does not exist on type 'DepartmentDTO[]'.
+src/components/admin/CourseManager.tsx(26,62): error TS2339: Property 'data' does not exist on type 'DepartmentDTO[]'.
+src/components/admin/CourseManager.tsx(36,52): error TS2554: Expected 1 arguments, but got 2.
+src/components/admin/CourseManager.tsx(47,77): error TS2339: Property 'name' does not exist on type 'DepartmentDTO'.
+src/components/admin/CourseManager.tsx(68,60): error TS2339: Property 'name' does not exist on type 'DepartmentDTO'.
+src/components/admin/CourseManager.tsx(84,87): error TS2339: Property 'name' does not exist on type 'CourseDTO'.
+src/components/admin/CourseManager.tsx(85,89): error TS2551: Property 'departmentId' does not exist on type 'CourseDTO'. Did you mean 'department'?
+src/components/admin/DepartmentManager.tsx(18,37): error TS2339: Property 'data' does not exist on type 'DepartmentDTO[]'.
+src/components/admin/DepartmentManager.tsx(64,75): error TS2339: Property 'name' does not exist on type 'DepartmentDTO'.
+src/components/admin/RoleManager.tsx(19,31): error TS2339: Property 'data' does not exist on type 'RoleDTO[]'.
+src/components/admin/RoleManager.tsx(29,48): error TS2554: Expected 1 arguments, but got 2.
+src/components/admin/RoleManager.tsx(67,55): error TS2339: Property 'name' does not exist on type 'RoleDTO'.
+src/components/admin/RoleManager.tsx(68,67): error TS2339: Property 'description' does not exist on type 'RoleDTO'.
+src/components/CounselorHeatmap.tsx(52,45): error TS2339: Property 'id' does not exist on type 'CounselorDTO'.
+src/context/AuthContext.tsx(72,40): error TS2339: Property 'id' does not exist on type 'CounselorDTO'.
