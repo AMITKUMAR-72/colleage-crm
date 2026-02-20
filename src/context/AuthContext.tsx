@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const restoreSession = () => {
             const token = localStorage.getItem('token');
             const storedUser = localStorage.getItem('user');
-            
+
             if (token && token !== 'undefined' && storedUser) {
                 try {
                     const parsedUser = JSON.parse(storedUser);
@@ -46,7 +46,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const navigateByRole = (role: Role) => {
-        switch (role) {
+        if (!role) {
+            router.push('/login');
+            return;
+        }
+        console.log("Navigating for role:", role);
+        const upperRole = String(role).toUpperCase();
+        switch (upperRole) {
             case 'ADMIN': router.push('/admin'); break;
             case 'MANAGER': router.push('/manager'); break;
             case 'COUNSELOR': router.push('/counselor'); break;
@@ -58,20 +64,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string, password?: string) => {
         const { token, email: userEmail } = await AuthService.login({ email, password });
         localStorage.setItem('token', token);
-        
+
         let detectedRole: Role = 'USER';
         let userId = Math.floor(Math.random() * 1000);
         let userName = email.split('@')[0];
-        
+
         try {
             // Fetch full user details from the backend to get the correct role
-            // This replaces the unreliable guessing logic and the problematic 404 counselor check
             const response = await api.get(`/api/users/email/${userEmail}`);
             const userData = response.data;
-            
+
             if (userData) {
                 if (userData.role) {
-                    detectedRole = (userData.role.role as Role) || 'USER';
+                    if (typeof userData.role === 'string') {
+                        detectedRole = userData.role as Role;
+                    } else if (userData.role.role) {
+                        detectedRole = (userData.role.role as Role);
+                    }
                 }
                 userId = userData.id || userId;
                 userName = userData.name || userName;
@@ -80,14 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Failed to fetch user role from backend, using basic USER role", e);
         }
 
-        const newUser: UserDTO = { 
-            id: userId, 
-            email: userEmail, 
+        const newUser: UserDTO = {
+            id: userId,
+            email: userEmail,
             name: userName,
             role: detectedRole,
             isActive: 'Active' // Default
         };
-        
+
         localStorage.setItem('user', JSON.stringify(newUser));
         setUser(newUser);
         navigateByRole(detectedRole);
@@ -97,20 +106,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await AuthService.signup({ name, email, password });
         const token = response.token;
         const userEmail = response.email;
-        
+
         localStorage.setItem('token', token);
-        
-        const newUser: UserDTO = { 
-            id: response.userId || Math.floor(Math.random() * 1000), 
-            email: userEmail, 
+
+        const newUser: UserDTO = {
+            id: response.userId || Math.floor(Math.random() * 1000),
+            email: userEmail,
             name: name,
             role: (response.role?.role as Role) || 'USER',
             isActive: 'Active'
         };
-        
+
         localStorage.setItem('user', JSON.stringify(newUser));
         setUser(newUser);
-        
+
         // Admin or Manager go to dashboard, others might need login or a generic page
         if (newUser.role === 'ADMIN' || newUser.role === 'MANAGER') {
             navigateByRole(newUser.role);
@@ -130,11 +139,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <AuthContext.Provider value={{ 
-            user, 
-            role, 
+        <AuthContext.Provider value={{
+            user,
+            role,
             isLoading,
-            login, 
+            login,
             signup,
             logout
         }}>

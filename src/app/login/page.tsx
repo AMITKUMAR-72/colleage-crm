@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 export default function LoginPage() {
     const { login, signup, user, isLoading: authLoading } = useAuth();
     const router = useRouter();
-    
+
     const [isLogin, setIsLogin] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -25,11 +25,11 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (!authLoading && user) {
-            const path = user.role === 'ADMIN' ? '/admin' 
-                      : user.role === 'MANAGER' ? '/manager'
-                      : user.role === 'COUNSELOR' ? '/counselor'
-                      : user.role === 'AFFILIATE' ? '/affiliate'
-                      : '/login';
+            const path = user.role === 'ADMIN' ? '/admin'
+                : user.role === 'MANAGER' ? '/manager'
+                    : user.role === 'COUNSELOR' ? '/counselor'
+                        : user.role === 'AFFILIATE' ? '/affiliate'
+                            : '/login';
             router.push(path);
         }
     }, [user, authLoading, router]);
@@ -47,44 +47,11 @@ export default function LoginPage() {
             }
         } catch (err: unknown) {
             console.error("Login attempt failed:", err);
-            let message = 'Authentication failed.';
-            
-            if (err && typeof err === 'object') {
-                const axiosError = err as any; 
-                const status = axiosError.response?.status;
-                const data = axiosError.response?.data;
-                const code = axiosError.code; // e.g., ERR_NETWORK
-                
-                // Construct a detailed debug message
-                let detail = '';
-                
-                if (status) {
-                    detail += ` [Status: ${status}]`;
-                }
-                if (code) {
-                    detail += ` [Code: ${code}]`;
-                }
-
-                if (data) {
-                     if (typeof data === 'string') {
-                        message = data;
-                     } else if (data.message) {
-                        message = data.message;
-                     } else if (data.error) {
-                        message = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
-                     } else {
-                        message = JSON.stringify(data);
-                     }
-                } else if (axiosError.message) {
-                    // Fallback to axios message if no response data (e.g. Network Error)
-                    message = axiosError.message;
-                }
-                
-                // Append technical details for the user to report
-                message = `${message}${detail}`;
+            if (isLogin) {
+                setError('Invalid credentials');
+            } else {
+                setError('Registration failed. Please check your details and try again.');
             }
-            
-            setError(message);
         } finally {
             setIsLoading(false);
         }
@@ -96,7 +63,7 @@ export default function LoginPage() {
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse" />
 
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="relative z-10 w-full max-w-md p-1"
@@ -104,7 +71,7 @@ export default function LoginPage() {
                 <div className="glass-card p-10 backdrop-blur-3xl bg-white/5 border border-white/10 shadow-2xl overflow-hidden rounded-[2rem]">
                     {/* Header */}
                     <div className="text-center mb-10">
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.8 }}
                             animate={{ scale: 1 }}
                             className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl shadow-lg shadow-blue-500/20 mb-6"
@@ -131,12 +98,12 @@ export default function LoginPage() {
                                 >
                                     <div className="relative group">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                                        <input 
+                                        <input
                                             type="text"
                                             placeholder="Full Name"
                                             required={!isLogin}
                                             value={formData.name}
-                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium"
                                         />
                                     </div>
@@ -147,12 +114,12 @@ export default function LoginPage() {
                         {/* Email Field */}
                         <div className="relative group">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                            <input 
+                            <input
                                 type="email"
                                 placeholder="Email Address"
                                 required
                                 value={formData.email}
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium"
                             />
                         </div>
@@ -160,12 +127,12 @@ export default function LoginPage() {
                         {/* Password Field */}
                         <div className="relative group">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                            <input 
+                            <input
                                 type="password"
                                 placeholder="Password"
                                 required
                                 value={formData.password}
-                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium"
                             />
                         </div>
@@ -173,8 +140,8 @@ export default function LoginPage() {
                         {/* Role selection is now handled server-side/auto-detected */}
 
                         {error && (
-                            <motion.p 
-                                initial={{ opacity: 0 }} 
+                            <motion.p
+                                initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 className="text-rose-500 text-xs font-bold text-center bg-rose-500/10 py-2 rounded-lg border border-rose-500/20"
                             >
@@ -182,7 +149,7 @@ export default function LoginPage() {
                             </motion.p>
                         )}
 
-                        <button 
+                        <button
                             type="submit"
                             disabled={isLoading}
                             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:hover:scale-100"
@@ -199,7 +166,7 @@ export default function LoginPage() {
                     </form>
 
                     <div className="mt-10 text-center">
-                        <button 
+                        <button
                             onClick={() => setIsLogin(!isLogin)}
                             className="text-slate-400 text-sm font-medium hover:text-white transition-colors"
                         >

@@ -3,8 +3,9 @@ import axios from 'axios';
 // Set this to true to force Mock Data even if backend is online
 const STANDALONE_DEMO = false;
 
-// export const API_BASE_URL = 'https://api.rafunirp.com'; 
-export const API_BASE_URL = ''; // Proxy to localhost via Next.js
+// Use same-origin requests so Next.js rewrites can proxy to backend without CORS issues in browser.
+// If needed, override with NEXT_PUBLIC_API_BASE_URL (e.g. in production deployments).
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 const api = axios.create({
     baseURL: API_BASE_URL,

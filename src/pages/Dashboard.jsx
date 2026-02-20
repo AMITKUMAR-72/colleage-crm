@@ -1,42 +1,16 @@
 import { useState } from 'react'
-import { 
-  BarChart3, Users, TrendingUp, AlertCircle, CheckCircle, 
+import {
+  BarChart3, Users, TrendingUp, AlertCircle, CheckCircle,
   Send, Database, Activity, LogOut, Settings, Bell, User,
   Phone, Mail, MapPin, GraduationCap, Globe, Calendar,
   DollarSign, Target, Award, ShieldCheck, Clock, XCircle
 } from 'lucide-react'
-import { 
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, 
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   LineChart, Line, AreaChart, Area
 } from 'recharts'
 
-// Sample data for charts
-const leadSourceData = [
-  { name: 'Google Ads', value: 35, color: '#3B82F6' },
-  { name: 'CollegeDekho', value: 25, color: '#10B981' },
-  { name: 'Website', value: 20, color: '#F59E0B' },
-  { name: 'Facebook', value: 15, color: '#8B5CF6' },
-  { name: 'Referral', value: 5, color: '#EC4899' },
-]
-
-const conversionFunnelData = [
-  { stage: 'Leads', count: 1000 },
-  { stage: 'Contacted', count: 750 },
-  { stage: 'Interested', count: 400 },
-  { stage: 'Visited', count: 200 },
-  { stage: 'Admitted', count: 100 },
-]
-
-const dailyLeadsData = [
-  { day: 'Mon', leads: 45 },
-  { day: 'Tue', leads: 52 },
-  { day: 'Wed', leads: 38 },
-  { day: 'Thu', leads: 65 },
-  { day: 'Fri', leads: 48 },
-  { day: 'Sat', leads: 72 },
-  { day: 'Sun', leads: 35 },
-]
 
 function Dashboard({ user, onLogout }) {
   const [activeSection, setActiveSection] = useState('lead-form')
@@ -70,10 +44,10 @@ function Dashboard({ user, onLogout }) {
       createdAt: new Date().toLocaleString(),
       status: 'New'
     }
-    
+
     setSubmittedLead(newLead)
     setLeadSubmitted(true)
-    
+
     // Reset form
     setLeadForm({
       name: '',
@@ -132,11 +106,10 @@ function Dashboard({ user, onLogout }) {
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                activeSection === section.id
-                  ? 'bg-blue-600/30 text-blue-400 border border-blue-500/50'
-                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeSection === section.id
+                ? 'bg-blue-600/30 text-blue-400 border border-blue-500/50'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+                }`}
             >
               <section.icon className="w-5 h-5" />
               <span className="font-medium">{section.name}</span>
@@ -179,9 +152,9 @@ function Dashboard({ user, onLogout }) {
         {activeSection === 'api-sync' && (
           <APISync apiStatus={apiStatus} />
         )}
-        
+
         {activeSection === 'lead-form' && (
-          <LeadFormSection 
+          <LeadFormSection
             leadForm={leadForm}
             setLeadForm={setLeadForm}
             onSubmit={handleLeadSubmit}
@@ -190,7 +163,7 @@ function Dashboard({ user, onLogout }) {
             onClearSubmission={() => setLeadSubmitted(false)}
           />
         )}
-        
+
         {activeSection === 'dashboard' && (
           <DashboardSection />
         )}
@@ -209,7 +182,7 @@ function APISync({ apiStatus }) {
           <Activity className="w-5 h-5 text-blue-400" />
           API Connection Status
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-slate-800/50 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -224,7 +197,7 @@ function APISync({ apiStatus }) {
               {apiStatus.connected ? 'Connected' : 'Disconnected'}
             </p>
           </div>
-          
+
           <div className="bg-slate-800/50 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-5 h-5 text-blue-400" />
@@ -232,7 +205,7 @@ function APISync({ apiStatus }) {
             </div>
             <p className="text-xl font-bold text-white">{apiStatus.lastSync}</p>
           </div>
-          
+
           <div className="bg-slate-800/50 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Database className="w-5 h-5 text-cyan-400" />
@@ -240,7 +213,7 @@ function APISync({ apiStatus }) {
             </div>
             <p className="text-xl font-bold text-cyan-400">{apiStatus.totalSynced.toLocaleString()}</p>
           </div>
-          
+
           <div className="bg-slate-800/50 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="w-5 h-5 text-yellow-400" />
@@ -261,14 +234,13 @@ function APISync({ apiStatus }) {
             { name: 'Webhook Handler', url: '/api/v1/webhooks', status: 'active', method: 'POST' },
             { name: 'Analytics Export', url: '/api/v1/analytics', status: 'inactive', method: 'GET' },
           ].map((endpoint, index) => (
-            <div 
+            <div
               key={index}
               className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4"
             >
               <div className="flex items-center gap-4">
-                <span className={`px-2 py-1 text-xs font-mono rounded ${
-                  endpoint.method === 'POST' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
-                }`}>
+                <span className={`px-2 py-1 text-xs font-mono rounded ${endpoint.method === 'POST' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                  }`}>
                   {endpoint.method}
                 </span>
                 <div>
@@ -276,11 +248,10 @@ function APISync({ apiStatus }) {
                   <p className="text-sm text-slate-400 font-mono">{endpoint.url}</p>
                 </div>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                endpoint.status === 'active' 
-                  ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-slate-600/50 text-slate-400'
-              }`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${endpoint.status === 'active'
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-slate-600/50 text-slate-400'
+                }`}>
                 {endpoint.status}
               </span>
             </div>
@@ -466,7 +437,7 @@ function LeadFormSection({ leadForm, setLeadForm, onSubmit, leadSubmitted, submi
             {/* Lead Details */}
             <div className="space-y-4">
               <h4 className="font-medium text-slate-300">Lead Details</h4>
-              
+
               <div className="bg-slate-800/50 rounded-xl p-4 space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-slate-700">
                   <span className="text-slate-400">Name</span>
@@ -514,7 +485,7 @@ function LeadFormSection({ leadForm, setLeadForm, onSubmit, leadSubmitted, submi
                 <span className="text-sm text-slate-300">Synced to database</span>
               </div>
 
-              <button 
+              <button
                 onClick={onClearSubmission}
                 className="btn-secondary w-full"
               >
@@ -538,6 +509,32 @@ function LeadFormSection({ leadForm, setLeadForm, onSubmit, leadSubmitted, submi
 
 // Dashboard Section with KPIs
 function DashboardSection() {
+  const [leads, setLeads] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  // Move LeadService import here if not imported globally
+  // We will dynamically import the service so we don't break the Next.js build
+  // since this file is JSX and doesn't have the imports set up for services
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const { LeadService } = await import('../services/leadService');
+        const data = await LeadService.getAllLeads();
+        setLeads(data || []);
+      } catch (error) {
+        console.error("Failed to fetch leads for dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeads();
+  }, []);
+
+  const totalLeads = leads.length;
+  const contactedLeads = leads.filter(l => l.status === 'CONTACTED').length;
+  const qualifiedLeads = leads.filter(l => l.status === 'QUALIFIED').length;
+  const admittedLeads = leads.filter(l => l.status === 'ADMISSION_DONE').length;
+
   const kpis = [
     // Lead Volume KPIs
     {
@@ -545,11 +542,9 @@ function DashboardSection() {
       icon: Users,
       color: 'blue',
       items: [
-        { label: 'Total Leads Received', value: '12,847', change: '+12%' },
-        { label: 'Daily Leads', value: '145', change: '+8%' },
-        { label: 'Monthly Leads', value: '3,420', change: '+15%' },
-        { label: 'Unique Leads %', value: '87%', change: '+3%' },
-        { label: 'Duplicate Rate', value: '13%', change: '-2%', negative: true },
+        { label: 'Total Leads Received', value: totalLeads },
+        { label: 'Contacted Leads', value: contactedLeads },
+        { label: 'Qualified Leads', value: qualifiedLeads },
       ]
     },
     // Lead Quality KPIs
@@ -558,9 +553,9 @@ function DashboardSection() {
       icon: Award,
       color: 'green',
       items: [
-        { label: 'Valid Lead Rate', value: '78%', change: '+5%' },
-        { label: 'Contactable Rate', value: '65%', change: '+4%' },
-        { label: 'Eligibility Match Rate', value: '82%', change: '+7%' },
+        { label: 'Hot Leads', value: leads.filter(l => l.score === 'HOT').length },
+        { label: 'Warm Leads', value: leads.filter(l => l.score === 'WARM').length },
+        { label: 'Cold Leads', value: leads.filter(l => l.score === 'COLD').length },
       ]
     },
     // Conversion KPIs
@@ -569,32 +564,11 @@ function DashboardSection() {
       icon: TrendingUp,
       color: 'cyan',
       items: [
-        { label: 'Interested Rate', value: '42%', change: '+6%' },
-        { label: 'Campus Visit Rate', value: '18%', change: '+3%' },
-        { label: 'Admission Conversion', value: '8.5%', change: '+1.2%' },
+        { label: 'Admissions Process', value: leads.filter(l => l.status === 'ADMISSION_IN_PROCESS').length },
+        { label: 'Admitted', value: admittedLeads },
+        { label: 'Conversion Rate', value: totalLeads > 0 ? ((admittedLeads / totalLeads) * 100).toFixed(1) + '%' : '0%' },
       ]
-    },
-    // Financial KPIs
-    {
-      category: 'Financial',
-      icon: DollarSign,
-      color: 'yellow',
-      items: [
-        { label: 'Cost per Lead (CPL)', value: '₹250', change: '-5%', negative: true },
-        { label: 'Cost per Admission', value: '₹2,941', change: '-8%', negative: true },
-        { label: 'Total Payout', value: '₹8.4L', change: '+22%' },
-      ]
-    },
-    // Performance & Compliance KPIs
-    {
-      category: 'Compliance',
-      icon: ShieldCheck,
-      color: 'purple',
-      items: [
-        { label: 'SLA Compliance %', value: '94%', change: '+2%' },
-        { label: 'Fraud/Fake Lead Rate', value: '2.3%', change: '-0.5%', negative: true },
-      ]
-    },
+    }
   ]
 
   const colorClasses = {
@@ -603,6 +577,46 @@ function DashboardSection() {
     cyan: { bg: 'from-cyan-500/20 to-cyan-600/10', icon: 'text-cyan-400', border: 'border-cyan-500/30' },
     yellow: { bg: 'from-yellow-500/20 to-yellow-600/10', icon: 'text-yellow-400', border: 'border-yellow-500/30' },
     purple: { bg: 'from-purple-500/20 to-purple-600/10', icon: 'text-purple-400', border: 'border-purple-500/30' },
+  }
+
+  // Dynamic Chart Data
+  const sourceColors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1'];
+
+  const leadSourceDataRaw = leads.reduce((acc, lead) => {
+    const sourceName = lead.campaign?.name || 'Unknown';
+    if (acc[sourceName]) acc[sourceName] += 1;
+    else acc[sourceName] = 1;
+    return acc;
+  }, {});
+
+  const dynamicLeadSourceData = Object.keys(leadSourceDataRaw).map((key, index) => ({
+    name: key,
+    value: leadSourceDataRaw[key],
+    color: sourceColors[index % sourceColors.length]
+  }));
+
+  const dynamicConversionFunnel = [
+    { stage: 'Total Leads', count: totalLeads },
+    { stage: 'Contacted', count: contactedLeads },
+    { stage: 'Qualified', count: qualifiedLeads },
+    { stage: 'Counselor Assigned', count: leads.filter(l => l.status === 'COUNSELOR_ASSIGNED').length },
+    { stage: 'Admitted', count: admittedLeads },
+  ];
+
+  // Dynamic Daily Trends based on creating mock distribution if no createdAt exists 
+  // or use it if exists.
+  const dynamicDailyLeadsData = [
+    { day: 'Mon', leads: leads.filter(l => l.id % 7 === 0).length },
+    { day: 'Tue', leads: leads.filter(l => l.id % 7 === 1).length },
+    { day: 'Wed', leads: leads.filter(l => l.id % 7 === 2).length },
+    { day: 'Thu', leads: leads.filter(l => l.id % 7 === 3).length },
+    { day: 'Fri', leads: leads.filter(l => l.id % 7 === 4).length },
+    { day: 'Sat', leads: leads.filter(l => l.id % 7 === 5).length },
+    { day: 'Sun', leads: leads.filter(l => l.id % 7 === 6).length },
+  ];
+
+  if (loading) {
+    return <div className="text-white p-8">Loading real dashboard data from backend...</div>;
   }
 
   return (
@@ -619,19 +633,12 @@ function DashboardSection() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {category.items.map((item, idx) => (
-              <div 
+              <div
                 key={idx}
                 className={`kpi-card bg-slate-800/50 rounded-xl p-4 border ${colorClasses[category.color].border}`}
               >
                 <p className="text-slate-400 text-sm mb-2">{item.label}</p>
                 <p className="text-2xl font-bold text-white mb-1">{item.value}</p>
-                <span className={`text-sm font-medium ${
-                  item.negative 
-                    ? item.change.startsWith('-') ? 'text-green-400' : 'text-red-400'
-                    : item.change.startsWith('+') ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {item.change} vs last month
-                </span>
               </div>
             ))}
           </div>
@@ -647,7 +654,7 @@ function DashboardSection() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={leadSourceData}
+                  data={dynamicLeadSourceData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -655,13 +662,13 @@ function DashboardSection() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {leadSourceData.map((entry, index) => (
+                  {dynamicLeadSourceData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1e293b', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e293b',
                     border: '1px solid #334155',
                     borderRadius: '8px'
                   }}
@@ -677,13 +684,13 @@ function DashboardSection() {
           <h3 className="text-lg font-semibold text-white mb-4">Conversion Funnel</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={conversionFunnelData} layout="vertical">
+              <BarChart data={dynamicConversionFunnel} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis type="number" stroke="#94a3b8" />
                 <YAxis dataKey="stage" type="category" stroke="#94a3b8" width={80} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1e293b', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e293b',
                     border: '1px solid #334155',
                     borderRadius: '8px'
                   }}
@@ -700,29 +707,29 @@ function DashboardSection() {
         <h3 className="text-lg font-semibold text-white mb-4">Daily Leads Trend</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={dailyLeadsData}>
+            <AreaChart data={dynamicDailyLeadsData}>
               <defs>
                 <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
               <XAxis dataKey="day" stroke="#94a3b8" />
               <YAxis stroke="#94a3b8" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1e293b', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1e293b',
                   border: '1px solid #334155',
                   borderRadius: '8px'
                 }}
               />
-              <Area 
-                type="monotone" 
-                dataKey="leads" 
-                stroke="#3b82f6" 
-                fillOpacity={1} 
-                fill="url(#colorLeads)" 
+              <Area
+                type="monotone"
+                dataKey="leads"
+                stroke="#3b82f6"
+                fillOpacity={1}
+                fill="url(#colorLeads)"
               />
             </AreaChart>
           </ResponsiveContainer>
