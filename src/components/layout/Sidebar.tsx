@@ -4,16 +4,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { 
-  Users, 
-  LayoutDashboard, 
-  UserSquare2, 
-  Settings, 
-  Calendar, 
-  ShieldCheck,
-  LogOut,
-  Menu,
-  X
+import {
+    Users,
+    LayoutDashboard,
+    UserSquare2,
+    Settings,
+    Calendar,
+    ShieldCheck,
+    LogOut,
+    Menu,
+    X
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -39,38 +39,35 @@ export default function Sidebar() {
     const sidebarContent = (
         <>
             <div className="p-6 md:p-8 border-b border-white/5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-xl shadow-blue-900/40 ring-1 ring-white/20 shrink-0">
-                    R
-                </div>
-                <div>
-                    <span className="block font-black text-white leading-none text-lg">RAFFLES</span>
-                    <span className="text-[10px] text-blue-400 font-bold tracking-[0.3em] uppercase leading-none">Management</span>
+                <img src="/raffles-logo.png" alt="Raffles Logo" className="w-11 h-11 shrink-0 object-contain drop-shadow-md bg-white rounded-lg p-1" />
+                <div className="font-[var(--font-poppins)]">
+                    <span className="block font-black text-white leading-none text-lg tracking-wide">RAFFLES</span>
+                    <span className="text-[10px] text-[#dbb212] font-bold tracking-[0.35em] uppercase leading-none mt-1 block">Management</span>
                 </div>
                 {/* Mobile close button */}
-                <button 
+                <button
                     onClick={() => setMobileOpen(false)}
                     className="ml-auto md:hidden p-1 text-slate-400 hover:text-white transition-colors"
                 >
                     <X className="w-6 h-6" />
                 </button>
             </div>
-            
+
             <nav className="flex-1 p-4 space-y-1">
                 {filteredItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
                     return (
-                        <Link 
-                            key={item.href} 
+                        <Link
+                            key={item.href}
                             href={item.href}
                             onClick={handleNavClick}
-                            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${
-                                isActive 
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20' 
-                                : 'hover:bg-slate-800 hover:text-white'
-                            }`}
+                            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${isActive
+                                ? 'bg-[#4d0101] text-white shadow-md shadow-black/20'
+                                : 'hover:bg-[#dbb212] hover:text-[#600202]'
+                                }`}
                         >
-                            <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
+                            <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-[#600202]'}`} />
                             <span className="font-medium">{item.label}</span>
                         </Link>
                     );
@@ -78,7 +75,7 @@ export default function Sidebar() {
             </nav>
 
             <div className="p-4 border-t border-slate-800">
-                <button 
+                <button
                     onClick={() => { logout(); setMobileOpen(false); }}
                     className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-colors group"
                 >
@@ -92,7 +89,7 @@ export default function Sidebar() {
     return (
         <>
             {/* Mobile hamburger trigger — rendered in DashboardLayout header */}
-            <button 
+            <button
                 onClick={() => setMobileOpen(true)}
                 className="fixed top-4 left-4 z-40 md:hidden p-2 bg-slate-900/90 backdrop-blur-sm rounded-xl text-white shadow-lg border border-white/10"
                 aria-label="Open menu"
@@ -110,9 +107,8 @@ export default function Sidebar() {
 
             {/* Mobile sidebar (slide-in) */}
             <aside
-                className={`fixed left-0 top-0 h-screen w-72 glass-sidebar text-slate-300 flex flex-col z-50 transition-transform duration-300 ease-out md:hidden ${
-                    mobileOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}
+                className={`fixed left-0 top-0 h-screen w-72 glass-sidebar text-slate-300 flex flex-col z-50 transition-transform duration-300 ease-out md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
             >
                 {sidebarContent}
             </aside>

@@ -15,7 +15,7 @@ export default function AdminDashboard() {
                     onClick={() => setActiveTab('OVERVIEW')}
                     className={`pb-3 px-2 text-sm font-medium transition relative ${
                         activeTab === 'OVERVIEW' 
-                            ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-indigo-600' 
+                            ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]' 
                             : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
@@ -25,7 +25,7 @@ export default function AdminDashboard() {
                     onClick={() => setActiveTab('COUNSELORS')}
                     className={`pb-3 px-2 text-sm font-medium transition relative ${
                         activeTab === 'COUNSELORS'
-                            ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-indigo-600'
+                            ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
                             : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >

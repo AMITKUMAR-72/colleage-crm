@@ -105,7 +105,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                             <input
                                 value={editForm.name}
                                 onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                className="text-xl font-bold text-gray-900 border-b-2 border-indigo-300 focus:border-indigo-500 outline-none bg-transparent"
+                                className="text-xl font-bold text-gray-900 border-b-2 border-indigo-300 focus:border-[#dbb212] outline-none bg-transparent"
                             />
                         ) : (
                             <h2 className="text-xl font-bold text-gray-900">{counselor.name}</h2>
@@ -159,7 +159,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                             <input
                                 value={editForm.phone}
                                 onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none"
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-[#dbb212] focus:ring-1 focus:ring-[#dbb212] outline-none"
                                 placeholder="10-digit phone"
                             />
                         </div>
@@ -168,7 +168,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                             <input
                                 value={editForm.department}
                                 onChange={(e) => setEditForm(prev => ({ ...prev, department: e.target.value }))}
-                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none"
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-[#dbb212] focus:ring-1 focus:ring-[#dbb212] outline-none"
                                 placeholder="Department name"
                             />
                         </div>

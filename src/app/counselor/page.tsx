@@ -75,7 +75,7 @@ export default function CounselorDashboard() {
                             <select 
                                 value={selectedEmail}
                                 onChange={(e) => setSelectedEmail(e.target.value)}
-                                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none min-w-[200px]"
+                                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#dbb212] outline-none min-w-[200px]"
                             >
                                 {allCounselors.map(c => (
                                     <option key={c.counselorId} value={c.email}>

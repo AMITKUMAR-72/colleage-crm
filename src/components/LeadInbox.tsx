@@ -7,20 +7,7 @@ import LeadSearchFilters from './LeadSearchFilters';
 import LeadNotes from './LeadNotes';
 import toast from 'react-hot-toast';
 
-const STATUS_COLORS: Record<string, string> = {
-    NEW: 'bg-amber-100 text-amber-700 border-amber-200',
-    TELECALLER_ASSIGNED: 'bg-cyan-100 text-cyan-700 border-cyan-200',
-    QUALIFIED: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    COUNSELOR_ASSIGNED: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    EXTERNAL_ASSIGNED: 'bg-violet-100 text-violet-700 border-violet-200',
-    ADMISSION_IN_PROCESS: 'bg-amber-100 text-amber-700 border-amber-200',
-    ADMISSION_DONE: 'bg-green-100 text-green-800 border-green-200',
-    LOST: 'bg-slate-100 text-slate-700 border-slate-200',
-    UNASSIGNED: 'bg-gray-100 text-gray-600 border-gray-200',
-    CONTACTED: 'bg-blue-100 text-blue-700 border-blue-200',
-    TIMED_OUT: 'bg-rose-100 text-rose-700 border-rose-200',
-    REASSIGNED: 'bg-pink-100 text-pink-700 border-pink-200',
-};
+
 
 interface LeadFilters {
     name: string;
@@ -109,10 +96,9 @@ export default function LeadInbox() {
                 </div>
 
                 {loading ? (
-                   <div className="py-20 text-center">
-                       <div className="inline-block w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                       <p className="text-sm text-gray-400 mt-3">Loading leads...</p>
-                   </div>
+                    <div className="py-20 flex justify-center items-center w-full">
+                        <img src="/raffles-logo.png" alt="Loading" className="h-12 w-auto object-contain animate-spin-y-ease-in" />
+                    </div>
                 ) : leads.length === 0 ? (
                     <div className="py-16 text-center">
                         <p className="text-4xl mb-2">📭</p>
@@ -146,16 +132,15 @@ export default function LeadInbox() {
                                             {getCampaignDisplay(lead.campaign)}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded border ${
-                                                lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded border ${lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                                                 lead.score === 'WARM' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                'bg-gray-50 text-gray-500 border-gray-100'
-                                            }`}>
+                                                    'bg-gray-50 text-gray-500 border-gray-100'
+                                                }`}>
                                                 {lead.score}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <button 
+                                            <button
                                                 onClick={() => setSelectedLead(lead)}
                                                 className="text-blue-600 font-bold text-xs hover:underline"
                                             >
@@ -178,7 +163,7 @@ export default function LeadInbox() {
                             <h2 className="text-xl font-bold">Lead Details</h2>
                             <button onClick={() => setSelectedLead(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
                         </div>
-                        
+
                         <div className="space-y-6">
                             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                                 <h3 className="font-bold text-lg text-blue-900">{selectedLead.name}</h3>

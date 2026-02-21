@@ -117,7 +117,7 @@ const BulkUpload = () => {
             <button
                 disabled={!file || status === 'uploading'}
                 onClick={handleUpload}
-                className="w-full mt-6 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="w-full mt-6 bg-[#4d0101] text-white font-bold py-3 rounded-xl hover:bg-[#4d0101] transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
                 Start Import
             </button>

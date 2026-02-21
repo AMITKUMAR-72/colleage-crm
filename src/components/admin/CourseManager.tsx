@@ -61,12 +61,12 @@ export default function CourseManager() {
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h3 className="text-xl font-bold mb-4">Courses</h3>
-            
+
             <form onSubmit={handleCreate} className="flex flex-col md:flex-row gap-4 mb-6">
                 <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                    className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    className="p-2 border rounded-lg focus:ring-2 focus:ring-[#dbb212] outline-none bg-white"
                     required
                 >
                     <option value="">Select Department</option>
@@ -76,18 +76,18 @@ export default function CourseManager() {
                         </option>
                     ))}
                 </select>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     value={courseName}
                     onChange={(e) => setCourseName(e.target.value)}
                     placeholder="New Course Name"
-                    className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-[#dbb212] outline-none"
                     required
                 />
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-[#4d0101] text-white rounded-lg hover:bg-[#4d0101] disabled:opacity-50"
                 >
                     {loading ? 'Adding...' : 'Add Course'}
                 </button>

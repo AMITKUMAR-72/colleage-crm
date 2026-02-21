@@ -11,11 +11,8 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse">Initializing CRM Portal...</p>
-      </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5EEE6]/80 backdrop-blur-sm transition-all min-h-screen">
+      <img src="/raffles-logo.png" alt="Loading" className="h-32 w-auto object-contain animate-spin-y-ease-in" />
     </div>
   );
 }

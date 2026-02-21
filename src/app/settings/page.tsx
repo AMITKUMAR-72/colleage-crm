@@ -26,7 +26,7 @@ export default function SettingsPage() {
             <div className="space-y-10">
                 <section>
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-200">
+                        <div className="p-2 bg-[#4d0101] rounded-lg text-white shadow-lg shadow-blue-200">
                             <SettingsIcon className="w-5 h-5" />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900">System Configuration</h2>

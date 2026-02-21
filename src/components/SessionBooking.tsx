@@ -38,7 +38,7 @@ export default function SessionBooking() {
                     <CalendarDays className="w-5 h-5 text-blue-600" />
                     Offline Sessions
                 </h2>
-                <button className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-blue-700 transition shadow-sm">
+                <button className="text-xs bg-[#4d0101] text-white px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-[#4d0101] transition shadow-sm">
                     <Plus className="w-3 h-3" /> New Slot
                 </button>
             </div>

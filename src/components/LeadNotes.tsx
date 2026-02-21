@@ -95,7 +95,7 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
                     placeholder="Add a note..."
-                    className="w-full p-3 pr-10 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full p-3 pr-10 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-[#dbb212] outline-none"
                     rows={2}
                 />
                 <button

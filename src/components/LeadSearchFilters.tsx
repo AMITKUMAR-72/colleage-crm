@@ -75,13 +75,13 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
         <div className="bg-white p-4 rounded-xl border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-5 gap-3">
             <input 
                 placeholder="Search by Name" 
-                className="p-2 border rounded-lg text-sm focus:border-indigo-400 outline-none"
+                className="p-2 border rounded-lg text-sm focus:border-[#dbb212] outline-none"
                 value={filters.name}
                 onChange={(e) => handleChange('name', e.target.value)}
             />
             
             <select 
-                className="p-2 border rounded-lg text-sm bg-white focus:border-indigo-400 outline-none"
+                className="p-2 border rounded-lg text-sm bg-white focus:border-[#dbb212] outline-none"
                 value={filters.status}
                 onChange={(e) => handleChange('status', e.target.value)}
             >
@@ -92,7 +92,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
             </select>
 
             <select 
-                className="p-2 border rounded-lg text-sm bg-white focus:border-indigo-400 outline-none"
+                className="p-2 border rounded-lg text-sm bg-white focus:border-[#dbb212] outline-none"
                 value={filters.course}
                 onChange={(e) => handleChange('course', e.target.value)}
             >
@@ -101,7 +101,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
             </select>
 
             <select 
-                className="p-2 border rounded-lg text-sm bg-white focus:border-indigo-400 outline-none"
+                className="p-2 border rounded-lg text-sm bg-white focus:border-[#dbb212] outline-none"
                 value={filters.campaign}
                 onChange={(e) => handleChange('campaign', e.target.value)}
             >
@@ -110,7 +110,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
             </select>
 
             <select 
-                className="p-2 border rounded-lg text-sm bg-white focus:border-indigo-400 outline-none"
+                className="p-2 border rounded-lg text-sm bg-white focus:border-[#dbb212] outline-none"
                 value={filters.score}
                 onChange={(e) => handleChange('score', e.target.value)}
             >

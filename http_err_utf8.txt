@@ -1,0 +1,62 @@
+﻿
+
+IsMutuallyAuthenticated : Fals
+                          e
+Cookies                 : {}
+Headers                 : {con
+                          nect
+                          ion,
+                           x-c
+                          onte
+                          nt-t
+                          ype-
+                          opti
+                          ons,
+                           x-x
+                          ss-p
+                          rote
+                          ctio
+                          n, p
+                          ragm
+                          a...
+                          }
+SupportsHeaders         : True
+ContentLength           : 0
+ContentEncoding         : 
+ContentType             : 
+CharacterSet            : 
+Server                  : ngin
+                          x/1.
+                          24.0
+                           (Ub
+                          untu
+                          )
+LastModified            : 22-0
+                          2-20
+                          26 0
+                          2:34
+                          :15
+StatusCode              : Forb
+                          idde
+                          n
+StatusDescription       : Forb
+                          idde
+                          n
+ProtocolVersion         : 1.1
+ResponseUri             : http
+                          ://l
+                          ocal
+                          host
+                          :300
+                          0/ap
+                          i/de
+                          part
+                          ment
+                          /nam
+                          e
+Method                  : GET
+IsFromCache             : Fals
+                          e
+
+
+

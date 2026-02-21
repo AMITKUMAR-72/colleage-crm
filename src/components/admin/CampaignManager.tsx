@@ -114,7 +114,7 @@ export default function CampaignManager() {
                                         value={sourceName}
                                         onChange={(e) => setSourceName(e.target.value)}
                                         placeholder="e.g. Google Ads"
-                                        className="w-full p-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                                        className="w-full p-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all placeholder:text-gray-300 font-medium"
                                         required
                                     />
                                 </div>
@@ -136,7 +136,7 @@ export default function CampaignManager() {
                                             value={affCompany} 
                                             onChange={e => setAffCompany(e.target.value)} 
                                             placeholder="Raffles Digital" 
-                                            className="w-full p-3 pl-11 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-medium" 
+                                            className="w-full p-3 pl-11 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all placeholder:text-gray-300 font-medium" 
                                             required 
                                         />
                                     </div>
@@ -150,7 +150,7 @@ export default function CampaignManager() {
                                             onChange={e => setAffEmail(e.target.value)} 
                                             type="email"
                                             placeholder="partner@example.com" 
-                                            className="w-full p-3 pl-11 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-medium" 
+                                            className="w-full p-3 pl-11 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all placeholder:text-gray-300 font-medium" 
                                             required 
                                         />
                                     </div>
@@ -191,7 +191,7 @@ export default function CampaignManager() {
                                             <span className="text-[10px] text-gray-400 uppercase font-black tracking-widest">ID #{s.id}</span>
                                         </div>
                                     </div>
-                                    <div className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-600 transition-all">
+                                    <div className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center group-hover:bg-[#4d0101] group-hover:border-blue-600 transition-all">
                                         <div className="w-1.5 h-1.5 bg-gray-300 rounded-full group-hover:bg-white transition-all" />
                                     </div>
                                 </div>

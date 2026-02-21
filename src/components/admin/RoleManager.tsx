@@ -51,7 +51,7 @@ export default function RoleManager() {
                     className="w-full p-2 border rounded-lg"
                     required
                 />
-                <button type="submit" disabled={loading} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg">
+                <button type="submit" disabled={loading} className="w-full px-4 py-2 bg-[#4d0101] text-white rounded-lg">
                     {loading ? 'Adding...' : 'Add Role'}
                 </button>
             </form>

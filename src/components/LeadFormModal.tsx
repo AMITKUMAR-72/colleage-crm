@@ -83,7 +83,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                             maxLength={20}
                             pattern="^[A-Za-z ]+$"
                             title="Name must contain only alphabets and spaces (3-20 chars)"
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
                             placeholder="e.g. John Doe"
                             value={formData.name}
                             onChange={e => setFormData({...formData, name: e.target.value})}
@@ -95,7 +95,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                         <input 
                             type="email" 
                             required
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
                             placeholder="john@example.com"
                             value={formData.email}
                             onChange={e => setFormData({...formData, email: e.target.value})}
@@ -109,7 +109,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                             required
                             pattern="^[0-9]{10}$"
                             title="Phone number must be exactly 10 digits"
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
                             placeholder="1234567890"
                             value={formData.phone}
                             onChange={e => setFormData({...formData, phone: e.target.value})}
@@ -123,7 +123,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                             required
                             minLength={10}
                             maxLength={50}
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
                             placeholder="e.g. 123 Main St, City"
                             value={formData.address}
                             onChange={e => setFormData({...formData, address: e.target.value})}
@@ -135,7 +135,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Course (Optional)</label>
                             <input 
                                 type="text" 
-                                className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
                                 placeholder="e.g. MBA"
                                 value={formData.course}
                                 onChange={e => setFormData({...formData, course: e.target.value})}
@@ -145,7 +145,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Intake (Optional)</label>
                             <input 
                                 type="text" 
-                                className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
                                 placeholder="e.g. Fall 2024"
                                 value={formData.intake}
                                 onChange={e => setFormData({...formData, intake: e.target.value})}
@@ -157,7 +157,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Initial Status</label>
                             <select 
-                                className="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#dbb212] outline-none"
                                 value={formData.status}
                                 onChange={e => setFormData({...formData, status: e.target.value as LeadStatus})}
                             >
@@ -171,7 +171,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Lead Score</label>
                             <select 
-                                className="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                className="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#dbb212] outline-none"
                                 value={formData.score}
                                 onChange={e => setFormData({...formData, score: e.target.value as LeadScore})}
                             >
@@ -193,7 +193,7 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold text-sm shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 py-2 px-4 bg-[#4d0101] text-white rounded-xl hover:bg-[#4d0101] font-bold text-sm shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Creating...' : 'Create Lead'}
                         </button>

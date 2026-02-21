@@ -223,7 +223,7 @@ export default function MyLeadsFeed({ counselorId }: Props) {
                                             <select
                                                 value={lead.status}
                                                 onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
-                                                className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white focus:border-indigo-400 outline-none"
+                                                className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white focus:border-[#dbb212] outline-none"
                                             >
                                                 {ALL_STATUSES.map(s => (
                                                     <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
@@ -287,12 +287,12 @@ export default function MyLeadsFeed({ counselorId }: Props) {
                                                 onChange={(e) => setNoteInput(e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleAddNote(lead.id)}
                                                 placeholder="Add a note..."
-                                                className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none"
+                                                className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#dbb212] focus:ring-1 focus:ring-[#dbb212] outline-none"
                                             />
                                             <button
                                                 onClick={() => handleAddNote(lead.id)}
                                                 disabled={!noteInput.trim()}
-                                                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="px-4 py-2 bg-[#4d0101] text-white text-sm font-medium rounded-lg hover:bg-[#4d0101] transition disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 Add
                                             </button>

@@ -2,13 +2,14 @@
 
 import Sidebar from './Sidebar';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const { user, role, isLoading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!isLoading) {
@@ -18,27 +19,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }
 
             // Path Protection Logic
-            const path = window.location.pathname;
-            
+            const path = pathname || window.location.pathname;
+
             if (path.startsWith('/admin') && role !== 'ADMIN') {
                 router.push('/login'); // Or a generic unauthorized page
             } else if (path.startsWith('/manager') && role !== 'MANAGER' && role !== 'ADMIN') {
                 router.push('/login');
-            } else if (path.startsWith('/counselor') && role !== 'COUNSELOR' && role !== 'ADMIN') {
+            } else if (path.startsWith('/counselor') && role !== 'COUNSELOR' && role !== 'MANAGER' && role !== 'ADMIN') {
                 router.push('/login');
             } else if (path.startsWith('/affiliate') && role !== 'AFFILIATE' && role !== 'ADMIN') {
                 router.push('/login');
             }
         }
-    }, [user, role, isLoading, router]);
+    }, [user, role, isLoading, pathname, router]);
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-slate-500 font-medium">Verifying Session...</p>
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm transition-all min-h-screen">
+                <img src="/raffles-logo.png" alt="Loading" className="h-32 w-auto object-contain animate-spin-y-ease-in" />
             </div>
         );
     }

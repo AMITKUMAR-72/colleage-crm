@@ -125,7 +125,7 @@ export default function CounselorManager() {
                             setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL' });
                             setShowModal(true);
                         }}
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-600/20"
+                        className="flex items-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-600/20"
                     >
                         <UserPlus className="w-5 h-5" />
                         Add Counselor
@@ -224,7 +224,7 @@ export default function CounselorManager() {
                                                     <div className="relative group/status">
                                                         <select
                                                             onChange={(e) => updateStatus(c.email, e.target.value as CounselorStatus)}
-                                                            className="p-2 py-2 bg-gray-50 border-none rounded-xl text-[10px] font-black tracking-tight uppercase focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 appearance-none pr-8 pl-3 min-w-[120px]"
+                                                            className="p-2 py-2 bg-gray-50 border-none rounded-xl text-[10px] font-black tracking-tight uppercase focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 appearance-none pr-8 pl-3 min-w-[120px]"
                                                             value={c.status}
                                                         >
                                                             <option value="AVAILABLE">AVAILABLE</option>
@@ -291,7 +291,7 @@ export default function CounselorManager() {
                                         <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
                                             required
-                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-gray-900"
+                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
                                             value={formData.name}
                                             onChange={e => setFormData({...formData, name: e.target.value})}
                                             placeholder="John Doe"
@@ -305,7 +305,7 @@ export default function CounselorManager() {
                                         <input
                                             required
                                             type="email"
-                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-gray-900"
+                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
                                             value={formData.email}
                                             onChange={e => setFormData({...formData, email: e.target.value})}
                                             placeholder="john@raffles.com"
@@ -319,7 +319,7 @@ export default function CounselorManager() {
                                     <input
                                         required={!editingCounselor}
                                         type="password"
-                                        className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-gray-900"
+                                        className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
                                         value={formData.password}
                                         onChange={e => setFormData({...formData, password: e.target.value})}
                                         placeholder={editingCounselor ? "Leave blank to keep current" : "········"}
@@ -331,7 +331,7 @@ export default function CounselorManager() {
                                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
                                             required
-                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-gray-900"
+                                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
                                             value={formData.phone}
                                             onChange={e => setFormData({...formData, phone: e.target.value})}
                                             placeholder="+91 00000 00000"
@@ -341,7 +341,7 @@ export default function CounselorManager() {
                                 <div className="col-span-1">
                                     <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Department</label>
                                     <select
-                                        className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-gray-900 appearance-none"
+                                        className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 appearance-none"
                                         value={formData.department}
                                         onChange={e => setFormData({...formData, department: e.target.value})}
                                         required
@@ -357,7 +357,7 @@ export default function CounselorManager() {
                                 <div className="col-span-1">
                                     <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Professional Tier</label>
                                     <select
-                                        className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-gray-900 appearance-none"
+                                        className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 appearance-none"
                                         value={formData.counselorType}
                                         onChange={e => setFormData({...formData, counselorType: e.target.value as CounselorType})}
                                     >

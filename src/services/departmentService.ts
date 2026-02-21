@@ -11,7 +11,7 @@ export const DepartmentService = {
         return response.data;
     },
     async getAllDepartments() {
-        const response = await api.get<DepartmentDTO[]>('/api/department');
+        const response = await api.get<DepartmentDTO[]>('/api/department/name');
         return response.data;
     },
     async getDepartmentByName(name: string) {
