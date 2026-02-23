@@ -13,7 +13,8 @@ import {
     ShieldCheck,
     LogOut,
     Menu,
-    X
+    X,
+    Upload
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -22,12 +23,12 @@ export default function Sidebar() {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const navItems = [
-        { label: 'Admin Panel', href: '/admin', roles: ['ADMIN'], icon: ShieldCheck },
+        { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'], icon: ShieldCheck },
         { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'], icon: LayoutDashboard },
-        { label: 'Lead Queue', href: '/counselor', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Users },
+        { label: 'Lead information', href: '/admin', roles: ['MANAGER', 'ADMIN'], icon: Users },
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE', 'ADMIN'], icon: UserSquare2 },
         { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
-        { label: 'Settings', href: '/settings', roles: ['ADMIN'], icon: Settings },
+        { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', "AFFILIATE"], icon: Upload },
     ];
 
     const filteredItems = navItems.filter(item => item.roles.includes(role || ''));

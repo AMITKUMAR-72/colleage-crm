@@ -7,6 +7,7 @@ import CourseManager from '@/components/admin/CourseManager';
 import CampaignManager from '@/components/admin/CampaignManager';
 import RoleManager from '@/components/admin/RoleManager';
 import CounselorManager from '@/components/admin/CounselorManager';
+import AffiliateManager from '@/components/admin/AffiliateManager';
 
 export default function ManagementHub() {
     const [activeTab, setActiveTab] = useState('courses');
@@ -15,7 +16,8 @@ export default function ManagementHub() {
         { id: 'departments', label: 'Departments', component: <DepartmentManager /> },
         { id: 'courses', label: 'Courses', component: <CourseManager /> },
         { id: 'counselors', label: 'Counselors', component: <CounselorManager /> },
-        { id: 'campaigns', label: 'Campaigns & Affiliates', component: <CampaignManager /> },
+        { id: 'affiliates', label: 'Affiliates', component: <AffiliateManager /> },
+        { id: 'campaigns', label: 'Campaign Sources', component: <CampaignManager /> },
         { id: 'roles', label: 'Roles', component: <RoleManager /> },
     ];
 
@@ -31,11 +33,10 @@ export default function ManagementHub() {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`px-4 py-2 whitespace-nowrap font-medium transition-colors ${
-                            activeTab === tab.id
+                        className={`px-4 py-2 whitespace-nowrap font-medium transition-colors ${activeTab === tab.id
                                 ? 'border-b-2 border-blue-600 text-blue-600'
                                 : 'text-gray-500 hover:text-gray-700'
-                        }`}
+                            }`}
                     >
                         {tab.label}
                     </button>

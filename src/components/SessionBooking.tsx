@@ -19,7 +19,7 @@ export default function SessionBooking() {
     const fetchSessions = async () => {
         try {
             setLoading(true);
-            const data = await SessionService.getAvailableSessions();
+            const data = await SessionService.getAllSessions();
             setSessions(data);
         } catch (err) {
             console.error("Failed to fetch sessions", err);
@@ -55,7 +55,7 @@ export default function SessionBooking() {
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-2 text-gray-900 font-bold">
                                         <Clock className="w-4 h-4 text-slate-400" />
-                                        {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                                        {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
                                         {new Date(session.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                     <p className="text-xs text-gray-500">{new Date(session.startTime).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>

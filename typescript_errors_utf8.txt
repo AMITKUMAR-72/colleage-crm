@@ -1,1 +1,0 @@
-﻿src/components/admin/DepartmentManager.tsx(22,42): error TS2339: Property 'matchAll' does not exist on type 'never'.

@@ -1,6 +1,81 @@
 import api from './api';
 import { LeadRequestDTO, LeadResponseDTO, NoteDTO, LeadStatus, LeadScore, PageResponse, CreateNoteRequestDTO } from '@/types/api';
 
+const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'list', 'rows'] as const;
+const WRAPPER_KEYS = ['data', 'result', 'response', 'responseObject', 'payload'] as const;
+
+const parseIfString = (value: unknown): unknown => {
+    if (typeof value !== 'string') return value;
+    try {
+        return JSON.parse(value);
+    } catch {
+        return value;
+    }
+};
+
+const toPageResponse = (raw: unknown): PageResponse<LeadResponseDTO> => {
+    const parsed = parseIfString(raw);
+
+    if (Array.isArray(parsed)) {
+        return {
+            content: parsed as LeadResponseDTO[],
+            totalPages: 1,
+            totalElements: parsed.length,
+            number: 0,
+            size: parsed.length,
+            first: true,
+            last: true,
+        };
+    }
+
+    const queue: unknown[] = [parsed];
+    const seen = new Set<unknown>();
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current || typeof current !== 'object' || seen.has(current)) continue;
+        seen.add(current);
+
+        const objectCurrent = current as Record<string, unknown>;
+
+        for (const key of PAGE_KEYS) {
+            const maybeArray = objectCurrent[key];
+            if (Array.isArray(maybeArray)) {
+                const totalPages = Number(objectCurrent.totalPages ?? objectCurrent.totalPage ?? objectCurrent.pages ?? objectCurrent.pageCount ?? 1) || 1;
+                const totalElements = Number(objectCurrent.totalElements ?? objectCurrent.totalCount ?? objectCurrent.count ?? maybeArray.length) || maybeArray.length;
+                const number = Number(objectCurrent.number ?? objectCurrent.page ?? objectCurrent.pageNumber ?? 0) || 0;
+                const size = Number(objectCurrent.size ?? objectCurrent.pageSize ?? maybeArray.length) || maybeArray.length;
+
+                return {
+                    content: maybeArray as LeadResponseDTO[],
+                    totalPages,
+                    totalElements,
+                    number,
+                    size,
+                    first: number <= 0,
+                    last: number >= totalPages - 1,
+                };
+            }
+        }
+
+        for (const key of WRAPPER_KEYS) {
+            if (key in objectCurrent) {
+                queue.push(parseIfString(objectCurrent[key]));
+            }
+        }
+    }
+
+    return {
+        content: [],
+        totalPages: 1,
+        totalElements: 0,
+        number: 0,
+        size: 0,
+        first: true,
+        last: true,
+    };
+};
+
 export const LeadService = {
     async createLead(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/create', data);
@@ -23,19 +98,19 @@ export const LeadService = {
     },
 
     // Returns Spring Data Page (paginated)
-    getRecentLeads: async (page: number = 0, size: number = 10) => {
-        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/recent/page/${page}/size/${size}`);
+    getRecentLeads: async (page: number, size: number) => {
+        const response = await api.get(`/api/leads/recent/page/${page}/size/${size}`);
         return response.data;
     },
 
     getUnassignedRecentLeads: async (page: number = 0, size: number = 10) => {
-        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/unassigned/recent/page/${page}/size/${size}`);
-        return response.data;
+        const response = await api.get(`/api/leads/unassigned/recent/page/${page}/size/${size}`);
+        return toPageResponse(response.data);
     },
 
     getCounselorRecentLeads: async (counselorId: number, page: number = 0, size: number = 10) => {
-        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/counselor/${counselorId}/recent/page/${page}/size/${size}`);
-        return response.data;
+        const response = await api.get(`/api/leads/counselor/${counselorId}/recent/page/${page}/size/${size}`);
+        return toPageResponse(response.data);
     },
 
     getTimedOutLeads: async () => {
@@ -50,18 +125,29 @@ export const LeadService = {
 
     // Search & Filter — each filter uses its own endpoint
     searchLeads: async (params: {
+        email?: string,
         name?: string,
         course?: string,
         status?: string,
         campaign?: string,
         score?: string
     }) => {
-        if (params.name) return (await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/name/${params.name}`)).data;
-        if (params.course) return (await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/course/${params.course}`)).data;
-        if (params.status) return (await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/status/${params.status}`)).data;
-        if (params.campaign) return (await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/campaign/${params.campaign}`)).data;
-        if (params.score) return (await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/score/${params.score}`)).data;
-        
+        const extractArray = (res: any) => res?.lead || res?.content || (Array.isArray(res) ? res : []);
+
+        if (params.email) {
+            try {
+                const lead = await LeadService.getLeadByEmail(params.email);
+                return lead ? [lead] : [];
+            } catch (error) {
+                return [];
+            }
+        }
+        if (params.name) return extractArray((await api.get(`/api/leads/searchBy/name/${params.name}`)).data);
+        if (params.course) return extractArray((await api.get(`/api/leads/searchBy/course/${params.course}`)).data);
+        if (params.status) return extractArray((await api.get(`/api/leads/searchBy/status/${params.status}`)).data);
+        if (params.campaign) return extractArray((await api.get(`/api/leads/searchBy/campaign/${params.campaign}`)).data);
+        if (params.score) return extractArray((await api.get(`/api/leads/searchBy/score/${params.score}`)).data);
+
         // Counselor fallback: use paginated recent leads which is public, 
         // instead of /api/leads which is restricted to Admin/Manager.
         const pageResponse = await api.get<PageResponse<LeadResponseDTO>>('/api/leads/recent/page/0/size/50');

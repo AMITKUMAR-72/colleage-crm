@@ -32,11 +32,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => {
         // Automatically unwrap the standard Api_Response wrapper if present
-        if (response.data && typeof response.data === 'object' && 'data' in response.data && ('timeStamp' in response.data || 'error' in response.data)) {
-            return {
-                ...response,
-                data: response.data.data
-            };
+        if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+            // Unwrap if it looks like a standard backend wrapper
+            if ('timeStamp' in response.data || 'error' in response.data || 'message' in response.data || 'status' in response.data || Array.isArray(response.data.data)) {
+                return {
+                    ...response,
+                    data: response.data.data
+                };
+            }
         }
         return response;
     },

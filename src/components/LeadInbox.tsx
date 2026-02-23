@@ -7,10 +7,23 @@ import LeadSearchFilters from './LeadSearchFilters';
 import LeadNotes from './LeadNotes';
 import toast from 'react-hot-toast';
 
-
+const STATUS_COLORS: Record<string, string> = {
+    NEW: 'bg-amber-100 text-amber-700 border-amber-200',
+    TELECALLER_ASSIGNED: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+    QUALIFIED: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    COUNSELOR_ASSIGNED: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    EXTERNAL_ASSIGNED: 'bg-violet-100 text-violet-700 border-violet-200',
+    ADMISSION_IN_PROCESS: 'bg-amber-100 text-amber-700 border-amber-200',
+    ADMISSION_DONE: 'bg-green-100 text-green-800 border-green-200',
+    LOST: 'bg-slate-100 text-slate-700 border-slate-200',
+    UNASSIGNED: 'bg-gray-100 text-gray-600 border-gray-200',
+    CONTACTED: 'bg-blue-100 text-blue-700 border-blue-200',
+    TIMED_OUT: 'bg-rose-100 text-rose-700 border-rose-200',
+    REASSIGNED: 'bg-pink-100 text-pink-700 border-pink-200',
+};
 
 interface LeadFilters {
-    name: string;
+    email: string;
     status: string;
     course: string;
     campaign: string;
@@ -23,7 +36,7 @@ export default function LeadInbox() {
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
-    const [filters, setFilters] = useState<LeadFilters>({ name: '', status: '', course: '', campaign: '', score: '' });
+    const [filters, setFilters] = useState<LeadFilters>({ email: '', status: '', course: '', campaign: '', score: '' });
 
     const fetchLeads = useCallback(async () => {
         try {
@@ -32,22 +45,61 @@ export default function LeadInbox() {
             const hasFilters = Object.values(filters).some(val => val !== '');
 
             if (hasFilters) {
-                const data = await LeadService.searchLeads(filters);
-                setLeads(data || []);
+                const response: any = await LeadService.searchLeads(filters);
+
+                let results;
+                if (filters.email) {
+                    results = Array.isArray(response) ? response : [];
+                } else {
+                    results = response.lead || response.content || (Array.isArray(response) ? response : []);
+                }
+
+                setLeads(results);
+                console.log(results);
                 setTotalPages(1);
+                setPage(0);
+
             } else {
-                const pageData = await LeadService.getRecentLeads(page, 10);
-                setLeads(pageData.content || []);
-                setTotalPages(pageData.totalPages || 1);
+                const response: any = await LeadService.getRecentLeads(page, 15);
+
+                // Use response.lead since you mentioned the response has 'count' and 'lead'
+                const newLeads = response.lead || response.content || [];
+                setLeads(newLeads);
+
+                // If the response manually returns 'count', we calculate the total pages
+                const totalCount = response.count ?? response.totalElements ?? 0;
+                const calculatedPages = totalCount > 0 ? Math.ceil(totalCount / 15) : 1;
+                setTotalPages(response.totalPages || calculatedPages);
+
+
+                console.log('Fetched recent leads:', response);
+                console.log('Leads state will update to:', newLeads);
             }
-        } catch {
-            console.error('Failed to fetch leads');
+
+        } catch (error) {
+            console.error('Failed to fetch leads', error);
             toast.error('Could not load leads');
             setLeads([]);
         } finally {
             setLoading(false);
         }
-    }, [page, filters]);
+    }, [filters, page]);
+
+    const handleViewLead = async (id: number) => {
+        try {
+            const fullLead = leads.find(l => l.id === id);
+
+            if (!fullLead) {
+                toast.error('Lead not found in current view');
+                return;
+            }
+
+            setSelectedLead(fullLead);
+        } catch (error) {
+            console.error('Failed to fetch lead details', error);
+            toast.error('Could not fetch lead details');
+        }
+    };
 
     useEffect(() => {
         fetchLeads();
@@ -105,47 +157,45 @@ export default function LeadInbox() {
                         <p className="text-gray-500 font-medium">No leads found</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50/50 text-slate-400 uppercase text-[10px] font-black tracking-widest">
+                    <div className="p-0 overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4">Identity</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4">Campaign</th>
-                                    <th className="px-6 py-4">Score</th>
-                                    <th className="px-6 py-4">Action</th>
+                                    <th className="px-6 py-4 font-bold">Name</th>
+                                    <th className="px-6 py-4 font-bold">Contact</th>
+                                    <th className="px-6 py-4 font-bold">Status & Score</th>
+                                    <th className="px-6 py-4 font-bold">Course / Intake</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100/50">
+                            <tbody className="divide-y divide-slate-100">
                                 {leads.map((lead) => (
-                                    <tr key={lead.id} className="hover:bg-blue-50/50 transition-colors group">
+                                    <tr
+                                        key={lead.id}
+                                        onClick={() => handleViewLead(lead.id)}
+                                        className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
+                                    >
                                         <td className="px-6 py-4">
-                                            <div className="font-bold text-slate-800">{lead.name}</div>
-                                            <div className="text-xs text-slate-500">{lead.email}</div>
+                                            <div className="font-bold text-slate-800">{lead.name || 'Unknown'}</div>
+                                            <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[150px]" title={lead.address}>{lead.address || '—'}</div>
+                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                                                {lead.status.replace(/_/g, ' ')}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-xs text-slate-500">
-                                            {getCampaignDisplay(lead.campaign)}
+                                            <div className="text-slate-700 font-medium truncate max-w-[200px]" title={lead.email}>{lead.email || '—'}</div>
+                                            <div className="text-slate-500 mt-0.5">{lead.phone || '—'}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded border ${lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                                                lead.score === 'WARM' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                    'bg-gray-50 text-gray-500 border-gray-100'
-                                                }`}>
-                                                {lead.score}
-                                            </span>
+                                            <div className="flex flex-col gap-1.5 items-start">
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                                    {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                                                </span>
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' : lead.score === 'WARM' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                                    {lead.score || 'NONE'}
+                                                </span>
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <button
-                                                onClick={() => setSelectedLead(lead)}
-                                                className="text-blue-600 font-bold text-xs hover:underline"
-                                            >
-                                                View & Notes
-                                            </button>
+                                        <td className="px-6 py-4 text-slate-700">
+                                            <div className="font-medium truncate max-w-[200px]" title={getCourseDisplay(lead)}>{getCourseDisplay(lead)}</div>
+                                            <div className="text-slate-500 mt-0.5 text-xs">Intake: {lead.intake || '—'}</div>
                                         </td>
                                     </tr>
                                 ))}

@@ -149,9 +149,7 @@ function Dashboard({ user, onLogout }) {
         </div>
 
         {/* Section Content */}
-        {activeSection === 'api-sync' && (
-          <APISync apiStatus={apiStatus} />
-        )}
+
 
         {activeSection === 'lead-form' && (
           <LeadFormSection
@@ -264,27 +262,9 @@ function APISync({ apiStatus }) {
 
 // Lead Form Section
 function LeadFormSection({ leadForm, setLeadForm, onSubmit, leadSubmitted, submittedLead, onClearSubmission }) {
-  const programs = [
-    'B.Tech Computer Science',
-    'B.Tech Electronics',
-    'BBA',
-    'MBA',
-    'B.Com',
-    'M.Com',
-    'B.Sc',
-    'M.Sc',
-  ]
 
-  const sources = [
-    'Google Ads',
-    'CollegeDekho',
-    'Shiksha',
-    'Website',
-    'Facebook',
-    'Instagram',
-    'Referral',
-    'Walk-in',
-  ]
+
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
