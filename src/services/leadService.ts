@@ -223,5 +223,15 @@ export const LeadService = {
     async integrateGoogleForm(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/integration/GoogelForm', data);
         return response.data;
+    },
+
+    async integrateAffiliatePartner(data: LeadRequestDTO) {
+        const response = await api.post<LeadResponseDTO>('/api/leads/integration/AffiliatePartner', data);
+        return response.data;
+    },
+
+    async getAffiliateLeads() {
+        const response = await api.get<LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
+        return response.data;
     }
 };
