@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import CounselorProfile from '@/components/counselor/CounselorProfile';
 import MyLeadsFeed from '@/components/counselor/MyLeadsFeed';
 import { CounselorService } from '@/services/counselorService';
-import SessionBooking from '@/components/SessionBooking';
+
 import { CounselorDTO } from '@/types/api';
 import { Toaster } from 'react-hot-toast';
 
@@ -61,7 +61,7 @@ export default function CounselorDashboard() {
     return (
         <DashboardLayout>
             <Toaster position="top-right" />
-            
+
             <div className="space-y-6">
                 {/* Admin Selector */}
                 {isAdmin && (
@@ -72,7 +72,7 @@ export default function CounselorDashboard() {
                         </div>
                         <div className="flex items-center gap-3">
                             {loadingCounselors && <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />}
-                            <select 
+                            <select
                                 value={selectedEmail}
                                 onChange={(e) => setSelectedEmail(e.target.value)}
                                 className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#dbb212] outline-none min-w-[200px]"
@@ -90,9 +90,9 @@ export default function CounselorDashboard() {
                 {/* Profile Header */}
                 {effectiveEmail ? (
                     <>
-                        <CounselorProfile 
-                            email={effectiveEmail} 
-                            onProfileLoaded={handleProfileLoaded} 
+                        <CounselorProfile
+                            email={effectiveEmail}
+                            onProfileLoaded={handleProfileLoaded}
                             onProfileError={handleProfileError}
                         />
 
@@ -116,7 +116,9 @@ export default function CounselorDashboard() {
 
                             {/* Sidebar */}
                             <div className="lg:col-span-4 space-y-6">
-                                <SessionBooking />
+                                <div className="hidden lg:block">
+                                    {/* Counselor Dashboard Sidebar Space */}
+                                </div>
 
                                 {/* Quick stats */}
                                 {counselor && (
@@ -133,11 +135,10 @@ export default function CounselorDashboard() {
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm text-gray-500">Priority</span>
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                    counselor.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${counselor.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
                                                     counselor.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
-                                                    'bg-green-100 text-green-700'
-                                                }`}>{counselor.priority}</span>
+                                                        'bg-green-100 text-green-700'
+                                                    }`}>{counselor.priority}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm text-gray-500">Department</span>

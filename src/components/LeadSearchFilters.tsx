@@ -11,6 +11,8 @@ interface LeadFilters {
     course: string;
     campaign: string;
     score: string;
+    startDate?: string;
+    endDate?: string;
 }
 
 interface FilterProps {
@@ -28,14 +30,16 @@ const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
 export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [campaigns, setCampaigns] = useState<CampaignDTO[]>([]);
-    const [filterType, setFilterType] = useState<'' | 'email' | 'status' | 'course' | 'campaign' | 'score'>('');
+    const [filterType, setFilterType] = useState<'' | 'email' | 'status' | 'course' | 'campaign' | 'score' | 'dateRange'>('');
 
     const [filters, setFilters] = useState<LeadFilters>({
         email: '',
         status: '',
         course: '',
         campaign: '',
-        score: ''
+        score: '',
+        startDate: '',
+        endDate: ''
     });
 
     const loadDropdowns = useCallback(async () => {
@@ -136,6 +140,28 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                             ))}
                         </select>
                     )}
+                    {filterType === 'dateRange' && (
+                        <div className="flex gap-3 w-full animate-in fade-in duration-300">
+                            <div className="flex-1">
+                                <label className="text-xs font-bold text-gray-500 mb-1 block">Start Date</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:border-[#dbb212] focus:ring-1 focus:ring-[#dbb212] outline-none shadow-sm transition-all text-gray-900"
+                                    value={filters.startDate || ''}
+                                    onChange={(e) => handleChange('startDate', e.target.value)}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-xs font-bold text-gray-500 mb-1 block">End Date</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full p-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:border-[#dbb212] focus:ring-1 focus:ring-[#dbb212] outline-none shadow-sm transition-all text-gray-900"
+                                    value={filters.endDate || ''}
+                                    onChange={(e) => handleChange('endDate', e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
 
@@ -146,7 +172,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         value={filterType}
                         onChange={(e) => {
                             setFilterType(e.target.value as any);
-                            const resetFilters = { email: '', status: '', course: '', campaign: '', score: '' };
+                            const resetFilters = { email: '', status: '', course: '', campaign: '', score: '', startDate: '', endDate: '' };
                             setFilters(resetFilters);
                             onFilterChange(resetFilters);
                         }}
@@ -157,6 +183,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         <option value="course" className="bg-white text-gray-800">Filter Course</option>
                         <option value="campaign" className="bg-white text-gray-800">Filter Source</option>
                         <option value="score" className="bg-white text-gray-800">Filter Score</option>
+                        <option value="dateRange" className="bg-white text-gray-800">Filter Date Range</option>
                     </select>
 
                 </div>
