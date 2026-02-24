@@ -63,7 +63,7 @@ export interface LeadResponseDTO {
     email: string;
     address: string;
     phone: string;
-    course?: { id: number; course: string };   // backend returns Courses entity
+    course?: string | { id: number; course: string };   // backend can return string or entity
     intake?: string;
     status: LeadStatus;
     campaign?: { id: number; name: string };   // backend returns Campaigns entity

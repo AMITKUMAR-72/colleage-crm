@@ -1,7 +1,7 @@
 import api from './api';
 import { LeadRequestDTO, LeadResponseDTO, NoteDTO, LeadStatus, LeadScore, PageResponse, CreateNoteRequestDTO } from '@/types/api';
 
-const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'list', 'rows'] as const;
+const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'lead', 'list', 'rows'] as const;
 const WRAPPER_KEYS = ['data', 'result', 'response', 'responseObject', 'payload'] as const;
 
 const parseIfString = (value: unknown): unknown => {
@@ -231,7 +231,12 @@ export const LeadService = {
     },
 
     async getAffiliateLeads() {
-        const response = await api.get<LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
-        return response.data;
+        // The api interceptor already unwraps the outer 'data' field.
+        // The unwrapped data is { count: number, lead: LeadResponseDTO[] }
+        const response = await api.get<{ lead: LeadResponseDTO[] } | LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
+
+        const data = response.data as any;
+        if (Array.isArray(data)) return data;
+        return data?.lead || data?.content || [];
     }
 };
