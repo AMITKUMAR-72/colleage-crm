@@ -80,9 +80,8 @@ export default function AffiliateLeadFeed() {
             <div className="px-6 py-3 border-b border-gray-50 flex flex-wrap gap-2">
                 <button
                     onClick={() => setFilter('')}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                        !filter ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition ${!filter ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}
                 >
                     All ({leads.length})
                 </button>
@@ -90,11 +89,10 @@ export default function AffiliateLeadFeed() {
                     <button
                         key={status}
                         onClick={() => setFilter(filter === status ? '' : status)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                            filter === status
-                                ? STATUS_COLORS[status]
-                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${filter === status
+                            ? STATUS_COLORS[status]
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                            }`}
                     >
                         {status.replace(/_/g, ' ')} ({count})
                     </button>

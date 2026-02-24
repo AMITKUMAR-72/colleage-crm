@@ -94,8 +94,8 @@ function Dashboard({ user, onLogout }) {
               <User className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-semibold text-white">{user.name}</p>
-              <p className="text-xs text-slate-400 capitalize">{user.role}</p>
+              <p className="font-semibold text-white">{user?.name}</p>
+              <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
             </div>
           </div>
         </div>
@@ -135,7 +135,7 @@ function Dashboard({ user, onLogout }) {
             <h2 className="text-2xl font-bold text-white">
               {sections.find(s => s.id === activeSection)?.name}
             </h2>
-            <p className="text-slate-400 text-sm">Welcome back, {user.name}!</p>
+            <p className="text-slate-400 text-sm">Welcome back, {user?.name}!</p>
           </div>
           <div className="flex items-center gap-4">
             <button className="relative p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 transition-colors">
@@ -262,9 +262,8 @@ function APISync({ apiStatus }) {
 
 // Lead Form Section
 function LeadFormSection({ leadForm, setLeadForm, onSubmit, leadSubmitted, submittedLead, onClearSubmission }) {
-
-
-
+  const programs = ['B.Tech', 'M.Tech', 'MBA', 'BBA', 'BCA'];
+  const sources = ['Website', 'Facebook', 'Google', 'Referral', 'Walk-in'];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

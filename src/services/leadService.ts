@@ -1,7 +1,7 @@
 import api from './api';
 import { LeadRequestDTO, LeadResponseDTO, NoteDTO, LeadStatus, LeadScore, PageResponse, CreateNoteRequestDTO } from '@/types/api';
 
-const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'list', 'rows'] as const;
+const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'lead', 'list', 'rows'] as const;
 const WRAPPER_KEYS = ['data', 'result', 'response', 'responseObject', 'payload'] as const;
 
 const parseIfString = (value: unknown): unknown => {
@@ -130,33 +130,34 @@ export const LeadService = {
         course?: string,
         status?: string,
         campaign?: string,
-        score?: string
+        score?: string,
+        startDate?: string,
+        endDate?: string
     }) => {
-        const extractArray = (res: any) => {
-            if (!res) return [];
-            // Handle unwrapped vs wrapped data
-            const data = res.data || res;
-            if (Array.isArray(data)) return data;
-            return data.lead || data.content || data.items || [];
-        };
-
-        try {
-            // Validation: Only search if we have a non-empty, non-whitespace value
-            const email = params.email?.trim();
-            const name = params.name?.trim();
-            const course = params.course?.trim();
-            const status = params.status?.trim();
-            const campaign = params.campaign?.trim();
-            const score = params.score?.trim();
-
-            if (email) {
-                try {
-                    const lead = await LeadService.getLeadByEmail(email);
-                    return lead ? [lead] : [];
-                } catch {
-                    return [];
-                }
+        // If searching by email, use the working email endpoint
+        if (params.email) {
+            try {
+                const lead = await LeadService.getLeadByEmail(params.email);
+                return lead ? [lead] : [];
+            } catch (error) {
+                return [];
             }
+        }
+
+        const extractArray = (res: any) => res?.lead || res?.content || (Array.isArray(res) ? res : []);
+
+        if (params.name) return extractArray((await api.get(`/api/leads/searchBy/name/${params.name}`)).data);
+        if (params.course) return extractArray((await api.get(`/api/leads/searchBy/course/${params.course}`)).data);
+        if (params.status) return extractArray((await api.get(`/api/leads/searchBy/status/${params.status}`)).data);
+        if (params.campaign) return extractArray((await api.get(`/api/leads/searchBy/campaign/${params.campaign}`)).data);
+        if (params.score) return extractArray((await api.get(`/api/leads/searchBy/score/${params.score}`)).data);
+        if (params.startDate && params.endDate) {
+            let start = params.startDate;
+            let end = params.endDate;
+            if (start.length === 16) start += ':00';
+            if (end.length === 16) end += ':00';
+            return extractArray((await api.get(`/api/leads/date-range/start/${start}/end/${end}`)).data);
+        }
 
             // Ensure we don't send empty strings to specialized search endpoints
             if (name && name.length >= 2) return extractArray(await api.get(`/api/leads/searchBy/name/${encodeURIComponent(name)}`));
@@ -248,5 +249,20 @@ export const LeadService = {
     async integrateGoogleForm(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/integration/GoogelForm', data);
         return response.data;
+    },
+
+    async integrateAffiliatePartner(data: LeadRequestDTO) {
+        const response = await api.post<LeadResponseDTO>('/api/leads/integration/AffiliatePartner', data);
+        return response.data;
+    },
+
+    async getAffiliateLeads() {
+        // The api interceptor already unwraps the outer 'data' field.
+        // The unwrapped data is { count: number, lead: LeadResponseDTO[] }
+        const response = await api.get<{ lead: LeadResponseDTO[] } | LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
+
+        const data = response.data as any;
+        if (Array.isArray(data)) return data;
+        return data?.lead || data?.content || [];
     }
 };

@@ -6,7 +6,10 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
     Menu,
-    X
+    X,
+    Upload,
+    Clock,
+    User
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -15,13 +18,14 @@ export default function Sidebar() {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const navItems = [
-        { label: 'Smart Dashboard', href: '/counselor', roles: ['COUNSELOR', 'TELECALLER'] },
-        { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'] },
-        { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'] },
-        { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'] },
-        { label: 'Lead information', href: '/admin', roles: ['MANAGER', 'ADMIN'] },
-        { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE', 'ADMIN'] },
-        { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', "AFFILIATE"] },
+        { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'], icon: ShieldCheck },
+        { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'], icon: LayoutDashboard },
+        { label: 'Lead information', href: '/admin', roles: ['MANAGER', 'ADMIN'], icon: Users },
+        { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },
+        { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
+        { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', 'AFFILIATE'], icon: Upload },
+        { label: 'Timed-Out Leads', href: '/timeout-leads', roles: ['ADMIN', 'MANAGER'], icon: Clock },
+        { label: 'Mentor Hub', href: '/mentor', roles: ['MENTOR', 'ADMIN'], icon: User },
     ];
 
     const filteredItems = navItems.filter(item => item.roles.includes(role || ''));
