@@ -132,26 +132,45 @@ export const LeadService = {
         campaign?: string,
         score?: string
     }) => {
-        const extractArray = (res: any) => res?.lead || res?.content || (Array.isArray(res) ? res : []);
+        const extractArray = (res: any) => {
+            if (!res) return [];
+            // Handle unwrapped vs wrapped data
+            const data = res.data || res;
+            if (Array.isArray(data)) return data;
+            return data.lead || data.content || data.items || [];
+        };
 
-        if (params.email) {
-            try {
-                const lead = await LeadService.getLeadByEmail(params.email);
-                return lead ? [lead] : [];
-            } catch (error) {
-                return [];
+        try {
+            // Validation: Only search if we have a non-empty, non-whitespace value
+            const email = params.email?.trim();
+            const name = params.name?.trim();
+            const course = params.course?.trim();
+            const status = params.status?.trim();
+            const campaign = params.campaign?.trim();
+            const score = params.score?.trim();
+
+            if (email) {
+                try {
+                    const lead = await LeadService.getLeadByEmail(email);
+                    return lead ? [lead] : [];
+                } catch {
+                    return [];
+                }
             }
-        }
-        if (params.name) return extractArray((await api.get(`/api/leads/searchBy/name/${params.name}`)).data);
-        if (params.course) return extractArray((await api.get(`/api/leads/searchBy/course/${params.course}`)).data);
-        if (params.status) return extractArray((await api.get(`/api/leads/searchBy/status/${params.status}`)).data);
-        if (params.campaign) return extractArray((await api.get(`/api/leads/searchBy/campaign/${params.campaign}`)).data);
-        if (params.score) return extractArray((await api.get(`/api/leads/searchBy/score/${params.score}`)).data);
 
-        // Counselor fallback: use paginated recent leads which is public, 
-        // instead of /api/leads which is restricted to Admin/Manager.
-        const pageResponse = await api.get<PageResponse<LeadResponseDTO>>('/api/leads/recent/page/0/size/50');
-        return pageResponse.data.content;
+            // Ensure we don't send empty strings to specialized search endpoints
+            if (name && name.length >= 2) return extractArray(await api.get(`/api/leads/searchBy/name/${encodeURIComponent(name)}`));
+            if (course && course.length > 0) return extractArray(await api.get(`/api/leads/searchBy/course/${encodeURIComponent(course)}`));
+            if (status && status.length > 0) return extractArray(await api.get(`/api/leads/searchBy/status/${encodeURIComponent(status)}`));
+            if (campaign && campaign.length > 0) return extractArray(await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(campaign)}`));
+            if (score && score.length > 0) return extractArray(await api.get(`/api/leads/searchBy/score/${encodeURIComponent(score)}`));
+
+        } catch (error: any) {
+            console.error("Search API Error:", error.message || error);
+        }
+
+        // Return empty array instead of failing if no search matches or search failed
+        return [];
     },
 
     getSourceByCount: async (campaign: string) => {
@@ -160,12 +179,18 @@ export const LeadService = {
     },
 
     updateLeadStatus: async (id: number, status: LeadStatus) => {
-        const response = await api.post<LeadResponseDTO>(`/api/leads/id/${id}/updateStatus/${status}`);
+        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${id}/status/${status}`);
         return response.data;
     },
 
     updateLeadScore: async (id: number, score: LeadScore) => {
-        const response = await api.post<LeadResponseDTO>(`/api/leads/id/${id}/updateScore/${score}`);
+        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${id}/score/${score}`);
+        return response.data;
+    },
+
+    assignLeadToCounselor: async (leadEmail: string, counselorId: number) => {
+        // Base assignment (Admin/Manager level)
+        const response = await api.post<LeadResponseDTO>(`/api/leads/${leadEmail}/assign/counselor/${counselorId}`);
         return response.data;
     },
 

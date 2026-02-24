@@ -5,16 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
-    Users,
-    LayoutDashboard,
-    UserSquare2,
-    Settings,
-    Calendar,
-    ShieldCheck,
-    LogOut,
     Menu,
-    X,
-    Upload
+    X
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -23,12 +15,13 @@ export default function Sidebar() {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const navItems = [
-        { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'], icon: ShieldCheck },
-        { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'], icon: LayoutDashboard },
-        { label: 'Lead information', href: '/admin', roles: ['MANAGER', 'ADMIN'], icon: Users },
-        { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE', 'ADMIN'], icon: UserSquare2 },
-        { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
-        { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', "AFFILIATE"], icon: Upload },
+        { label: 'Smart Dashboard', href: '/counselor', roles: ['COUNSELOR', 'TELECALLER'] },
+        { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'] },
+        { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'] },
+        { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'] },
+        { label: 'Lead information', href: '/admin', roles: ['MANAGER', 'ADMIN'] },
+        { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE', 'ADMIN'] },
+        { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', "AFFILIATE"] },
     ];
 
     const filteredItems = navItems.filter(item => item.roles.includes(role || ''));
@@ -40,10 +33,16 @@ export default function Sidebar() {
     const sidebarContent = (
         <>
             <div className="p-6 md:p-8 border-b border-white/5 flex items-center gap-3">
-                <img src="/raffles-logo.png" alt="Raffles Logo" className="w-11 h-11 shrink-0 object-contain drop-shadow-md bg-white rounded-lg p-1" />
+                <div className="relative">
+                    <img 
+                        src="/raffles-logo.png" 
+                        alt="Raffles Logo" 
+                        className="w-12 h-12 shrink-0 object-contain bg-white rounded-xl p-1.5" 
+                    />
+                </div>
                 <div className="font-[var(--font-poppins)]">
-                    <span className="block font-black text-white leading-none text-lg tracking-wide">RAFFLES</span>
-                    <span className="text-[10px] text-[#dbb212] font-bold tracking-[0.35em] uppercase leading-none mt-1 block">Management</span>
+                    <span className="block font-black text-white leading-none text-xl tracking-tight">RAFFLES</span>
+                    <span className="text-[10px] text-[#dbb212] font-black tracking-[0.4em] uppercase leading-none mt-1.5 block opacity-90">Management</span>
                 </div>
                 {/* Mobile close button */}
                 <button
@@ -56,20 +55,18 @@ export default function Sidebar() {
 
             <nav className="flex-1 p-4 space-y-1">
                 {filteredItems.map((item) => {
-                    const Icon = item.icon;
                     const isActive = pathname === item.href;
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
                             onClick={handleNavClick}
-                            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${isActive
+                            className={`flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 group ${isActive
                                 ? 'bg-[#4d0101] text-white shadow-md shadow-black/20'
                                 : 'hover:bg-[#dbb212] hover:text-[#600202]'
                                 }`}
                         >
-                            <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-[#600202]'}`} />
-                            <span className="font-medium">{item.label}</span>
+                            <span className="font-bold text-xs uppercase tracking-widest">{item.label}</span>
                         </Link>
                     );
                 })}
@@ -78,10 +75,9 @@ export default function Sidebar() {
             <div className="p-4 border-t border-slate-800">
                 <button
                     onClick={() => { logout(); setMobileOpen(false); }}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-colors group"
+                    className="flex items-center px-4 py-2.5 rounded-lg w-full text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-colors group"
                 >
-                    <LogOut className="w-5 h-5 text-slate-600 group-hover:text-rose-500" />
-                    <span className="font-medium">Sign Out</span>
+                    <span className="font-bold text-xs uppercase tracking-widest">Sign Out</span>
                 </button>
             </div>
         </>

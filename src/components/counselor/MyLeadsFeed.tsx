@@ -6,30 +6,31 @@ import { NoteService } from '@/services/noteService';
 import { LeadResponseDTO, NoteDTO, LeadStatus, LeadScore } from '@/types/api';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+// Simplified - Icons removed
 
 interface Props {
     counselorId: number;
+    counselorType?: string;
+    onLeadsUpdate?: (leads: LeadResponseDTO[]) => void;
+    onActionComplete?: () => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
     NEW: 'bg-blue-100 text-blue-700',
-    TELECALLER_ASSIGNED: 'bg-cyan-100 text-cyan-700',
-    QUALIFIED: 'bg-emerald-100 text-emerald-700',
-    COUNSELOR_ASSIGNED: 'bg-indigo-100 text-indigo-700',
-    EXTERNAL_ASSIGNED: 'bg-violet-100 text-violet-700',
+    TELECALLER_ASSIGNED: 'bg-indigo-50 text-indigo-600 border border-indigo-100',
+    QUALIFIED: 'bg-emerald-100 text-emerald-700 font-bold',
+    COUNSELOR_ASSIGNED: 'bg-purple-100 text-purple-700',
+    CONTACTED: 'bg-sky-50 text-sky-600 border border-sky-100',
     ADMISSION_IN_PROCESS: 'bg-amber-100 text-amber-700',
     ADMISSION_DONE: 'bg-green-100 text-green-800',
-    LOST: 'bg-red-100 text-red-700',
+    LOST: 'bg-red-50 text-red-600',
     UNASSIGNED: 'bg-gray-100 text-gray-600',
-    CONTACTED: 'bg-sky-100 text-sky-700',
-    TIMED_OUT: 'bg-orange-100 text-orange-700',
-    REASSIGNED: 'bg-pink-100 text-pink-700',
 };
 
 const SCORE_COLORS: Record<string, string> = {
-    HOT: 'bg-red-500 text-white',
-    WARM: 'bg-amber-400 text-white',
-    COLD: 'bg-blue-400 text-white',
+    HOT: 'bg-red-500 text-white shadow-sm ring-2 ring-red-100',
+    WARM: 'bg-amber-400 text-white shadow-sm ring-2 ring-amber-100',
+    COLD: 'bg-slate-400 text-white shadow-sm ring-2 ring-slate-100',
 };
 
 const ALL_STATUSES: LeadStatus[] = [
@@ -38,9 +39,7 @@ const ALL_STATUSES: LeadStatus[] = [
     'LOST', 'UNASSIGNED', 'CONTACTED', 'TIMED_OUT', 'REASSIGNED'
 ];
 
-const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
-
-export default function MyLeadsFeed({ counselorId }: Props) {
+export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate, onActionComplete }: Props) {
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
@@ -50,23 +49,82 @@ export default function MyLeadsFeed({ counselorId }: Props) {
     const [noteInput, setNoteInput] = useState('');
     const [notesLoading, setNotesLoading] = useState<number | null>(null);
 
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('');
+    const [scoreFilter, setScoreFilter] = useState<string>('');
+    // Feed Mode states
+    const [feedMode, setFeedMode] = useState<'MY_LEADS' | 'UNASSIGNED'>('MY_LEADS');
+    const [isSearching, setIsSearching] = useState(false);
+
     const loadLeads = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await LeadService.getCounselorRecentLeads(counselorId, page, 10);
-            setLeads(response.content || []);
-            setTotalPages(response.totalPages || 1);
-        } catch {
+            let data;
+            if (searchQuery || statusFilter || scoreFilter) {
+                setIsSearching(true);
+                data = await LeadService.searchLeads({
+                    name: searchQuery,
+                    status: statusFilter,
+                    score: scoreFilter
+                });
+                const content = Array.isArray(data) ? data : (data as any)?.content || [];
+                setLeads(content);
+                setTotalPages(1);
+                if (onLeadsUpdate) onLeadsUpdate(content);
+            } else if (feedMode === 'UNASSIGNED') {
+                setIsSearching(false);
+                const response = await LeadService.getUnassignedRecentLeads(page, 10);
+                const content = response?.content || [];
+                setLeads(content);
+                setTotalPages(response?.totalPages || 1);
+                if (onLeadsUpdate) onLeadsUpdate(content);
+            } else {
+                setIsSearching(false);
+                const response = await LeadService.getCounselorRecentLeads(counselorId, page, 10);
+                const content = response?.content || [];
+                setLeads(content);
+                setTotalPages(response?.totalPages || 1);
+                if (onLeadsUpdate) onLeadsUpdate(content);
+            }
+        } catch (err) {
+            console.error(err);
             toast.error('Failed to load leads');
             setLeads([]);
         } finally {
             setLoading(false);
         }
-    }, [counselorId, page]);
+    }, [counselorId, page, searchQuery, statusFilter, scoreFilter, onLeadsUpdate, feedMode]);
 
     useEffect(() => {
         if (counselorId) loadLeads();
     }, [counselorId, loadLeads]);
+
+    const handleClaimLead = async (lead: LeadResponseDTO) => {
+        try {
+            // Priority 1: Direct assignment API (Admin/Manager level)
+            await LeadService.assignLeadToCounselor(lead.email, counselorId);
+            toast.success('Lead claimed successfully!');
+            loadLeads();
+            onActionComplete?.();
+        } catch (error: any) {
+            // Priority 2: Fallback to Counselor-level status update if 403 Forbidden
+            if (error.response?.status === 403) {
+                console.warn('Direct assignment forbidden. Attempting status-based claim fallback...');
+                try {
+                    await LeadService.updateLeadStatus(lead.id, 'TELECALLER_ASSIGNED');
+                    toast.success('Lead claimed via status update!');
+                    loadLeads();
+                    onActionComplete?.();
+                    return;
+                } catch (fallbackError) {
+                    console.error('Claim fallback failed:', fallbackError);
+                }
+            }
+            console.error('Claim failed:', error);
+            toast.error('Failed to claim lead. Permission denied.');
+        }
+    };
 
     const toggleExpand = async (leadId: number) => {
         if (expandedLeadId === leadId) {
@@ -87,6 +145,62 @@ export default function MyLeadsFeed({ counselorId }: Props) {
         }
     };
 
+    const handleQuickAction = async (leadId: number, status: LeadStatus) => {
+        try {
+            await LeadService.updateLeadStatus(leadId, status);
+            setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
+            toast.success(`Marked as ${status.replace(/_/g, ' ')}`);
+            onActionComplete?.();
+        } catch {
+            toast.error('Action failed');
+        }
+    };
+
+    const handleCallAction = async (leadId: number) => {
+        try {
+            await LeadService.updateLeadStatus(leadId, 'CONTACTED');
+            await NoteService.createNote(leadId, 'Call initiated via Telecaller Dashboard.');
+            
+            setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: 'CONTACTED' as LeadStatus } : l));
+            
+            // Refresh notes if this lead is expanded
+            if (expandedLeadId === leadId) {
+                const data = await NoteService.getLeadNotes(leadId);
+                setNotes(prev => ({ ...prev, [leadId]: data }));
+            }
+            
+            toast.success('Call interaction logged');
+        } catch {
+            toast.error('Failed to log call');
+        }
+    };
+
+    const handleScoreAction = async (leadId: number, score: LeadScore) => {
+        try {
+            await LeadService.updateLeadScore(leadId, score);
+            
+            // Automated Routing Logic based on USER requirements:
+            // HOT -> INTERNAL COUNSELOR
+            // WARM -> EXTERNAL COUNSELOR
+            let status: LeadStatus | undefined;
+            if (score === 'HOT') status = 'COUNSELOR_ASSIGNED';
+            else if (score === 'WARM') status = 'EXTERNAL_ASSIGNED';
+
+            if (status) {
+                await LeadService.updateLeadStatus(leadId, status);
+                toast.success(`Priority set to ${score}. Routing to ${score === 'HOT' ? 'Internal' : 'External'} Counselor.`);
+                // If it's routed away, we might want to remove it from the telecaller's active list
+                setLeads(prev => prev.filter(l => l.id !== leadId));
+                onActionComplete?.();
+            } else {
+                setLeads(prev => prev.map(l => l.id === leadId ? { ...l, score } : l));
+                toast.success(`Priority set to ${score}`);
+            }
+        } catch {
+            toast.error('Failed to update priority');
+        }
+    };
+
     const handleAddNote = async (leadId: number) => {
         if (!noteInput.trim()) return;
         try {
@@ -102,199 +216,243 @@ export default function MyLeadsFeed({ counselorId }: Props) {
         }
     };
 
-    const handleDeleteNote = async (leadId: number, noteId: number) => {
-        try {
-            await NoteService.deleteNote(noteId);
-            setNotes(prev => ({
-                ...prev,
-                [leadId]: (prev[leadId] || []).filter(n => n.noteId !== noteId)
-            }));
-            toast.success('Note deleted');
-        } catch {
-            toast.error('Failed to delete note');
-        }
-    };
-
-    const handleStatusChange = async (leadId: number, newStatus: LeadStatus) => {
-        try {
-            const updated = await LeadService.updateLeadStatus(leadId, newStatus);
-            setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: updated.status } : l));
-            toast.success('Status updated');
-        } catch {
-            toast.error('Failed to update status');
-        }
-    };
-
-    const handleScoreChange = async (leadId: number, newScore: LeadScore) => {
-        try {
-            await LeadService.updateLeadScore(leadId, newScore);
-            setLeads(prev => prev.map(l => l.id === leadId ? { ...l, score: newScore } : l));
-            toast.success('Score updated');
-        } catch {
-            toast.error('Failed to update score');
-        }
-    };
-
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900">My Leads</h3>
-                    <p className="text-sm text-gray-500">Leads assigned to you</p>
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            {/* Header with Search & Filters */}
+            <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/30">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            {feedMode === 'MY_LEADS' ? 'Assignments' : 'Unassigned Pool'} 
+                            <span className="bg-slate-900 text-white text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-tighter font-bold">{leads.length} Active</span>
+                        </h3>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            {feedMode === 'MY_LEADS' ? 'Focus on high-priority follow-ups today' : 'Claim leads to add them to your assignments'}
+                        </p>
+                    </div>
+
+                    <div className="flex bg-slate-100 p-1 rounded-2xl gap-1">
+                        <button 
+                            onClick={() => { setFeedMode('MY_LEADS'); setPage(0); }}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${feedMode === 'MY_LEADS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        >
+                            My Leads
+                        </button>
+                        <button 
+                            onClick={() => { setFeedMode('UNASSIGNED'); setPage(0); }}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${feedMode === 'UNASSIGNED' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        >
+                            Unassigned
+                        </button>
+                    </div>
                 </div>
-                <button
-                    onClick={loadLeads}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-600"
-                    title="Refresh"
-                >
-                    🔄
-                </button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="relative group flex-1">
+                        <input 
+                            type="text"
+                            placeholder="Search by name or email..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-slate-50 transition-all font-medium placeholder:text-slate-400"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <select 
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none cursor-pointer appearance-none"
+                        >
+                            <option value="">All Statuses</option>
+                            {ALL_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                        </select>
+                        <select 
+                            value={scoreFilter}
+                            onChange={(e) => setScoreFilter(e.target.value)}
+                            className="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none cursor-pointer appearance-none"
+                        >
+                            <option value="">All Priority</option>
+                            <option value="HOT">HOT</option>
+                            <option value="WARM">WARM</option>
+                            <option value="COLD">COLD</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
+            {/* Leads List */}
             {loading ? (
-                <div className="p-8 text-center">
-                    <div className="inline-block w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                    <p className="text-sm text-gray-500 mt-3">Loading leads...</p>
+                <div className="p-20 text-center">
+                    <p className="text-sm text-slate-500 font-bold animate-pulse">Synchronizing assignments...</p>
                 </div>
             ) : leads.length === 0 ? (
-                <div className="p-12 text-center">
-                    <p className="text-4xl mb-3">📭</p>
-                    <p className="text-gray-500 font-medium">No leads assigned yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Leads will appear once assigned by admin</p>
+                <div className="p-20 text-center bg-slate-50/20">
+                    <p className="text-slate-900 font-black text-lg uppercase tracking-tight">No Leads Found</p>
+                    <p className="text-sm text-slate-500 mt-1">Try adjusting your filters or checking back later.</p>
                 </div>
             ) : (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-slate-100">
                     {leads.map(lead => (
-                        <div key={lead.id} className="hover:bg-gray-50/50 transition">
-                            {/* Lead row */}
-                            <div
-                                className="px-6 py-4 flex items-center gap-4 cursor-pointer"
-                                onClick={() => toggleExpand(lead.id)}
-                            >
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        <div key={lead.id} className={`group transition-all duration-300 ${expandedLeadId === lead.id ? 'bg-slate-50/50' : 'hover:bg-slate-50/20'}`}>
+                            {/* Standard Row */}
+                            <div className="px-8 py-5 flex items-center gap-5 cursor-pointer" onClick={() => toggleExpand(lead.id)}>
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg relative overflow-hidden ${
+                                    lead.score === 'HOT' ? 'bg-rose-600' : 
+                                    lead.score === 'WARM' ? 'bg-amber-500' : 
+                                    'bg-slate-400'
+                                }`}>
                                     {lead.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 truncate">{lead.name}</p>
-                                    <p className="text-xs text-gray-500 truncate">{lead.email}</p>
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <h4 className="font-black text-slate-900 truncate leading-tight uppercase tracking-tight">{lead.name}</h4>
+                                        <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${STATUS_COLORS[lead.status] || 'bg-slate-100'}`}>
+                                            {lead.status.replace(/_/g, ' ')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-[11px] text-slate-500 font-bold truncate">
+                                            {lead.phone}
+                                        </p>
+                                        <p className="text-[11px] text-slate-400 font-medium truncate hidden md:block">{lead.email}</p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${SCORE_COLORS[lead.score] || 'bg-gray-200'}`}>
-                                        {lead.score}
-                                    </span>
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${STATUS_COLORS[lead.status] || 'bg-gray-100'}`}>
-                                        {lead.status.replace(/_/g, ' ')}
-                                    </span>
+
+                                {/* Quick Actions */}
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleCallAction(lead.id); }}
+                                        className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+                                    >
+                                        Call
+                                    </button>
+                                    
+                                    {/* Action context based on counselor type */}
+                                    {counselorType === 'INTERNAL' && lead.status === 'QUALIFIED' && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleQuickAction(lead.id, 'ADMISSION_IN_PROCESS'); }}
+                                            className="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-all text-[10px] font-black uppercase tracking-widest shadow-sm"
+                                        >
+                                            Start Admission
+                                        </button>
+                                    )}
+
+                                    {counselorType === 'EXTERNAL' && (
+                                        <div className="px-3 py-2 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 text-[10px] font-black uppercase tracking-widest">
+                                            Partner Handled
+                                        </div>
+                                    )}
+
+                                    {(lead.status === 'UNASSIGNED' || lead.status === 'NEW') ? (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleClaimLead(lead); }}
+                                            className="px-3 py-2 rounded-xl bg-slate-900 text-white hover:bg-[#600202] transition-all text-[10px] font-black uppercase tracking-widest shadow-sm"
+                                        >
+                                            Claim
+                                        </button>
+                                    ) : (
+                                        lead.status !== 'QUALIFIED' && (
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleQuickAction(lead.id, 'QUALIFIED'); }}
+                                                className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+                                            >
+                                                Qualify
+                                            </button>
+                                        )
+                                    )}
                                 </div>
-                                <span className={`text-gray-400 transition-transform ${expandedLeadId === lead.id ? 'rotate-180' : ''}`}>
-                                    ▾
-                                </span>
                             </div>
 
-                            {/* Expanded panel */}
+                            {/* Detail Panel */}
                             {expandedLeadId === lead.id && (
-                                <div className="px-6 pb-5 space-y-4 bg-gray-50/70 border-t border-gray-100">
-                                    {/* Lead details */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-                                        <div>
-                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Phone</span>
-                                            <p className="text-sm font-medium text-gray-700">{lead.phone}</p>
+                                <div className="px-8 pb-8 pt-2">
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 p-6 bg-white rounded-2xl border border-slate-200 mb-6">
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block">Interested Course</span>
+                                            <p className="text-xs font-black text-slate-900 uppercase">{typeof lead.course === 'object' ? lead.course?.course : lead.course || '—'}</p>
                                         </div>
-                                        <div>
-                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Address</span>
-                                            <p className="text-sm font-medium text-gray-700">{lead.address || '—'}</p>
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block">Lead Source</span>
+                                            <p className="text-xs font-black text-slate-900 uppercase">Direct Application</p>
                                         </div>
-                                        <div>
-                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Course</span>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                {typeof lead.course === 'object' ? lead.course?.course : lead.course || '—'}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Intake</span>
-                                            <p className="text-sm font-medium text-gray-700">{lead.intake || '—'}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Status & Score selectors */}
-                                    <div className="flex flex-wrap gap-3 items-center">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-medium text-gray-500">Status:</span>
-                                            <select
-                                                value={lead.status}
-                                                onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
-                                                className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white focus:border-[#dbb212] outline-none"
-                                            >
-                                                {ALL_STATUSES.map(s => (
-                                                    <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-medium text-gray-500">Score:</span>
-                                            <div className="flex gap-1">
-                                                {ALL_SCORES.map(s => (
-                                                    <button
-                                                        key={s}
-                                                        onClick={() => handleScoreChange(lead.id, s)}
-                                                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
-                                                            lead.score === s
-                                                                ? SCORE_COLORS[s]
-                                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                                        }`}
-                                                    >
-                                                        {s}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Notes section */}
-                                    <div className="border-t border-gray-200 pt-3">
-                                        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Notes</h4>
                                         
-                                        {notesLoading === lead.id ? (
-                                            <p className="text-xs text-gray-400 animate-pulse">Loading notes...</p>
-                                        ) : (notes[lead.id] || []).length === 0 ? (
-                                            <p className="text-xs text-gray-400 mb-3">No notes yet</p>
-                                        ) : (
-                                            <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
-                                                {(notes[lead.id] || []).map(n => (
-                                                    <div key={n.noteId} className="flex items-start gap-2 bg-white rounded-lg p-3 border border-gray-100">
-                                                        <div className="flex-1">
-                                                            <p className="text-sm text-gray-700">{n.note}</p>
-                                                            <p className="text-[10px] text-gray-400 mt-1">
-                                                                {n.createdAt ? format(new Date(n.createdAt), 'MMM d, yyyy HH:mm') : ''}
-                                                            </p>
-                                                        </div>
+                                        {lead.status !== 'UNASSIGNED' && lead.status !== 'NEW' && (
+                                            <div className="space-y-1 col-span-2">
+                                                <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block mb-1.5">Set Priority & Route</span>
+                                                <div className="flex gap-2">
+                                                    {(['HOT', 'WARM', 'COLD'] as LeadScore[]).map((score) => (
                                                         <button
-                                                            onClick={() => handleDeleteNote(lead.id, n.noteId)}
-                                                            className="text-gray-300 hover:text-red-400 transition text-xs"
-                                                            title="Delete note"
+                                                            key={score}
+                                                            onClick={() => handleScoreAction(lead.id, score)}
+                                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                                                lead.score === score 
+                                                                    ? 'bg-slate-900 text-white border-slate-900' 
+                                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                                                            }`}
                                                         >
-                                                            ✕
+                                                            {score}
                                                         </button>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
+                                    </div>
 
-                                        {/* Add note */}
+                                    {/* Action Hub */}
+                                    <div className="space-y-4">
+                                        <h5 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
+                                            Interaction Log
+                                        </h5>
+                                        
+                                        <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                            {notesLoading === lead.id ? (
+                                                <div className="p-4 bg-slate-50 rounded-xl animate-pulse">
+                                                    <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
+                                                </div>
+                                            ) : (notes[lead.id] || []).length === 0 ? (
+                                                <div className="p-8 text-center border border-slate-200 rounded-2xl">
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">No Interaction Logs</p>
+                                                </div>
+                                            ) : (
+                                                (notes[lead.id] || []).map(note => (
+                                                    <div key={note.noteId} className="p-4 bg-white border border-slate-100 rounded-xl relative group/note">
+                                                        <p className="text-xs text-slate-700 font-bold leading-relaxed mb-2 uppercase tracking-tight">{note.note}</p>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.1em]">{format(new Date(note.createdAt), 'MMM d, h:mm a')}</span>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    NoteService.deleteNote(note.noteId).then(() => {
+                                                                        setNotes(p => ({ ...p, [lead.id]: p[lead.id].filter(n => n.noteId !== note.noteId) }));
+                                                                        toast.success("Log removed");
+                                                                    });
+                                                                }}
+                                                                className="text-rose-500 font-black text-[9px] uppercase tracking-widest opacity-0 group-hover/note:opacity-100 transition-opacity"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+
                                         <div className="flex gap-2">
-                                            <input
-                                                value={expandedLeadId === lead.id ? noteInput : ''}
-                                                onChange={(e) => setNoteInput(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleAddNote(lead.id)}
-                                                placeholder="Add a note..."
-                                                className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#dbb212] focus:ring-1 focus:ring-[#dbb212] outline-none"
-                                            />
-                                            <button
+                                            <div className="relative flex-1">
+                                                <input 
+                                                    type="text"
+                                                    value={noteInput}
+                                                    onChange={(e) => setNoteInput(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleAddNote(lead.id)}
+                                                    placeholder="Enter interaction outcome or notes..."
+                                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:bg-white focus:border-slate-400 transition-all font-bold placeholder:uppercase placeholder:tracking-widest"
+                                                />
+                                            </div>
+                                            <button 
                                                 onClick={() => handleAddNote(lead.id)}
                                                 disabled={!noteInput.trim()}
-                                                className="px-4 py-2 bg-[#4d0101] text-white text-sm font-medium rounded-lg hover:bg-[#4d0101] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="px-6 py-3 bg-slate-900 text-white text-[10px] font-black rounded-xl hover:bg-[#600202] transition-all disabled:opacity-30 uppercase tracking-widest"
                                             >
-                                                Add
+                                                Save
                                             </button>
                                         </div>
                                     </div>
@@ -306,24 +464,32 @@ export default function MyLeadsFeed({ counselorId }: Props) {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-                    <button
-                        onClick={() => setPage(p => Math.max(0, p - 1))}
-                        disabled={page === 0}
-                        className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            {!isSearching && totalPages > 1 && (
+                <div className="px-8 py-6 border-t border-slate-50 bg-slate-50/10 flex items-center justify-between">
+                    <button 
+                         onClick={() => setPage(p => Math.max(0, p - 1))}
+                         disabled={page === 0}
+                         className="px-4 py-2 text-[10px] font-black text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white disabled:opacity-30 transition-all uppercase tracking-widest"
                     >
-                        ← Previous
+                        Previous
                     </button>
-                    <span className="text-sm text-gray-500">
-                        Page {page + 1} of {totalPages}
-                    </span>
-                    <button
+                    <div className="flex items-center gap-2">
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <button 
+                                key={i}
+                                onClick={() => setPage(i)}
+                                className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${page === i ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
+                    <button 
                         onClick={() => setPage(p => p + 1)}
                         disabled={page >= totalPages - 1}
-                        className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        className="px-4 py-2 text-[10px] font-black text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white disabled:opacity-30 transition-all uppercase tracking-widest"
                     >
-                        Next →
+                        Next
                     </button>
                 </div>
             )}

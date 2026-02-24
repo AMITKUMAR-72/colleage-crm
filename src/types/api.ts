@@ -137,9 +137,13 @@ export interface CreateNoteRequestDTO {
 
 export interface SessionDTO {
     id: number;
+    sessionId?: number; // Added to match service params and potential backend field
     startTime: string;
     endTime: string;
+    date?: string;       // Added to fix TS errors and handle optional backend field
     departmentId: number;
+    maxSlots?: number;   // Added to fix TS errors
+    bookedSlots?: number; // Added to fix TS errors
     availableSlots: number;
 }
 
