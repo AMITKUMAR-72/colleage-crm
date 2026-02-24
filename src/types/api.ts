@@ -1,5 +1,5 @@
 // ─── Roles ───
-export type Role = 'ADMIN' | 'MANAGER' | 'COUNSELOR' | 'AFFILIATE' | 'USER';
+export type Role = 'ADMIN' | 'MANAGER' | 'COUNSELOR' | 'AFFILIATE' | 'USER' | 'MENTOR' | 'TELECALLER';
 
 // ─── Lead Enums (matches backend Status.java exactly) ───
 export type LeadStatus =
@@ -59,6 +59,7 @@ export interface CounselorDTO {
 // Matches backend Lead_Response_DTO.java
 export interface LeadResponseDTO {
     id: number;
+    leadId?: number;
     name: string;
     email: string;
     address: string;
@@ -68,6 +69,7 @@ export interface LeadResponseDTO {
     status: LeadStatus;
     campaign?: { id: number; name: string };   // backend returns Campaigns entity
     score: LeadScore;
+    timedOutAt?: string;
 }
 
 // Matches backend Lead_Request_DTO.java
@@ -137,10 +139,31 @@ export interface CreateNoteRequestDTO {
 
 export interface SessionDTO {
     id: number;
+    sessionId?: number;
     startTime: string;
     endTime: string;
-    departmentId: number;
-    availableSlots: number;
+    departmentId?: number;
+    department?: string;
+    availableSlots?: number;
+    maxCapacity?: number;
+    location?: string;
+    notes?: string;
+    mentorId?: number;
+    mentorIds?: number[];
+    assignedMentors?: any[];
+    status?: string;
+}
+
+export interface SessionAssignmentDTO {
+    assignmentId: number;
+    leadId: number;
+    leadName: string;
+    sessionId: number;
+    counselorId: number;
+    counselorName: string;
+    assignedAt: string;
+    notes: string;
+    preferredDate: string;
 }
 
 // Paginated response from Spring Data Page

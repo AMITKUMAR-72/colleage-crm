@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CounselorService } from '@/services/counselorService';
 import { DepartmentService } from '@/services/departmentService';
-import { CounselorDTO, CounselorStatus, CounselorType, DepartmentDTO } from '@/types/api';
+import { CounselorDTO, CounselorStatus, CounselorType, DepartmentDTO, Priority } from '@/types/api';
 import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
 import { UserPlus, Mail, Phone, Building2, UserCircle2, ShieldCheck, ShieldAlert, Edit2, UserCheck, ChevronDown } from 'lucide-react';
@@ -24,7 +24,10 @@ export default function CounselorManager() {
         password: '',
         phone: '',
         department: '',
-        counselorType: 'INTERNAL' as CounselorType
+        counselorType: 'INTERNAL' as CounselorType,
+        status: 'AVAILABLE' as CounselorStatus,
+        priority: 'MEDIUM' as Priority,
+        totalLeads: 0
     });
 
     const handleViewDetails = async (id: number) => {
@@ -88,7 +91,7 @@ export default function CounselorManager() {
             }
             setShowModal(false);
             setEditingCounselor(null);
-            setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL' });
+            setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL', status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
             loadCounselors();
         } catch (error) {
             const err = error as AxiosError<{ message: string }>;
@@ -118,7 +121,10 @@ export default function CounselorManager() {
             password: '', // Password not editable here for simplicity/security
             phone: counselor.phone,
             department: counselor.department || '',
-            counselorType: counselor.counselorType
+            counselorType: counselor.counselorType,
+            status: counselor.status,
+            priority: counselor.priority,
+            totalLeads: counselor.totalLeads || 0
         });
         setShowModal(true);
     };
@@ -133,7 +139,7 @@ export default function CounselorManager() {
                         <button
                             onClick={() => {
                                 setEditingCounselor(null);
-                                setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL' });
+                                setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL', status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
                                 setShowModal(true);
                             }}
                             className="flex items-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-600/20"

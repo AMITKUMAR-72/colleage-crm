@@ -130,10 +130,11 @@ export const LeadService = {
         course?: string,
         status?: string,
         campaign?: string,
-        score?: string
+        score?: string,
+        startDate?: string,
+        endDate?: string
     }) => {
-        const extractArray = (res: any) => res?.lead || res?.content || (Array.isArray(res) ? res : []);
-
+        // If searching by email, use the working email endpoint
         if (params.email) {
             try {
                 const lead = await LeadService.getLeadByEmail(params.email);
@@ -142,11 +143,21 @@ export const LeadService = {
                 return [];
             }
         }
+
+        const extractArray = (res: any) => res?.lead || res?.content || (Array.isArray(res) ? res : []);
+
         if (params.name) return extractArray((await api.get(`/api/leads/searchBy/name/${params.name}`)).data);
         if (params.course) return extractArray((await api.get(`/api/leads/searchBy/course/${params.course}`)).data);
         if (params.status) return extractArray((await api.get(`/api/leads/searchBy/status/${params.status}`)).data);
         if (params.campaign) return extractArray((await api.get(`/api/leads/searchBy/campaign/${params.campaign}`)).data);
         if (params.score) return extractArray((await api.get(`/api/leads/searchBy/score/${params.score}`)).data);
+        if (params.startDate && params.endDate) {
+            let start = params.startDate;
+            let end = params.endDate;
+            if (start.length === 16) start += ':00';
+            if (end.length === 16) end += ':00';
+            return extractArray((await api.get(`/api/leads/date-range/start/${start}/end/${end}`)).data);
+        }
 
         // Counselor fallback: use paginated recent leads which is public, 
         // instead of /api/leads which is restricted to Admin/Manager.

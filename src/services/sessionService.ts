@@ -1,5 +1,5 @@
 import api from './api';
-import { SessionDTO } from '@/types/api';
+import { SessionDTO, SessionAssignmentDTO } from '@/types/api';
 
 export const SessionService = {
     // Create session slot
@@ -15,9 +15,11 @@ export const SessionService = {
     },
 
     // Assign lead to session
-    assignLeadToSession: async (leadId: number, sessionId: number) => {
-        const response = await api.post(`/api/offlineSession/assign`, { leadId, sessionId });
-        return response.data;
+    assignLeadToSession: async (payload: { leadId: number; notes: string; preferredDate: string }) => {
+        const response = await api.post<any>(`/api/offlineSession/assign`, payload);
+        // Handle backend returning { data: { ... } }
+        const data = response.data.data ? response.data.data : response.data;
+        return data as SessionAssignmentDTO;
     },
 
     // List available sessions by department ID
@@ -76,8 +78,9 @@ export const SessionService = {
 
     // Filter sessions by mentor assignment
     getSessionsByMentorAssigned: async (assigned: boolean) => {
-        const response = await api.get<SessionDTO[]>(`/api/offlineSession/mentorAssigned/${assigned}`);
-        return response.data;
+        const response = await api.get(`/api/offlineSession/mentorAssigned/${assigned}`);
+        // Handle backend returning { data: [...] } instead of direct array
+        return response.data.data ? response.data.data : response.data;
     },
 
     // Get available mentors for session
