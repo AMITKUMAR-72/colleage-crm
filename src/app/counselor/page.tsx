@@ -6,8 +6,10 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import CounselorProfile from '@/components/counselor/CounselorProfile';
 import MyLeadsFeed from '@/components/counselor/MyLeadsFeed';
 import { CounselorService } from '@/services/counselorService';
-
-import { CounselorDTO } from '@/types/api';
+import TelecallerStats from '@/components/counselor/TelecallerStats';
+import InternalCounselorStats from '@/components/counselor/InternalCounselorStats';
+import ExternalCounselorStats from '@/components/counselor/ExternalCounselorStats';
+import { CounselorDTO, LeadResponseDTO } from '@/types/api';
 import { Toaster } from 'react-hot-toast';
 // Simplified - Icons removed
 
@@ -87,7 +89,7 @@ export default function CounselorDashboard() {
                             </select>
                         </div>
                     </div>
-                </header>
+                )}
 
                 {effectiveEmail ? (
                     <>
@@ -97,6 +99,14 @@ export default function CounselorDashboard() {
                             onProfileError={handleProfileError}
                         />
 
+                        {/* Summary Stats based on Counselor Type */}
+                        {counselor?.counselorType === 'TELECALLER' && <TelecallerStats leads={currentLeads} />}
+                        {counselor?.counselorType === 'INTERNAL' && <InternalCounselorStats leads={currentLeads} />}
+                        {counselor?.counselorType === 'EXTERNAL' && <ExternalCounselorStats leads={currentLeads} />}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            {/* Main Content Area */}
+                            <div className="lg:col-span-8 space-y-6">
                                 {counselor ? (
                                     <MyLeadsFeed 
                                         counselorId={counselor.counselorId} 
@@ -153,8 +163,7 @@ export default function CounselorDashboard() {
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Managed</p>
                                         </div>
                                     </div>
-                                </div>
-
+                                )}
                             </div>
                         </div>
                     </>

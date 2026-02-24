@@ -134,44 +134,34 @@ export const LeadService = {
         startDate?: string,
         endDate?: string
     }) => {
-        // If searching by email, use the working email endpoint
-        if (params.email) {
-            try {
+        try {
+            // If searching by email, use the working email endpoint
+            if (params.email) {
                 const lead = await LeadService.getLeadByEmail(params.email);
                 return lead ? [lead] : [];
-            } catch (error) {
-                return [];
             }
-        }
 
-        const extractArray = (res: any) => res?.lead || res?.content || (Array.isArray(res) ? res : []);
+            const extractArray = (res: any) => res?.data?.lead || res?.data?.content || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
 
-        if (params.name) return extractArray((await api.get(`/api/leads/searchBy/name/${params.name}`)).data);
-        if (params.course) return extractArray((await api.get(`/api/leads/searchBy/course/${params.course}`)).data);
-        if (params.status) return extractArray((await api.get(`/api/leads/searchBy/status/${params.status}`)).data);
-        if (params.campaign) return extractArray((await api.get(`/api/leads/searchBy/campaign/${params.campaign}`)).data);
-        if (params.score) return extractArray((await api.get(`/api/leads/searchBy/score/${params.score}`)).data);
-        if (params.startDate && params.endDate) {
-            let start = params.startDate;
-            let end = params.endDate;
-            if (start.length === 16) start += ':00';
-            if (end.length === 16) end += ':00';
-            return extractArray((await api.get(`/api/leads/date-range/start/${start}/end/${end}`)).data);
-        }
+            if (params.name && params.name.length >= 2) return extractArray(await api.get(`/api/leads/searchBy/name/${encodeURIComponent(params.name)}`));
+            if (params.course) return extractArray(await api.get(`/api/leads/searchBy/course/${encodeURIComponent(params.course)}`));
+            if (params.status) return extractArray(await api.get(`/api/leads/searchBy/status/${encodeURIComponent(params.status)}`));
+            if (params.campaign) return extractArray(await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(params.campaign)}`));
+            if (params.score) return extractArray(await api.get(`/api/leads/searchBy/score/${encodeURIComponent(params.score)}`));
+            
+            if (params.startDate && params.endDate) {
+                let start = params.startDate;
+                let end = params.endDate;
+                if (start.length === 16) start += ':00';
+                if (end.length === 16) end += ':00';
+                return extractArray(await api.get(`/api/leads/date-range/start/${start}/end/${end}`));
+            }
 
-            // Ensure we don't send empty strings to specialized search endpoints
-            if (name && name.length >= 2) return extractArray(await api.get(`/api/leads/searchBy/name/${encodeURIComponent(name)}`));
-            if (course && course.length > 0) return extractArray(await api.get(`/api/leads/searchBy/course/${encodeURIComponent(course)}`));
-            if (status && status.length > 0) return extractArray(await api.get(`/api/leads/searchBy/status/${encodeURIComponent(status)}`));
-            if (campaign && campaign.length > 0) return extractArray(await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(campaign)}`));
-            if (score && score.length > 0) return extractArray(await api.get(`/api/leads/searchBy/score/${encodeURIComponent(score)}`));
-
+            return [];
         } catch (error: any) {
             console.error("Search API Error:", error.message || error);
+            return [];
         }
-
-        // Return empty array instead of failing if no search matches or search failed
-        return [];
     },
 
     getSourceByCount: async (campaign: string) => {
