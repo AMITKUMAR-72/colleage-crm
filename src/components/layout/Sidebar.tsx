@@ -9,7 +9,12 @@ import {
     X,
     Upload,
     Clock,
-    User
+    User,
+    ShieldCheck,
+    LayoutDashboard,
+    Users,
+    UserSquare2,
+    Calendar
 } from 'lucide-react';
 
 export default function Sidebar() {
