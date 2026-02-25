@@ -31,6 +31,7 @@ export default function Sidebar() {
         { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
         { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', 'AFFILIATE'], icon: Upload },
         { label: 'Timed-Out Leads', href: '/timeout-leads', roles: ['ADMIN', 'MANAGER'], icon: Clock },
+        { label: 'Monitor', href: '/admin?tab=MONITOR', roles: ['ADMIN'], icon: ShieldCheck },
         { label: 'Mentor Hub', href: '/mentor', roles: ['MENTOR', 'ADMIN'], icon: User },
     ];
 
@@ -44,10 +45,10 @@ export default function Sidebar() {
         <>
             <div className="p-6 md:p-8 border-b border-white/5 flex items-center gap-3">
                 <div className="relative">
-                    <img 
-                        src="/raffles-logo.png" 
-                        alt="Raffles Logo" 
-                        className="w-12 h-12 shrink-0 object-contain bg-white rounded-xl p-1.5" 
+                    <img
+                        src="/raffles-logo.png"
+                        alt="Raffles Logo"
+                        className="w-12 h-12 shrink-0 object-contain bg-white rounded-xl p-1.5"
                     />
                 </div>
                 <div className="font-[var(--font-poppins)]">

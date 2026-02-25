@@ -1,12 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import LeadInbox from '@/components/LeadInbox';
 import CounselorManager from '@/components/admin/CounselorManager';
+import AuditMonitor from '@/components/admin/AuditMonitor';
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS'>('OVERVIEW');
+    const searchParams = useSearchParams();
+    const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'COUNSELORS' | 'MONITOR' | null : null;
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS' | 'MONITOR'>(tabParam || 'OVERVIEW');
+
+    useEffect(() => {
+        if (tabParam) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     return (
         <DashboardLayout>
@@ -32,8 +42,8 @@ export default function AdminDashboard() {
                 <button
                     onClick={() => setActiveTab('OVERVIEW')}
                     className={`pb-3 px-2 text-sm font-medium transition relative ${activeTab === 'OVERVIEW'
-                            ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
-                            : 'text-gray-500 hover:text-gray-700'
+                        ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
+                        : 'text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Overview
@@ -41,11 +51,20 @@ export default function AdminDashboard() {
                 <button
                     onClick={() => setActiveTab('COUNSELORS')}
                     className={`pb-3 px-2 text-sm font-medium transition relative ${activeTab === 'COUNSELORS'
-                            ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
-                            : 'text-gray-500 hover:text-gray-700'
+                        ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
+                        : 'text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Counselors
+                </button>
+                <button
+                    onClick={() => setActiveTab('MONITOR')}
+                    className={`pb-3 px-2 text-sm font-medium transition relative ${activeTab === 'MONITOR'
+                        ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    Monitor
                 </button>
             </div>
 
@@ -68,8 +87,10 @@ export default function AdminDashboard() {
 
                     <LeadInbox />
                 </>
-            ) : (
+            ) : activeTab === 'COUNSELORS' ? (
                 <CounselorManager />
+            ) : (
+                <AuditMonitor />
             )}
         </DashboardLayout>
     );
