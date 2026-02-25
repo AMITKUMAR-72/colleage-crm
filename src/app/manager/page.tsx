@@ -5,10 +5,11 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import LeadInbox from '@/components/LeadInbox';
 import AssignedLeadsMonitor from '@/components/manager/AssignedLeadsMonitor';
 import ContactedLeadsMonitor from '@/components/manager/ContactedLeadsMonitor';
-import { LayoutDashboard, UserCheck, PhoneCall, History } from 'lucide-react';
+import CounselorPerformance from '@/components/manager/CounselorPerformance';
+
 
 export default function ManagerDashboard() {
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT' | 'COUNSELORS'>('OVERVIEW');
 
     return (
         <DashboardLayout>
@@ -33,76 +34,72 @@ export default function ManagerDashboard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div
                     onClick={() => window.location.href = '/timeout-leads'}
-                    className="w-full md:w-72 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group flex items-center gap-4"
+                    className="w-full md:w-72 bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group"
                 >
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                        <History className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-rose-600 transition-colors">Reassignment</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Timed-out Leads</p>
+                    <div className="flex flex-col">
+                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-rose-600 transition-colors uppercase">REASSIGNMENT</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Timed-out Leads</p>
                     </div>
                 </div>
 
-                <div className="flex gap-1 bg-slate-100/50 p-1 rounded-2xl w-fit border border-slate-200/60">
-                    <button
-                        onClick={() => setActiveTab('OVERVIEW')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black transition-all ${activeTab === 'OVERVIEW'
-                            ? 'bg-white text-indigo-600 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
-                            }`}
-                    >
-                        <LayoutDashboard className="w-4 h-4" />
-                        OVERVIEW
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('ASSIGNMENTS')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black transition-all ${activeTab === 'ASSIGNMENTS'
-                            ? 'bg-white text-green-600 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
-                            }`}
-                    >
-                        <UserCheck className="w-4 h-4" />
-                        ASSIGNMENTS
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('ENGAGEMENT')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black transition-all ${activeTab === 'ENGAGEMENT'
-                            ? 'bg-white text-indigo-600 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
-                            }`}
-                    >
-                        <PhoneCall className="w-4 h-4" />
-                        ENGAGEMENT
-                    </button>
+                {/* Responsive Tabs Navigation */}
+                <div className="relative mb-8">
+                    <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 w-full overflow-x-auto no-scrollbar">
+                        <button
+                            onClick={() => setActiveTab('OVERVIEW')}
+                            className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'OVERVIEW'
+                                ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-900/5 translate-y-[-1px]'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                                }`}
+                        >
+                            OVERVIEW
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('ASSIGNMENTS')}
+                            className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'ASSIGNMENTS'
+                                ? 'bg-white text-green-600 shadow-lg shadow-green-900/5 translate-y-[-1px]'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                                }`}
+                        >
+                            ASSIGNMENTS
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('ENGAGEMENT')}
+                            className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'ENGAGEMENT'
+                                ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-900/5 translate-y-[-1px]'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                                }`}
+                        >
+                            ENGAGEMENT
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('COUNSELORS')}
+                            className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'COUNSELORS'
+                                ? 'bg-white text-emerald-600 shadow-lg shadow-emerald-900/5 translate-y-[-1px]'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                                }`}
+                        >
+                            COUNSELORS
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {activeTab === 'OVERVIEW' && (
                     <>
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-                            <div className="lg:col-span-3">
-                                <div onClick={() => setActiveTab('ASSIGNMENTS')} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group flex flex-col items-center justify-center text-center h-full gap-2">
-                                    <div className="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <History className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-slate-800 text-sm group-hover:text-green-600 uppercase tracking-tight">Assignment Logs</h3>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Review Distribution</p>
-                                    </div>
-                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div onClick={() => setActiveTab('ASSIGNMENTS')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group text-left">
+                                <h3 className="font-black text-slate-800 text-sm group-hover:text-green-600 uppercase tracking-tight">Assignment Logs</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Review Distribution</p>
                             </div>
-                            <div className="lg:col-span-3">
-                                <div onClick={() => setActiveTab('ENGAGEMENT')} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group flex flex-col items-center justify-center text-center h-full gap-2">
-                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <PhoneCall className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-slate-800 text-sm group-hover:text-indigo-600 uppercase tracking-tight">Team Engagement</h3>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Contact Metrics</p>
-                                    </div>
-                                </div>
+                            <div onClick={() => setActiveTab('ENGAGEMENT')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group text-left">
+                                <h3 className="font-black text-slate-800 text-sm group-hover:text-indigo-600 uppercase tracking-tight">Team Engagement</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Contact Metrics</p>
+                            </div>
+                            <div onClick={() => setActiveTab('COUNSELORS')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group text-left">
+                                <h3 className="font-black text-slate-800 text-sm group-hover:text-emerald-600 uppercase tracking-tight">Team Performance</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Counselor Analytics</p>
                             </div>
                         </div>
 
@@ -114,6 +111,7 @@ export default function ManagerDashboard() {
 
                 {activeTab === 'ASSIGNMENTS' && <AssignedLeadsMonitor />}
                 {activeTab === 'ENGAGEMENT' && <ContactedLeadsMonitor />}
+                {activeTab === 'COUNSELORS' && <CounselorPerformance />}
             </div>
         </DashboardLayout>
     );

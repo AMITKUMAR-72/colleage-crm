@@ -60,6 +60,7 @@ export const SessionService = {
 
     // Cancel session
     cancelSession: async (sessionId: number) => {
+        console.log(`[SessionService] POST request to /api/offlineSession/${sessionId}/cancel`);
         const response = await api.post(`/api/offlineSession/${sessionId}/cancel`);
         return response.data;
     },
@@ -87,9 +88,9 @@ export const SessionService = {
         return response.data.data ? response.data.data : response.data;
     },
 
-    // Get available mentors for session
+    // Get available mentors for session (Trigger search)
     getAvailableMentorsForSession: async (sessionId: number) => {
-        const response = await api.get(`/api/offlineSession/${sessionId}/available-mentors`);
+        const response = await api.put(`/api/offlineSession/${sessionId}/available-mentors`);
         return response.data;
     }
 };

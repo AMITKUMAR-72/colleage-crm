@@ -13,6 +13,7 @@ export type LeadStatus =
     | 'LOST'
     | 'UNASSIGNED'
     | 'CONTACTED'
+    | 'INTERESTED'
     | 'TIMED_OUT'
     | 'REASSIGNED';
 
@@ -212,10 +213,11 @@ export interface AssignedLeadDTO {
 
 export interface ContactedLeadDTO {
     id: number;
-    lead: LeadResponseDTO;
-    assignedTo: CounselorDTO;
-    assignedBy: UserDTO;
-    contactedAt: string;
-    status: LeadStatus;
+    leadId: number;
+    leadName: string;
+    assignedByEmail: string;
+    assignedToEmail: string;
+    status: string;
+    assignedAt: string;
     notes?: string;
 }

@@ -6,7 +6,6 @@ import { LeadService } from '@/services/leadService';
 import { CounselorService } from '@/services/counselorService';
 import { useAuth } from '@/context/AuthContext';
 import LeadSearchFilters from './LeadSearchFilters';
-import LeadNotes from './LeadNotes';
 import toast from 'react-hot-toast';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -70,8 +69,8 @@ export default function LeadInbox() {
                     // Counselor specific leads API
                     response = await CounselorService.getAssignedLeads(page, 20);
                 } else {
-                    // Admin/Manager generic leads API
-                    response = await LeadService.getRecentLeads(page, pageSize);
+                    // Admin/Manager generic leads API - Now fetching unassigned leads specifically
+                    response = await LeadService.getUnassignedRecentLeads(page, 10);
                 }
 
                 // Handle both Spring Data Page object and custom response format
@@ -114,6 +113,8 @@ export default function LeadInbox() {
     useEffect(() => {
         fetchLeads();
     }, [fetchLeads]);
+
+
 
     const getCourseDisplay = (lead: LeadResponseDTO): string => {
         if (!lead.course) return 'General';
@@ -159,22 +160,21 @@ export default function LeadInbox() {
 
                 {loading ? (
                     <div className="py-20 flex justify-center items-center w-full">
-                        <img src="/raffles-logo.png" alt="Loading" className="h-12 w-auto object-contain animate-spin-y-ease-in" />
+                        <img src="/raffles-logo.png" alt="Loading" className="h-20 w-auto object-contain animate-spin-y-ease-in" />
                     </div>
                 ) : leads.length === 0 ? (
                     <div className="py-16 text-center">
-                        <p className="text-4xl mb-2">📭</p>
-                        <p className="text-gray-500 font-medium">No leads found</p>
+                        <p className="text-slate-500 font-medium lowercase italic">no leads found</p>
                     </div>
                 ) : (
                     <div className="p-0 overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
+                            <thead className="text-[10px] text-slate-400 uppercase bg-slate-50/50 border-b border-slate-200 tracking-widest font-black">
                                 <tr>
-                                    <th className="px-4 sm:px-6 py-4 font-bold">Name</th>
-                                    <th className="hidden sm:table-cell px-6 py-4 font-bold">Contact</th>
-                                    <th className="px-4 sm:px-6 py-4 font-bold">Status</th>
-                                    <th className="hidden md:table-cell px-6 py-4 font-bold">Course</th>
+                                    <th className="px-6 py-4">Name</th>
+                                    <th className="px-6 py-4">Contact</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -182,31 +182,28 @@ export default function LeadInbox() {
                                     <tr
                                         key={lead.id}
                                         onClick={() => handleViewLead(lead.id)}
-                                        className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
+                                        className="hover:bg-slate-50 transition-colors border-b last:border-0 border-slate-100"
                                     >
-                                        <td className="px-4 sm:px-6 py-4">
-                                            <div className="font-bold text-slate-800 text-sm sm:text-base">{lead.name || 'Unknown'}</div>
-                                            <div className="sm:hidden text-xs text-slate-500 mt-1">{lead.phone || '—'}</div>
-                                            <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate max-w-[120px] sm:max-w-[150px]" title={lead.address}>{lead.address || '—'}</div>
-                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-slate-800 text-sm">{lead.name || 'Unknown'}</div>
+                                            <div className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">{lead.id}</div>
                                         </td>
-                                        <td className="hidden sm:table-cell px-6 py-4">
-                                            <div className="text-slate-700 font-medium truncate max-w-[200px]" title={lead.email}>{lead.email || '—'}</div>
-                                            <div className="text-slate-500 mt-0.5">{lead.phone || '—'}</div>
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-700 text-xs font-medium">{lead.email || '—'}</div>
+                                            <div className="text-slate-500 text-[10px] mt-0.5">{lead.phone || '—'}</div>
                                         </td>
-                                        <td className="px-4 sm:px-6 py-4">
-                                            <div className="flex flex-col gap-1.5 items-start">
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                                                    {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
-                                                </span>
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border ${lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' : lead.score === 'WARM' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                                                    {lead.score || 'NONE'}
-                                                </span>
-                                            </div>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                                {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                                            </span>
                                         </td>
-                                        <td className="hidden md:table-cell px-6 py-4 text-slate-700">
-                                            <div className="font-medium truncate max-w-[200px]" title={getCourseDisplay(lead)}>{getCourseDisplay(lead)}</div>
-                                            <div className="text-slate-500 mt-0.5 text-xs">Intake: {lead.intake || '—'}</div>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => handleViewLead(lead.id)}
+                                                className="text-[10px] font-black text-indigo-600 hover:text-indigo-900 uppercase tracking-widest"
+                                            >
+                                                Details
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -252,12 +249,13 @@ export default function LeadInbox() {
                                 <p className="text-sm"><strong>Address:</strong> {selectedLead.address || 'N/A'}</p>
                             </div>
 
-                            {/* Notes — no counselorEmail needed, uses JWT */}
-                            <LeadNotes leadId={selectedLead.id} />
+
                         </div>
                     </div>
                 </div>
             )}
+
+
         </div>
     );
 }

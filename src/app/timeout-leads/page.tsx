@@ -6,9 +6,8 @@ import TimeoutLeadInbox from '@/components/TimeoutLeadInbox';
 export default function TimeoutLeadsPage() {
     return (
         <DashboardLayout>
-            <div className="mb-8">
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">Timed-Out Leads</h1>
-                <p className="text-gray-500 mt-2 font-medium">Manage and reassign leads that have timed out.</p>
+            <div className="mb-6">
+                <h1 className="text-xl font-black text-slate-800 tracking-tight uppercase">Timed-Out Leads</h1>
             </div>
 
             <div className="w-full">

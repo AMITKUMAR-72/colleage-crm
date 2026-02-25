@@ -56,33 +56,40 @@ export const CounselorService = {
     },
 
     searchLeadById: async (id: number) => {
-        const response = await api.get<LeadResponseDTO>(`/api/counselor/leads/search/id/${id}`);
-        return response.data;
+        const response = await api.get(`/api/counselor/leads/search/id/${id}`);
+        const data = response.data as any;
+        return data?.data || data?.content || data;
     },
 
     searchLeadByEmail: async (email: string) => {
-        const response = await api.get<LeadResponseDTO>(`/api/counselor/leads/search/email/${email}`);
-        return response.data;
+        const response = await api.get(`/api/counselor/leads/search/email/${encodeURIComponent(email)}`);
+        const data = response.data as any;
+        return data?.data || data?.content || data;
     },
 
     searchLeadsBySource: async (source: string) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/source/${source}`);
-        return response.data;
+        const response = await api.get(`/api/counselor/leads/search/source/${encodeURIComponent(source)}`);
+        const data = response.data as any;
+        return data?.data?.content || data?.data || data?.content || (Array.isArray(data) ? data : []);
     },
 
     searchLeadsByScore: async (score: string) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/score/${score}`);
-        return response.data;
+        const response = await api.get(`/api/counselor/leads/search/score/${encodeURIComponent(score.toUpperCase())}`);
+        const data = response.data as any;
+        // The interceptor might have already unwrapped 'data', so we check for nested 'content'
+        return data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
     searchLeadsByCourse: async (course: string) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/course/${course}`);
-        return response.data;
+        const response = await api.get(`/api/counselor/leads/search/course/${encodeURIComponent(course)}`);
+        const data = response.data as any;
+        return data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
     searchLeadsByDate: async (date: string) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/date/${date}`);
-        return response.data;
+        const response = await api.get(`/api/counselor/leads/search/date/${date}`);
+        const data = response.data as any;
+        return data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
     updateLeadScore: async (leadId: number, score: LeadScore) => {

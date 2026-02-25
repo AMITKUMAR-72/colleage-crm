@@ -62,7 +62,7 @@ const SignIn: React.FC = () => {
                                     <div className="flex flex-col gap-2 mb-5">
                                         <label className="text-stone-700 text-base font-medium">Username or Email</label>
                                         <input
-                                            className="form-input w-full rounded-lg text-stone-900 border border-stone-300 bg-stone-50 focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] h-14 placeholder:text-stone-400 px-4 text-base font-normal transition-all outline-none"
+                                            className="form-input w-full rounded-lg text-stone-900 border border-stone-300 bg-stone-50 hover:border-[#dbb212] focus:ring-2 focus:ring-[#dbb212]/20 focus:border-[#dbb212] h-14 placeholder:text-stone-400 px-4 text-base font-normal transition-all outline-none"
                                             placeholder="e.g. john@globaledu.com"
                                             type="email"
                                             required
@@ -72,9 +72,9 @@ const SignIn: React.FC = () => {
                                     </div>
                                     <div className="flex flex-col gap-2 mb-1">
                                         <label className="text-stone-700 text-base font-medium">Password</label>
-                                        <div className="flex w-full items-stretch rounded-lg group">
+                                        <div className="flex w-full items-stretch rounded-lg group transition-all">
                                             <input
-                                                className="form-input flex-1 rounded-l-lg text-stone-900 border border-stone-300 bg-stone-50 focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] border-r-0 h-14 placeholder:text-stone-400 px-4 text-base font-normal outline-none"
+                                                className="form-input flex-1 rounded-l-lg text-stone-900 border border-stone-300 bg-stone-50 group-hover:border-[#dbb212] focus:ring-2 focus:ring-[#dbb212]/20 focus:border-[#dbb212] border-r-0 h-14 placeholder:text-stone-400 px-4 text-base font-normal outline-none transition-all"
                                                 placeholder="Enter your password"
                                                 type={showPassword ? "text" : "password"}
                                                 required
@@ -82,7 +82,7 @@ const SignIn: React.FC = () => {
                                                 onChange={(e) => setPassword(e.target.value)}
                                             />
                                             <button
-                                                className="text-stone-400 flex border border-stone-300 bg-stone-50 border-l-0 items-center justify-center px-4 rounded-r-lg group-focus-within:border-primary/20 transition-all"
+                                                className="text-stone-400 flex border border-stone-300 bg-stone-50 border-l-0 items-center justify-center px-4 rounded-r-lg group-hover:border-[#dbb212] group-focus-within:border-[#dbb212] hover:text-[#dbb212] transition-all"
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
                                             >

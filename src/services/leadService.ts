@@ -148,7 +148,7 @@ export const LeadService = {
             if (params.status) return extractArray(await api.get(`/api/leads/searchBy/status/${encodeURIComponent(params.status)}`));
             if (params.campaign) return extractArray(await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(params.campaign)}`));
             if (params.score) return extractArray(await api.get(`/api/leads/searchBy/score/${encodeURIComponent(params.score)}`));
-            
+
             if (params.startDate && params.endDate) {
                 let start = params.startDate;
                 let end = params.endDate;

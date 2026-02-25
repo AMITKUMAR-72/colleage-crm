@@ -16,7 +16,8 @@ export default function MentorManager() {
         name: '',
         email: '',
         phone: '',
-        departmentName: ''
+        departmentName: '',
+        password: ''
     });
 
     const [isEditing, setIsEditing] = useState(false);
@@ -68,7 +69,7 @@ export default function MentorManager() {
                 toast.success('Mentor created successfully');
             }
             // Reset form
-            setFormData({ name: '', email: '', phone: '', departmentName: '' });
+            setFormData({ name: '', email: '', phone: '', departmentName: '', password: '' });
             setIsEditing(false);
             loadMentors();
         } catch (error) {
@@ -120,13 +121,19 @@ export default function MentorManager() {
                                 <label className="block text-xs font-bold text-gray-600 mb-1">Department</label>
                                 <input type="text" name="departmentName" value={formData.departmentName || ''} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" />
                             </div>
+                            {!isEditing && (
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">Password</label>
+                                    <input required type="password" name="password" value={formData.password || ''} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" />
+                                </div>
+                            )}
                         </div>
                         <div className="flex gap-2">
                             <button type="submit" className="bg-[#4d0101] text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-[#600202] active:scale-95 transition-all text-sm">
                                 {isEditing ? 'Update Mentor' : 'Create Mentor'}
                             </button>
                             {isEditing && (
-                                <button type="button" onClick={() => { setIsEditing(false); setFormData({ name: '', email: '', phone: '', departmentName: '' }); }} className="bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-bold hover:bg-gray-300 active:scale-95 transition-all text-sm">
+                                <button type="button" onClick={() => { setIsEditing(false); setFormData({ name: '', email: '', phone: '', departmentName: '', password: '' }); }} className="bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-bold hover:bg-gray-300 active:scale-95 transition-all text-sm">
                                     Cancel
                                 </button>
                             )}

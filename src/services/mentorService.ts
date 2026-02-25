@@ -7,6 +7,7 @@ export interface MentorDTO {
     phone?: string;
     departmentName?: string;
     availability?: boolean;
+    password?: string;
 }
 
 export const MentorService = {

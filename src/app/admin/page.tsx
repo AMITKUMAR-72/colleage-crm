@@ -6,11 +6,43 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import LeadInbox from '@/components/LeadInbox';
 import CounselorManager from '@/components/admin/CounselorManager';
 import AuditMonitor from '@/components/admin/AuditMonitor';
+import { LeadService } from '@/services/leadService';
 
 function AdminDashboardContent() {
     const searchParams = useSearchParams();
     const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'COUNSELORS' | 'MONITOR' | null : null;
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS' | 'MONITOR'>(tabParam || 'OVERVIEW');
+    const [leadsCount, setLeadsCount] = useState(0);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                console.log("[AdminDashboard] Fetching stats via RecentLeads...");
+                const leadsData = await LeadService.getRecentLeads(0, 1);
+
+
+                let count = 0;
+                if (leadsData && typeof leadsData === 'object') {
+                    const l = leadsData as any;
+                    // Check for count in all known nested formats
+                    const explicitCount = l.count ?? l.data?.count ?? l.totalElements ?? l.data?.totalElements;
+
+                    if (typeof explicitCount === 'number') {
+                        count = explicitCount;
+                    } else {
+                        const array = l.lead || l.data?.lead || l.content || l.data?.content || [];
+                        count = Array.isArray(array) ? array.length : 0;
+                    }
+                }
+
+                console.log("[AdminDashboard] Calculated final count:", count);
+                setLeadsCount(count);
+            } catch (error) {
+                console.error("[AdminDashboard] Failed to fetch stats:", error);
+            }
+        };
+        fetchStats();
+    }, []);
 
     useEffect(() => {
         if (tabParam) {
@@ -38,51 +70,52 @@ function AdminDashboardContent() {
                 </div>
             </header>
 
-            <div className="flex gap-4 mb-6 border-b border-gray-100 pb-1">
-                <button
-                    onClick={() => setActiveTab('OVERVIEW')}
-                    className={`pb-3 px-2 text-sm font-medium transition relative ${activeTab === 'OVERVIEW'
-                        ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
-                        : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                >
-                    Overview
-                </button>
-                <button
-                    onClick={() => setActiveTab('COUNSELORS')}
-                    className={`pb-3 px-2 text-sm font-medium transition relative ${activeTab === 'COUNSELORS'
-                        ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
-                        : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                >
-                    Counselors
-                </button>
-                <button
-                    onClick={() => setActiveTab('MONITOR')}
-                    className={`pb-3 px-2 text-sm font-medium transition relative ${activeTab === 'MONITOR'
-                        ? 'text-indigo-600 after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-[#4d0101]'
-                        : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                >
-                    Monitor
-                </button>
+            {/* Responsive Tabs Navigation */}
+            <div className="relative mb-8">
+                <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 w-full overflow-x-auto no-scrollbar">
+                    <button
+                        onClick={() => setActiveTab('OVERVIEW')}
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'OVERVIEW'
+                            ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                            }`}
+                    >
+                        Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('COUNSELORS')}
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'COUNSELORS'
+                            ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                            }`}
+                    >
+                        Counselors
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('MONITOR')}
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'MONITOR'
+                            ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                            }`}
+                    >
+                        Monitor
+                    </button>
+                </div>
             </div>
 
             {activeTab === 'OVERVIEW' ? (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
-                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">User Management</h3>
-                            <p className="text-sm text-gray-500">Manage roles and permissions.</p>
+                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">Total Leads</h3>
+                            <p className="text-2xl font-black text-[#4d0101]">{leadsCount}</p>
+
                         </div>
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
-                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">Global Analytics</h3>
-                            <p className="text-sm text-gray-500">Track lead conversion globally.</p>
+                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">CONVERTED LEADS</h3>
+                            <p className="text-sm text-yellow-600 font-bold uppercase tracking-widest mt-2">On Working</p>
                         </div>
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group text-center" onClick={() => window.location.href = '/admin/manage'}>
-                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">System Management</h3>
-                            <p className="text-sm text-gray-500">Configure campaigns, courses, & roles.</p>
-                        </div>
+
                     </div>
 
                     <LeadInbox />

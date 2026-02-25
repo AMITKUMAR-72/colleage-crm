@@ -5,7 +5,10 @@ export const ManagerService = {
     // ─── Assigned Leads ───
     getAllAssignedLeads: async (page: number, size: number) => {
         const response = await api.get<PageResponse<AssignedLeadDTO>>(`/api/assignedLeads/all/page/${page}/size/${size}`);
-        return response.data;
+        // Handle cases where the backend might return the Page object nested or flat
+        const data = response.data;
+        console.log('[ManagerService] getAllAssignedLeads response:', data);
+        return data;
     },
 
     getAssignmentsByCounselor: async (counselorId: number) => {
@@ -31,6 +34,7 @@ export const ManagerService = {
     // ─── Contacted Leads ───
     getAllContactedLeads: async (page: number, size: number) => {
         const response = await api.get<PageResponse<ContactedLeadDTO>>(`/api/contactedLeads/all/page/${page}/size/${size}`);
+        console.log('[ManagerService] getAllContactedLeads response:', response.data);
         return response.data;
     },
 
@@ -57,5 +61,12 @@ export const ManagerService = {
     getContactedByDateRange: async (start: string, end: string) => {
         const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/date-range/start/${start}/end/${end}`);
         return response.data;
+    },
+
+    // ─── Counselor Performance ───
+    getCounselorRecentLeads: async (counselorId: number, page: number, size: number) => {
+        const response = await api.get<any>(`/api/leads/counselor/${counselorId}/recent/page/${page}/size/${size}`);
+        console.log(`[ManagerService] getCounselorRecentLeads for ${counselorId}:`, response.data);
+        return response.data; // Expected { count: number, lead: Lead[] }
     }
 };

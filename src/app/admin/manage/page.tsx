@@ -32,19 +32,22 @@ export default function ManagementHub() {
                 <p className="text-gray-500">Configure global settings and master data.</p>
             </div>
 
-            <div className="flex gap-2 border-b mb-6 overflow-x-auto">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-4 py-2 whitespace-nowrap font-medium transition-colors ${activeTab === tab.id
-                            ? 'border-b-2 border-blue-600 text-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
-                            }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            {/* Premium Responsive Tabs Navigation */}
+            <div className="relative mb-8">
+                <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 w-full overflow-x-auto no-scrollbar">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex-1 min-w-[130px] md:flex-none md:px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === tab.id
+                                ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                                }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">

@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { LeadResponseDTO } from '@/types/api';
 import { TimeOutService } from '@/services/timeoutService';
 import { CounselorService } from '@/services/counselorService';
+import { CounselorDTO } from '@/types/api';
+
 import TimeoutSearchFilters, { TimeoutLeadFilters } from './TimeoutSearchFilters';
 import toast from 'react-hot-toast';
 
@@ -29,44 +31,22 @@ export default function TimeoutLeadInbox() {
     const [totalPages, setTotalPages] = useState(1);
     const [filters, setFilters] = useState<TimeoutLeadFilters>({ email: '', name: '', counselorEmail: '', startDate: '', endDate: '' });
 
-    const [reassignLead, setReassignLead] = useState<LeadResponseDTO | null>(null);
-    const [counselorEmailInput, setCounselorEmailInput] = useState('');
-    const [foundCounselor, setFoundCounselor] = useState<any>(null);
-    const [isSearching, setIsSearching] = useState(false);
-    const [isAssigning, setIsAssigning] = useState(false);
+    const [reassigning, setReassigning] = useState<LeadResponseDTO | null>(null);
+    const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
+    const [isReassignLoading, setIsReassignLoading] = useState(false);
 
-    const handleSearchCounselor = async () => {
-        if (!counselorEmailInput) return;
+    const handleReassign = async (counselorId: number) => {
+        if (!reassigning) return;
+        setIsReassignLoading(true);
         try {
-            setIsSearching(true);
-            setFoundCounselor(null);
-            const counselor = await CounselorService.getCounselorByEmail(counselorEmailInput);
-            if (counselor && counselor.counselorId) {
-                setFoundCounselor(counselor);
-            } else {
-                toast.error('Counselor not found');
-            }
-        } catch (error) {
-            toast.error('Error fetching counselor');
-        } finally {
-            setIsSearching(false);
-        }
-    };
-
-    const handleAssignSubmit = async () => {
-        if (!foundCounselor || !reassignLead) return;
-        try {
-            setIsAssigning(true);
-            await TimeOutService.reassignLead(foundCounselor.counselorId, reassignLead.id, reassignLead.email);
+            await TimeOutService.reassignLead(counselorId, reassigning.id, reassigning.email);
             toast.success('Lead reassigned successfully');
-            setReassignLead(null);
-            setCounselorEmailInput('');
-            setFoundCounselor(null);
-            fetchLeads(); // Refresh feed
+            setReassigning(null);
+            fetchLeads();
         } catch (error) {
             toast.error('Failed to reassign lead');
         } finally {
-            setIsAssigning(false);
+            setIsReassignLoading(false);
         }
     };
 
@@ -102,6 +82,8 @@ export default function TimeoutLeadInbox() {
 
     useEffect(() => {
         fetchLeads();
+        // Load counselors for picker
+        CounselorService.getAllCounselors().then(setCounselors).catch(() => { });
     }, [fetchLeads]);
 
     return (
@@ -136,12 +118,11 @@ export default function TimeoutLeadInbox() {
 
                 {loading ? (
                     <div className="py-20 flex justify-center items-center w-full">
-                        <img src="/raffles-logo.png" alt="Loading" className="h-12 w-auto object-contain animate-spin-y-ease-in" />
+                        <img src="/raffles-logo.png" alt="Loading" className="h-20 w-auto object-contain animate-spin-y-ease-in" />
                     </div>
                 ) : leads.length === 0 ? (
                     <div className="py-16 text-center">
-                        <p className="text-4xl mb-2">📭</p>
-                        <p className="text-gray-500 font-medium">No timeout leads found</p>
+                        <p className="text-slate-500 font-medium lowercase italic">no timeout leads found</p>
                     </div>
                 ) : (
                     <div className="p-0 overflow-x-auto">
@@ -158,16 +139,9 @@ export default function TimeoutLeadInbox() {
                             <tbody className="divide-y divide-slate-100/50">
                                 {leads.map((lead) => (
                                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer group">
-                                        <td className="px-4 sm:px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold shadow-sm border border-indigo-200/50 shrink-0">
-                                                    {lead.name ? lead.name.charAt(0).toUpperCase() : '?'}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-slate-800 text-sm sm:text-base">{lead.name || 'Unknown'}</span>
-                                                    <span className="sm:hidden text-[10px] text-slate-500">{lead.phone || '—'}</span>
-                                                </div>
-                                            </div>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-slate-800 text-sm">{lead.name || 'Unknown'}</div>
+                                            <div className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">{lead.id}</div>
                                         </td>
                                         <td className="hidden sm:table-cell px-6 py-4">
                                             <div className="flex flex-col gap-1">
@@ -191,12 +165,12 @@ export default function TimeoutLeadInbox() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 sm:px-6 py-4 text-center">
+                                        <td className="px-6 py-4 text-center">
                                             <button
-                                                onClick={() => setReassignLead(lead)}
-                                                className="text-indigo-600 font-bold text-xs hover:underline bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors hover:bg-indigo-100 whitespace-nowrap"
+                                                onClick={() => setReassigning(lead)}
+                                                className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all"
                                             >
-                                                Reassign
+                                                REASSIGN
                                             </button>
                                         </td>
                                     </tr>
@@ -208,64 +182,57 @@ export default function TimeoutLeadInbox() {
             </div>
 
             {/* Reassign Modal */}
-            {reassignLead && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50/50">
+            {reassigning && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 p-4" onClick={() => setReassigning(null)}>
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
                             <div>
-                                <h3 className="font-black tracking-tight text-gray-900 text-lg">Reassign Lead</h3>
-                                <p className="text-xs text-gray-500 font-medium">Find counselor by email to reassign</p>
+                                <h3 className="font-black text-slate-900 text-lg">Reassign Lead</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                    {reassigning.name}
+                                </p>
                             </div>
-                            <button onClick={() => setReassignLead(null)} className="text-gray-400 hover:text-gray-700 bg-white shadow-sm border rounded-lg p-1.5 transition-colors">
-                                ✕
+                            <button
+                                onClick={() => setReassigning(null)}
+                                className="px-4 py-2 text-[10px] items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors font-black uppercase tracking-widest"
+                            >
+                                Close
                             </button>
                         </div>
-                        <div className="p-6 space-y-5">
-                            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Target Lead</p>
-                                <p className="font-bold text-indigo-900">{reassignLead.name}</p>
-                                <p className="text-sm text-indigo-700">{reassignLead.email}</p>
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-bold text-gray-600 mb-2 block uppercase tracking-wider">Counselor Email</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="email"
-                                        placeholder="counselor@example.com"
-                                        className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#dbb212] transition-all font-medium"
-                                        value={counselorEmailInput}
-                                        onChange={(e) => {
-                                            setCounselorEmailInput(e.target.value);
-                                            setFoundCounselor(null); // reset when typing
-                                        }}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSearchCounselor()}
-                                    />
+                        <div className="p-4 max-h-[400px] overflow-y-auto space-y-2">
+                            {counselors.length > 0 ? (
+                                counselors.filter(c => c.status === 'AVAILABLE').map(c => (
                                     <button
-                                        onClick={handleSearchCounselor}
-                                        disabled={isSearching || !counselorEmailInput}
-                                        className="bg-[#4d0101] text-white px-5 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-[#600202] active:scale-95 transition-all disabled:opacity-70"
+                                        key={c.counselorId}
+                                        onClick={() => handleReassign(c.counselorId)}
+                                        disabled={isReassignLoading}
+                                        className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
                                     >
-                                        {isSearching ? '...' : 'Find'}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded bg-slate-100 text-slate-600 flex items-center justify-center font-black text-xs">
+                                                {c.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="flex flex-col items-start leading-tight">
+                                                <span className="text-sm font-bold text-slate-700">{c.name}</span>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.department}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-1 px-2 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest">
+                                            {c.status}
+                                        </div>
                                     </button>
-                                </div>
-                            </div>
-
-                            {foundCounselor && (
-                                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
-                                    <p className="text-xs font-bold text-emerald-600 mb-2 block uppercase tracking-wider">Target Counselor Found</p>
-                                    <p className="font-bold text-emerald-900 mb-1">{foundCounselor.name}</p>
-                                    <p className="text-sm font-medium text-emerald-700 mb-4">ID: {foundCounselor.counselorId} • Type: {foundCounselor.counselorType}</p>
-
-                                    <button
-                                        onClick={handleAssignSubmit}
-                                        disabled={isAssigning}
-                                        className="w-full bg-emerald-600 text-white font-bold text-sm py-3 rounded-xl hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-md flex justify-center items-center"
-                                    >
-                                        {isAssigning ? 'Reassigning...' : 'Assign to Counselor'}
-                                    </button>
-                                </div>
+                                ))
+                            ) : (
+                                <p className="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-widest">No available counselors</p>
                             )}
+                        </div>
+                        <div className="p-4 bg-slate-50/50 flex justify-end">
+                            <button
+                                onClick={() => setReassigning(null)}
+                                className="px-6 py-2.5 text-xs font-black text-slate-500 hover:text-slate-700 transition-all uppercase tracking-widest"
+                            >
+                                Cancel
+                            </button>
                         </div>
                     </div>
                 </div>
