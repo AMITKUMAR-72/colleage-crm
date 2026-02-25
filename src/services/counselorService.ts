@@ -1,5 +1,5 @@
 import api from './api';
-import { CounselorDTO, CounselorStatus, Priority } from '@/types/api';
+import { CounselorDTO, CounselorStatus, Priority, LeadResponseDTO, LeadScore, PageResponse } from '@/types/api';
 
 export const CounselorService = {
     createCounselor: async (data: Partial<CounselorDTO>) => {
@@ -44,6 +44,59 @@ export const CounselorService = {
 
     searchByName: async (name: string) => {
         const response = await api.get<CounselorDTO[]>(`/api/counselors/searchBy/name/${name}`);
+        return response.data;
+    },
+
+    // ─── Counselor Lead Management ───
+    getAssignedLeads: async (page: number, size: number) => {
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/counselor/leads/all/${page}/${size}`);
+        // Handle potential backend wrapper
+        const data = (response as any).data?.content ? (response as any).data : response.data;
+        return data;
+    },
+
+    searchLeadById: async (id: number) => {
+        const response = await api.get<LeadResponseDTO>(`/api/counselor/leads/search/id/${id}`);
+        return response.data;
+    },
+
+    searchLeadByEmail: async (email: string) => {
+        const response = await api.get<LeadResponseDTO>(`/api/counselor/leads/search/email/${email}`);
+        return response.data;
+    },
+
+    searchLeadsBySource: async (source: string) => {
+        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/source/${source}`);
+        return response.data;
+    },
+
+    searchLeadsByScore: async (score: string) => {
+        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/score/${score}`);
+        return response.data;
+    },
+
+    searchLeadsByCourse: async (course: string) => {
+        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/course/${course}`);
+        return response.data;
+    },
+
+    searchLeadsByDate: async (date: string) => {
+        const response = await api.get<LeadResponseDTO[]>(`/api/counselor/leads/search/date/${date}`);
+        return response.data;
+    },
+
+    updateLeadScore: async (leadId: number, score: LeadScore) => {
+        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${leadId}/score/${score}`);
+        return response.data;
+    },
+
+    updateLeadStatus: async (leadId: number, status: string) => {
+        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${leadId}/status/${status}`);
+        return response.data;
+    },
+
+    updateLeadCourse: async (leadId: number, courseName: string) => {
+        const response = await api.put<LeadResponseDTO>(`/api/counselor/lead/${leadId}/course/${courseName}`);
         return response.data;
     }
 };

@@ -75,6 +75,10 @@ export const SessionService = {
         const response = await api.get<SessionDTO[]>(`/api/offlineSession/status/${status}`);
         return response.data;
     },
+    getSessionStatus: async () => {
+        const response = await api.get(`/api/enum/session-status`);
+        return response.data;
+    },
 
     // Filter sessions by mentor assignment
     getSessionsByMentorAssigned: async (assigned: boolean) => {

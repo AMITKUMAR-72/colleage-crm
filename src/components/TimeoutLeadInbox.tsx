@@ -109,25 +109,25 @@ export default function TimeoutLeadInbox() {
             <TimeoutSearchFilters onFilterChange={(f) => setFilters(f)} />
 
             <div className="glass-card rounded-2xl overflow-hidden mb-12 relative bg-white shadow-sm border border-gray-100">
-                <div className="p-5 border-b border-slate-100/50 bg-slate-50/30 flex justify-between items-center">
+                <div className="p-4 sm:p-5 border-b border-slate-100/50 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h2 className="font-black text-slate-800 tracking-tight">Timed-Out Leads Feed</h2>
                         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
                             {leads.length} Leads Found • Page {page + 1} of {totalPages}
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                         <button
                             onClick={() => setPage(p => Math.max(0, p - 1))}
                             disabled={page === 0}
-                            className="px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
                             Prev
                         </button>
                         <button
                             onClick={() => setPage(p => p + 1)}
                             disabled={page >= totalPages - 1}
-                            className="px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
                             Next
                         </button>
@@ -148,62 +148,55 @@ export default function TimeoutLeadInbox() {
                         <table className="w-full text-sm text-left whitespace-nowrap">
                             <thead className="text-xs text-slate-500 bg-slate-50/50 border-b border-slate-100/50 uppercase font-bold tracking-wider">
                                 <tr>
-                                    <th className="px-6 py-4">Lead Name</th>
-                                    <th className="px-6 py-4">Contact</th>
-                                    <th className="px-6 py-4">Course</th>
-                                    <th className="px-6 py-4">Score</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4">Timed Out At</th>
-                                    <th className="px-6 py-4 text-center">Action</th>
+                                    <th className="px-4 sm:px-6 py-4">Lead</th>
+                                    <th className="hidden sm:table-cell px-6 py-4">Contact</th>
+                                    <th className="hidden md:table-cell px-6 py-4">Course</th>
+                                    <th className="px-4 sm:px-6 py-4">Status & Time</th>
+                                    <th className="px-4 sm:px-6 py-4 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100/50">
                                 {leads.map((lead) => (
                                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer group">
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 sm:px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold shadow-sm border border-indigo-200/50">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold shadow-sm border border-indigo-200/50 shrink-0">
                                                     {lead.name ? lead.name.charAt(0).toUpperCase() : '?'}
                                                 </div>
-                                                <span className="font-bold text-slate-800">{lead.name || 'Unknown'}</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-slate-800 text-sm sm:text-base">{lead.name || 'Unknown'}</span>
+                                                    <span className="sm:hidden text-[10px] text-slate-500">{lead.phone || '—'}</span>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden sm:table-cell px-6 py-4">
                                             <div className="flex flex-col gap-1">
-                                                <span className="font-medium text-slate-700">{lead.email || '—'}</span>
+                                                <span className="font-medium text-slate-700 text-sm">{lead.email || '—'}</span>
                                                 <span className="text-xs text-slate-500">{lead.phone || '—'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden md:table-cell px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-xs">
                                                 {typeof lead.course === 'object' ? lead.course.course : String(lead.course || '—')}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center justify-center px-2 py-1 uppercase text-[10px] font-bold tracking-wider rounded border ${lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-200' :
-                                                lead.score === 'WARM' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                                    'bg-sky-50 text-sky-600 border-sky-200'
-                                                }`}>
-                                                {lead.score || 'NONE'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[lead.status] || STATUS_COLORS['NEW']}`}>
-                                                {lead.status.replace(/_/g, ' ')}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-xs">
-                                                <span className="text-slate-800 font-semibold">{lead.timedOutAt ? new Date(lead.timedOutAt).toLocaleDateString() : '—'}</span>
-                                                <span className="text-slate-500 block">{lead.timedOutAt ? new Date(lead.timedOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                                        <td className="px-4 sm:px-6 py-4">
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border w-fit ${STATUS_COLORS[lead.status] || STATUS_COLORS['NEW']}`}>
+                                                    {lead.status.replace(/_/g, ' ')}
+                                                </span>
+                                                <div className="text-[10px]">
+                                                    <span className="text-slate-800 font-semibold">{lead.timedOutAt ? new Date(lead.timedOutAt).toLocaleDateString() : '—'}</span>
+                                                    <span className="text-slate-500 ml-1">{lead.timedOutAt ? new Date(lead.timedOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-4 sm:px-6 py-4 text-center">
                                             <button
                                                 onClick={() => setReassignLead(lead)}
-                                                className="text-indigo-600 font-bold text-xs hover:underline bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors hover:bg-indigo-100"
+                                                className="text-indigo-600 font-bold text-xs hover:underline bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors hover:bg-indigo-100 whitespace-nowrap"
                                             >
-                                                Reassign →
+                                                Reassign
                                             </button>
                                         </td>
                                     </tr>

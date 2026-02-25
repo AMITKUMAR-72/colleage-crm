@@ -5,7 +5,7 @@ import { CampaignService } from '@/services/campaignService';
 import { CampaignDTO } from '@/types/api';
 import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
-import { Globe, Search, UserCircle2, ChevronDown } from 'lucide-react';
+import { Globe, Search, UserCircle2, ChevronDown, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function CampaignManager() {
@@ -97,10 +97,10 @@ export default function CampaignManager() {
             {/* Main List View */}
             <div style={{ display: showModal ? 'none' : 'block' }} className="space-y-8">
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 w-full md:w-[60%] lg:w-[40%] xl:w-1/3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 w-full sm:w-[60%] lg:w-[45%] xl:w-1/3">
                         <select
-                            className="p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer"
+                            className="p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer"
                             value={searchType}
                             onChange={(e) => setSearchType(e.target.value as any)}
                         >
@@ -110,11 +110,11 @@ export default function CampaignManager() {
 
                         {searchType === 'NAME' && (
                             <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Enter source name... (Press Enter to search)"
-                                    className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
+                                    placeholder="Search..."
+                                    className="w-full pl-8 sm:pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
                                     value={searchValue}
                                     onChange={(e) => setSearchValue(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -129,8 +129,9 @@ export default function CampaignManager() {
                                 setFormData({ name: '' });
                                 setShowModal(true);
                             }}
-                            className="flex items-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-600/20"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4d0101] text-white px-6 py-3.5 sm:py-3 rounded-2xl hover:bg-[#600202] active:scale-[0.98] transition-all font-bold shadow-lg shadow-rose-900/10"
                         >
+                            <Plus className="w-4 h-4 sm:hidden" />
                             Add Source
                         </button>
                     )}
@@ -193,23 +194,23 @@ export default function CampaignManager() {
                 style={{ display: showModal ? 'flex' : 'none', backgroundColor: 'transparent' }}
             >
                 <div className="bg-white rounded-[1.2rem] w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
-                    <div className="from-indigo-600 to-purple-600 p-8 text-white relative text-center">
-                        <img src="/raffles-logo.png" alt="Raffles" className="h-24 w-auto object-contain mx-auto mb-4" />
-                        <h3 className="text-2xl text-black font-semibold tracking-tight font-poppins">
+                    <div className="from-indigo-600 to-purple-600 p-6 sm:p-8 text-white relative text-center">
+                        <img src="/raffles-logo.png" alt="Raffles" className="h-16 sm:h-24 w-auto object-contain mx-auto mb-4" />
+                        <h3 className="text-xl sm:text-2xl text-black font-semibold tracking-tight font-poppins">
                             Create Campaign Source
                         </h3>
-                        <p className="opacity-80 text-black font-medium text-sm mt-1 max-w-md mx-auto">
+                        <p className="opacity-80 text-black font-medium text-[10px] sm:text-sm mt-1 max-w-md mx-auto px-4">
                             Fill in the details to register a new external marketing campaign.
                         </p>
                         <button
                             onClick={() => setShowModal(false)}
-                            className="absolute top-8 right-8 w-10 h-10 bg-black/10 hover:bg-black/20 rounded-2xl flex items-center justify-center transition-colors font-bold text-black"
+                            className="absolute top-4 right-4 sm:top-8 sm:right-8 w-8 h-8 sm:w-10 sm:h-10 bg-black/10 hover:bg-black/20 rounded-xl sm:rounded-2xl flex items-center justify-center transition-colors font-bold text-black"
                         >
                             ✕
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                    <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
                         <div className="flex flex-col gap-6">
                             <div className="w-full">
                                 <label htmlFor="sourceName" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Source Name</label>
@@ -226,17 +227,17 @@ export default function CampaignManager() {
                             </div>
                         </div>
 
-                        <div className="pt-4 flex gap-4">
+                        <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
                             <button
                                 type="button"
                                 onClick={() => setShowModal(false)}
-                                className="flex-1 py-4 rounded-2xl border border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-all"
+                                className="order-2 sm:order-1 flex-1 py-3.5 sm:py-4 rounded-2xl border border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-all"
                             >
                                 Dismiss
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 py-4 rounded-2xl bg-[#4d0101] from-indigo-600 to-purple-600 text-white font-black shadow-xl shadow-indigo-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-[#4d0101] text-white font-black shadow-xl shadow-rose-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
                                 Confirm Registration
                             </button>

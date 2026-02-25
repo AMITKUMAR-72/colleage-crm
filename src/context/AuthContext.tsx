@@ -45,6 +45,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         restoreSession();
     }, []);
 
+    const normalizeRole = (roleInput: any): Role => {
+        if (!roleInput) return 'USER';
+
+        let r = "";
+        if (typeof roleInput === 'string') {
+            r = roleInput;
+        } else if (roleInput.role) {
+            r = roleInput.role;
+        } else {
+            r = String(roleInput);
+        }
+
+        let clean = r.toUpperCase();
+
+        // Handle complex string format like ROLE{ROLE='COUNSELOR'}
+        if (clean.includes("ROLE='")) {
+            const match = clean.match(/ROLE='([^']+)'/);
+            if (match) clean = match[1];
+        } else if (clean.includes("{")) {
+            // Fallback for other nested brace formats
+            const match = clean.match(/=([^,}]+)/) || clean.match(/{([^}]+)}/);
+            if (match) clean = match[1].replace(/['"]/g, '');
+        }
+
+        // Standard cleanups
+        clean = clean.replace('ROLE_', '').trim();
+
+        // Handle typos
+        if (clean === 'CONSENLOR' || clean === 'COUSELOR') return 'COUNSELOR';
+
+        return clean as Role;
+    };
+
     const navigateByRole = (role: Role) => {
         if (!role) {
             router.push('/login');
@@ -55,38 +88,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         switch (upperRole) {
             case 'ADMIN': router.push('/admin'); break;
             case 'MANAGER': router.push('/manager'); break;
-            case 'COUNSELOR': router.push('/counselor'); break;
+            case 'COUNSELOR': router.push('/counselor/leads'); break;
             case 'AFFILIATE': router.push('/affiliate'); break;
             default: router.push('/login');
         }
     };
 
     const login = async (email: string, password?: string) => {
-        const { token, email: userEmail } = await AuthService.login({ email, password });
+        const authData = await AuthService.login({ email, password });
+        const { token, email: userEmail } = authData;
         localStorage.setItem('token', token);
 
         let detectedRole: Role = 'USER';
-        let userId = Math.floor(Math.random() * 1000);
-        let userName = email.split('@')[0];
+        let userId = authData.user?.id || Math.floor(Math.random() * 1000);
+        let userName = authData.user?.name || email.split('@')[0];
 
+        // 1. Try to get role from auth response
+        if (authData.role) {
+            detectedRole = normalizeRole(authData.role);
+        } else if (authData.user && authData.user.role) {
+            detectedRole = normalizeRole(authData.user.role);
+        }
+
+        // 2. Try decoding JWT as a reliable secondary source
+        if ((detectedRole === 'USER' || !detectedRole) && token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const payload = JSON.parse(window.atob(base64));
+
+                // Check common role claim names
+                const roleClaim = payload.role || payload.roles || (payload.authorities && payload.authorities[0]);
+                if (roleClaim) {
+                    detectedRole = normalizeRole(roleClaim);
+                }
+            } catch (e) {
+                console.error("JWT decode failed during login", e);
+            }
+        }
+
+        // 3. Sync with full user details from the backend
         try {
-            // Fetch full user details from the backend to get the correct role
             const response = await api.get(`/api/users/email/${userEmail}`);
             const userData = response.data;
 
             if (userData) {
                 if (userData.role) {
-                    if (typeof userData.role === 'string') {
-                        detectedRole = userData.role as Role;
-                    } else if (userData.role.role) {
-                        detectedRole = (userData.role.role as Role);
-                    }
+                    detectedRole = normalizeRole(userData.role);
                 }
                 userId = userData.id || userId;
                 userName = userData.name || userName;
             }
         } catch (e) {
-            console.error("Failed to fetch user role from backend, using basic USER role", e);
+            console.error("Failed to fetch user role from backend sync", e);
+            // We keep the role from AuthResponse or JWT if sync fails
         }
 
         const newUser: UserDTO = {
@@ -94,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: userEmail,
             name: userName,
             role: detectedRole,
-            isActive: 'Active' // Default
+            isActive: 'Active'
         };
 
         localStorage.setItem('user', JSON.stringify(newUser));
@@ -109,11 +164,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         localStorage.setItem('token', token);
 
+        const signupRole = normalizeRole(response.role);
+
         const newUser: UserDTO = {
             id: response.userId || Math.floor(Math.random() * 1000),
             email: userEmail,
             name: name,
-            role: (response.role?.role as Role) || 'USER',
+            role: signupRole,
             isActive: 'Active'
         };
 

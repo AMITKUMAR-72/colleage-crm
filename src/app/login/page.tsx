@@ -18,7 +18,7 @@ const SignIn: React.FC = () => {
         if (!authLoading && user) {
             const path = user.role === 'ADMIN' ? '/admin'
                 : user.role === 'MANAGER' ? '/manager'
-                    : user.role === 'COUNSELOR' ? '/counselor'
+                    : user.role === 'COUNSELOR' ? '/counselor/leads'
                         : user.role === 'AFFILIATE' ? '/affiliate'
                             : '/login';
             router.push(path);

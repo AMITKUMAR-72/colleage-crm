@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { LeadResponseDTO, CampaignDTO } from '@/types/api';
 import { LeadService } from '@/services/leadService';
+import { CounselorService } from '@/services/counselorService';
+import { useAuth } from '@/context/AuthContext';
 import LeadSearchFilters from './LeadSearchFilters';
 import LeadNotes from './LeadNotes';
 import toast from 'react-hot-toast';
@@ -31,6 +33,7 @@ interface LeadFilters {
 }
 
 export default function LeadInbox() {
+    const { role } = useAuth();
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
@@ -60,20 +63,27 @@ export default function LeadInbox() {
                 setPage(0);
 
             } else {
-                const response: any = await LeadService.getRecentLeads(page, 15);
+                let response: any;
+                const pageSize = 15;
 
-                // Use response.lead since you mentioned the response has 'count' and 'lead'
-                const newLeads = response.lead || response.content || [];
+                if (role === 'COUNSELOR') {
+                    // Counselor specific leads API
+                    response = await CounselorService.getAssignedLeads(page, 20);
+                } else {
+                    // Admin/Manager generic leads API
+                    response = await LeadService.getRecentLeads(page, pageSize);
+                }
+
+                // Handle both Spring Data Page object and custom response format
+                const newLeads = response.lead || response.content || (Array.isArray(response) ? response : []);
                 setLeads(newLeads);
 
-                // If the response manually returns 'count', we calculate the total pages
                 const totalCount = response.count ?? response.totalElements ?? 0;
-                const calculatedPages = totalCount > 0 ? Math.ceil(totalCount / 15) : 1;
+                const size = response.size || pageSize;
+                const calculatedPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
                 setTotalPages(response.totalPages || calculatedPages);
 
-
-                console.log('Fetched recent leads:', response);
-                console.log('Leads state will update to:', newLeads);
+                console.log('Fetched leads for role', role, ':', response);
             }
 
         } catch (error) {
@@ -122,25 +132,25 @@ export default function LeadInbox() {
             <LeadSearchFilters onFilterChange={(f: LeadFilters) => setFilters(f)} />
 
             <div className="glass-card rounded-2xl overflow-hidden mb-12 relative bg-white shadow-sm border border-gray-100">
-                <div className="p-5 border-b border-slate-100/50 bg-slate-50/30 flex justify-between items-center">
+                <div className="p-4 sm:p-5 border-b border-slate-100/50 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h2 className="font-black text-slate-800 tracking-tight">Live Lead Feed</h2>
                         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
                             {leads.length} Leads Found • Page {page + 1} of {totalPages}
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                         <button
                             onClick={() => setPage(p => Math.max(0, p - 1))}
                             disabled={page === 0}
-                            className="px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
                             Prev
                         </button>
                         <button
                             onClick={() => setPage(p => p + 1)}
                             disabled={page >= totalPages - 1}
-                            className="px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
                             Next
                         </button>
@@ -161,10 +171,10 @@ export default function LeadInbox() {
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4 font-bold">Name</th>
-                                    <th className="px-6 py-4 font-bold">Contact</th>
-                                    <th className="px-6 py-4 font-bold">Status & Score</th>
-                                    <th className="px-6 py-4 font-bold">Course / Intake</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold">Name</th>
+                                    <th className="hidden sm:table-cell px-6 py-4 font-bold">Contact</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold">Status</th>
+                                    <th className="hidden md:table-cell px-6 py-4 font-bold">Course</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -174,26 +184,27 @@ export default function LeadInbox() {
                                         onClick={() => handleViewLead(lead.id)}
                                         className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
                                     >
-                                        <td className="px-6 py-4">
-                                            <div className="font-bold text-slate-800">{lead.name || 'Unknown'}</div>
-                                            <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[150px]" title={lead.address}>{lead.address || '—'}</div>
+                                        <td className="px-4 sm:px-6 py-4">
+                                            <div className="font-bold text-slate-800 text-sm sm:text-base">{lead.name || 'Unknown'}</div>
+                                            <div className="sm:hidden text-xs text-slate-500 mt-1">{lead.phone || '—'}</div>
+                                            <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate max-w-[120px] sm:max-w-[150px]" title={lead.address}>{lead.address || '—'}</div>
                                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden sm:table-cell px-6 py-4">
                                             <div className="text-slate-700 font-medium truncate max-w-[200px]" title={lead.email}>{lead.email || '—'}</div>
                                             <div className="text-slate-500 mt-0.5">{lead.phone || '—'}</div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 sm:px-6 py-4">
                                             <div className="flex flex-col gap-1.5 items-start">
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
                                                     {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
                                                 </span>
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' : lead.score === 'WARM' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border ${lead.score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' : lead.score === 'WARM' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
                                                     {lead.score || 'NONE'}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-700">
+                                        <td className="hidden md:table-cell px-6 py-4 text-slate-700">
                                             <div className="font-medium truncate max-w-[200px]" title={getCourseDisplay(lead)}>{getCourseDisplay(lead)}</div>
                                             <div className="text-slate-500 mt-0.5 text-xs">Intake: {lead.intake || '—'}</div>
                                         </td>
@@ -208,10 +219,10 @@ export default function LeadInbox() {
             {/* Lead Details Slide-over */}
             {selectedLead && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-                    <div className="w-full max-w-md bg-white h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right duration-300">
+                    <div className="w-full sm:max-w-md bg-white h-full shadow-2xl p-4 sm:p-6 overflow-y-auto animate-in slide-in-from-right duration-300">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold">Lead Details</h2>
-                            <button onClick={() => setSelectedLead(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+                            <button onClick={() => setSelectedLead(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">✕</button>
                         </div>
 
                         <div className="space-y-6">

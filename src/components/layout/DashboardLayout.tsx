@@ -21,8 +21,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             // Path Protection Logic
             const path = pathname || window.location.pathname;
 
-            if (path.startsWith('/admin') && role !== 'ADMIN') {
-                router.push('/login'); // Or a generic unauthorized page
+            if (path.startsWith('/admin') && role !== 'ADMIN' && role !== 'COUNSELOR') {
+                router.push('/login');
             } else if (path.startsWith('/manager') && role !== 'MANAGER' && role !== 'ADMIN') {
                 router.push('/login');
             } else if (path.startsWith('/counselor') && role !== 'COUNSELOR' && role !== 'MANAGER' && role !== 'ADMIN') {

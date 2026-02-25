@@ -133,8 +133,7 @@ export default function CounselorManager() {
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Main List View */}
             <div style={{ display: showModal ? 'none' : 'block' }} className="space-y-8">
-                <div className="flex flex-end md:flex-row md:items-center justify-end gap-4">
-
+                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
                     {role === 'ADMIN' && (
                         <button
                             onClick={() => {
@@ -142,9 +141,9 @@ export default function CounselorManager() {
                                 setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL', status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
                                 setShowModal(true);
                             }}
-                            className="flex items-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-600/20"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg"
                         >
-
+                            <UserPlus className="w-5 h-5" />
                             Add Counselor
                         </button>
                     )}
@@ -158,10 +157,10 @@ export default function CounselorManager() {
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4 font-bold">Counselor Details</th>
-                                    <th className="px-6 py-4 font-bold">Department & Type</th>
-                                    <th className="px-6 py-4 font-bold">Status</th>
-                                    <th className="px-6 py-4 font-bold text-center">Metrics</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold">Counselor</th>
+                                    <th className="hidden sm:table-cell px-6 py-4 font-bold">Department</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold">Status</th>
+                                    <th className="hidden md:table-cell px-6 py-4 font-bold text-center">Metrics</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -171,13 +170,19 @@ export default function CounselorManager() {
                                         className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
                                         onClick={() => handleViewDetails(c.counselorId)}
                                     >
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 sm:px-6 py-4">
                                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
-                                            <div className="font-bold text-slate-800">{c.name}</div>
-                                            <div className="text-slate-500 mt-0.5 truncate max-w-[200px]" title={c.email}>{c.email}</div>
-                                            <div className="text-xs text-slate-400 mt-0.5">{c.phone}</div>
+                                            <div className="font-bold text-slate-800 text-sm sm:text-base">{c.name}</div>
+                                            <div className="text-slate-500 mt-0.5 text-xs truncate max-w-[120px] sm:max-w-[200px]" title={c.email}>{c.email}</div>
+                                            <div className="sm:hidden mt-2 flex flex-col gap-1">
+                                                <div className="text-[10px] text-slate-400 font-bold">{c.department || 'General'} • {c.counselorType}</div>
+                                                <div className="flex gap-4">
+                                                    <div className="text-[10px] text-slate-400 font-medium">L: {c.totalLeads}</div>
+                                                    <div className="text-[10px] text-slate-400 font-medium">P: {c.priority}</div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden sm:table-cell px-6 py-4">
                                             <div className="font-medium text-slate-700">{c.department || 'General'}</div>
                                             <div className={`mt-1.5 w-fit px-2 py-0.5 text-[10px] font-bold rounded-full border ${c.counselorType === 'INTERNAL' ? 'bg-blue-50 text-blue-600 border-blue-100' :
                                                 c.counselorType === 'TELECALLER' ? 'bg-amber-50 text-amber-600 border-amber-100' :
@@ -186,8 +191,8 @@ export default function CounselorManager() {
                                                 {c.counselorType}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className={`w-fit px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase border ${c.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                        <td className="px-4 sm:px-6 py-4">
+                                            <div className={`w-fit px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold tracking-widest uppercase border ${c.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                                 c.status === 'SESSION_ASSIGNED' ? 'bg-purple-50 text-purple-600 border-purple-100' :
                                                     c.status === 'ON_LEAVE' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                                                         c.status === 'BUSY' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
@@ -197,7 +202,7 @@ export default function CounselorManager() {
                                                 {c.status.replace('_', ' ')}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="hidden md:table-cell px-6 py-4 text-center">
                                             <div className="flex justify-center gap-6">
                                                 <div className="flex flex-col items-center">
                                                     <span className="font-bold text-slate-800">{c.totalLeads}</span>
@@ -232,32 +237,32 @@ export default function CounselorManager() {
                 className="flex items-start justify-center transition-all font-poppins"
                 style={{ display: showModal ? 'flex' : 'none', backgroundColor: 'transparent' }}
             >
-                <div className="bg-white rounded-[1.2rem] w-full  overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
-                    <div className=" from-indigo-600 to-purple-600 p-8 text-white relative text-center">
-                        <img src="/raffles-logo.png" alt="Raffles" className="h-24 w-auto object-contain mx-auto mb-4" />
-                        <h3 className="text-2xl text-black font-semibold tracking-tight font-poppins">
+                <div className="bg-white rounded-[1.2rem] w-full max-w-4xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
+                    <div className="from-indigo-600 to-purple-600 p-6 sm:p-8 text-white relative text-center">
+                        <img src="/raffles-logo.png" alt="Raffles" className="h-16 sm:h-20 w-auto object-contain mx-auto mb-4" />
+                        <h3 className="text-xl sm:text-2xl text-black font-semibold tracking-tight font-poppins">
                             {editingCounselor ? 'Modify Counselor' : 'Create Counselor'}
                         </h3>
-                        <p className="opacity-80 text-black font-medium text-sm mt-1 max-w-md mx-auto">
+                        <p className="opacity-80 text-black font-medium text-xs sm:text-sm mt-1 max-w-md mx-auto">
                             {editingCounselor ? 'Update the professional profile of the team member.' : 'Fill in the professional details to create a new counselor account.'}
                         </p>
                         <button
                             onClick={() => setShowModal(false)}
-                            className="absolute top-8 right-8 w-10 h-10 bg-black/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors font-bold"
+                            className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 bg-black/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors font-bold"
                         >
                             ✕
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                        <div className="grid grid-cols-2 gap-12">
+                    <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                             <div className="col-span-1">
-                                <label htmlFor="counselorName" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Full Name</label>
+                                <label htmlFor="counselorName" className="block text-[10px] sm:text-xs font-black text-black uppercase tracking-widest mb-1 sm:mb-2 ml-1 cursor-pointer">Full Name</label>
                                 <div className="relative">
                                     <input
                                         id="counselorName"
                                         required
-                                        className="w-full pl-4 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
+                                        className="w-full pl-4 pr-4 py-3 sm:py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="Enter Full Name"

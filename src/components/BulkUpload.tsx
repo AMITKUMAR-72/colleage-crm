@@ -175,15 +175,15 @@ const BulkUpload = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
-            <h2 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2 w-full">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+            <h2 className="font-bold text-gray-800 mb-6 flex items-center justify-center gap-2 w-full text-base sm:text-lg">
                 <Upload className="w-5 h-5 text-blue-600" />
                 Bulk Lead Upload
             </h2>
 
             <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`w-full border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer transition-colors ${file ? 'border-blue-400 bg-blue-50/30' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                className={`w-full border-2 border-dashed rounded-xl p-6 sm:p-10 flex flex-col items-center justify-center cursor-pointer transition-colors ${file ? 'border-blue-400 bg-blue-50/30' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                     }`}
             >
                 <input
@@ -193,14 +193,14 @@ const BulkUpload = () => {
                     className="hidden"
                     accept=".xlsx,.xls"
                 />
-                <FileUp className={`w-10 h-10 mb-4 ${file ? 'text-blue-500' : 'text-gray-300'}`} />
-                <p className="text-sm font-medium text-gray-600 text-center">
+                <FileUp className={`w-8 h-8 sm:w-10 sm:h-10 mb-4 ${file ? 'text-blue-500' : 'text-gray-300'}`} />
+                <p className="text-xs sm:text-sm font-medium text-gray-600 text-center">
                     {file ? file.name : 'Click to select Excel file'}
                 </p>
                 {isValidating && <p className="text-[10px] text-blue-500 mt-1 animate-pulse">Validating format...</p>}
                 {validationError && <p className="text-[10px] text-rose-500 mt-1 text-center font-medium">⚠️ {validationError.replace("Invalid format. Missing headers:", "Please add these columns to your Excel:")}</p>}
                 {!isValidating && !validationError && file && <p className="text-[10px] text-emerald-500 mt-1">Excellent! Your file format is correct ✓</p>}
-                <p className="text-xs text-gray-400 mt-1">Single file up to 10MB</p>
+                <p className="text-[10px] sm:text-xs text-gray-400 mt-1">Single file up to 10MB</p>
             </div>
 
             {status !== 'idle' && (

@@ -185,19 +185,19 @@ export default function DepartmentManager() {
                 <>
                     <h3 className="text-xl font-bold mb-4">Departments</h3>
 
-                    <form onSubmit={handleCreate} className="flex gap-4 mb-6">
+                    <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-4 mb-6">
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="New Department Name"
-                            className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-[#dbb212] outline-none"
+                            className="flex-1 p-2.5 sm:p-2 border rounded-xl sm:rounded-lg focus:ring-2 focus:ring-[#dbb212] outline-none font-medium"
                             required
                         />
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 bg-[#4d0101] text-white rounded-lg hover:bg-[#4d0101] disabled:opacity-50"
+                            className="w-full sm:w-auto px-6 py-3 sm:px-4 sm:py-2 bg-[#4d0101] text-white rounded-xl sm:rounded-lg hover:bg-[#600202] disabled:opacity-50 font-bold transition-all"
                         >
                             {loading ? 'Adding...' : 'Add Department'}
                         </button>
@@ -207,9 +207,9 @@ export default function DepartmentManager() {
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4 font-bold">Department Name</th>
-                                    <th className="px-6 py-4 font-bold">Metrics</th>
-                                    <th className="px-6 py-4 font-bold text-right">Actions</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold text-sm">Department</th>
+                                    <th className="hidden sm:table-cell px-6 py-4 font-bold text-sm">Metrics</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold text-right text-sm">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -220,11 +220,15 @@ export default function DepartmentManager() {
                                             onClick={() => dept.department && handleViewDepartment(dept.department)}
                                             className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
                                         >
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 sm:px-6 py-4">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
-                                                <span className="font-bold text-slate-800 uppercase tracking-tight">{dept.department}</span>
+                                                <div className="font-bold text-slate-800 uppercase tracking-tight">{dept.department}</div>
+                                                <div className="sm:hidden mt-1 flex gap-3">
+                                                    <span className="text-[10px] text-slate-400 font-bold">{(dept.courses || []).length} CRSE</span>
+                                                    <span className="text-[10px] text-slate-400 font-bold">{(dept.counselors || []).length} CNSL</span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="hidden sm:table-cell px-6 py-4">
                                                 <div className="flex gap-4">
                                                     <div className="flex flex-col items-center">
                                                         <span className="font-bold text-slate-800">{(dept.courses || []).length}</span>
@@ -236,13 +240,13 @@ export default function DepartmentManager() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-4 sm:px-6 py-4 text-right">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleEditClick(dept);
                                                     }}
-                                                    className="px-3 py-1.5 text-xs font-bold text-[#4d0101] bg-rose-50 border border-rose-100 rounded-md hover:bg-rose-100 transition-colors"
+                                                    className="px-4 py-2 sm:px-3 sm:py-1.5 text-xs font-bold text-[#4d0101] bg-rose-50 border border-rose-100 rounded-lg sm:rounded-md hover:bg-rose-100 transition-colors"
                                                 >
                                                     Edit
                                                 </button>
@@ -309,41 +313,39 @@ export default function DepartmentManager() {
                                 <table className="w-full text-sm text-left">
                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                         <tr>
-                                            <th className="px-6 py-4 font-bold">Counselor Name</th>
-                                            <th className="px-6 py-4 font-bold">Contact Info</th>
-                                            <th className="px-6 py-4 font-bold">Status & Details</th>
-                                            <th className="px-6 py-4 font-bold text-right">Performance</th>
+                                            <th className="px-4 sm:px-6 py-4 font-bold">Counselor</th>
+                                            <th className="hidden sm:table-cell px-6 py-4 font-bold">Details</th>
+                                            <th className="px-4 sm:px-6 py-4 font-bold text-right">Perf</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {selectedDepartment.counselors.map((counselor: any, idx: number) => (
                                             <tr key={counselor.counselorId || counselor.id || idx} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <span className="font-bold text-slate-800">{counselor.name || 'N/A'}</span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-slate-700">{counselor.email || 'N/A'}</span>
-                                                        <span className="text-slate-500 text-xs">{counselor.phone || 'N/A'}</span>
+                                                <td className="px-4 sm:px-6 py-4">
+                                                    <div className="font-bold text-slate-800">{counselor.name || 'N/A'}</div>
+                                                    <div className="sm:hidden text-[10px] text-slate-500 mt-1">{counselor.email || 'N/A'}</div>
+                                                    <div className={`sm:hidden mt-2 px-2 py-0.5 rounded-[4px] text-[9px] font-bold uppercase tracking-wider w-fit ${counselor.status === 'AVAILABLE' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {counselor.status || 'N/A'}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="hidden sm:table-cell px-6 py-4">
                                                     <div className="flex flex-col gap-1 items-start">
                                                         <span className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider ${counselor.status === 'AVAILABLE' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                                                             {counselor.status || 'N/A'}
                                                         </span>
-                                                        <span className="text-xs text-slate-500">{counselor.counselorType || 'N/A'} • Priority {counselor.priority || 'N/A'}</span>
+                                                        <span className="text-xs text-slate-500">{counselor.email || 'N/A'}</span>
+                                                        <span className="text-xs text-slate-500">{counselor.counselorType || 'N/A'} • P{counselor.priority || 'N/A'}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex gap-4 justify-end">
-                                                        <div className="flex flex-col items-center">
-                                                            <span className="font-bold text-slate-800">{counselor.totalLeads ?? 0}</span>
-                                                            <span className="text-[10px] text-slate-400">TOTAL</span>
+                                                <td className="px-4 sm:px-6 py-4 text-right">
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className="font-bold text-slate-800 text-sm">{counselor.totalLeads ?? 0}</span>
+                                                            <span className="text-[9px] text-slate-400">TOT</span>
                                                         </div>
-                                                        <div className="flex flex-col items-center">
-                                                            <span className="font-bold text-slate-800">{(counselor as any).interestedLeads ?? 0}</span>
-                                                            <span className="text-[10px] text-slate-400">INTERESTED</span>
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className="font-bold text-emerald-600 text-sm">{(counselor as any).interestedLeads ?? 0}</span>
+                                                            <span className="text-[9px] text-slate-400">INT</span>
                                                         </div>
                                                     </div>
                                                 </td>

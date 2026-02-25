@@ -78,10 +78,15 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
 
     return (
         <div className="mb-6">
-            <div className="flex items-center gap-4 w-full">
-                <div className="relative flex-1 animate-in fade-in duration-300">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full">
+                <div className="relative flex-1 animate-in fade-in duration-300 min-h-[44px] flex items-center">
+                    {filterType === '' && (
+                        <div className="text-gray-400 text-sm font-medium italic px-2">
+                            Select a filter type to start searching...
+                        </div>
+                    )}
                     {filterType === 'email' && (
-                        <>
+                        <div className="relative w-full">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -94,7 +99,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                                 onChange={(e) => handleChange('email', e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && onFilterChange(filters)}
                             />
-                        </>
+                        </div>
                     )}
                     {filterType === 'status' && (
                         <select
@@ -141,7 +146,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         </select>
                     )}
                     {filterType === 'dateRange' && (
-                        <div className="flex gap-3 w-full animate-in fade-in duration-300">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full animate-in fade-in duration-300">
                             <div className="flex-1">
                                 <label className="text-xs font-bold text-gray-500 mb-1 block">Start Date</label>
                                 <input
@@ -164,9 +169,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                     )}
                 </div>
 
-
-
-                <div className="relative w-[20%]">
+                <div className="relative w-full sm:w-48">
                     <select
                         className="w-full appearance-none bg-[#4d0101] text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-[#600202] active:scale-[0.98] transition-all cursor-pointer outline-none focus:ring-2 focus:ring-[#dbb212] text-left"
                         value={filterType}
@@ -177,7 +180,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                             onFilterChange(resetFilters);
                         }}
                     >
-                        <option value="" disabled className="bg-white text-gray-500 text-center">Filters</option>
+                        <option value="" disabled className="bg-white text-gray-500">Select Filter Type</option>
                         <option value="email" className="bg-white text-gray-800">Filter Email</option>
                         <option value="status" className="bg-white text-gray-800">Filter Status</option>
                         <option value="course" className="bg-white text-gray-800">Filter Course</option>
@@ -185,7 +188,6 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         <option value="score" className="bg-white text-gray-800">Filter Score</option>
                         <option value="dateRange" className="bg-white text-gray-800">Filter Date Range</option>
                     </select>
-
                 </div>
             </div>
         </div>

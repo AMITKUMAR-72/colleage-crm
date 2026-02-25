@@ -176,3 +176,46 @@ export interface PageResponse<T> {
     first: boolean;
     last: boolean;
 }
+
+// ─── Audit Log ───
+
+export interface DiffEntry {
+    new: any;
+    old: any;
+}
+
+export interface AuditLogDTO {
+    id: number;
+    action: string;
+    entityType: string;
+    entityId: string;
+    oldState: Record<string, any>;
+    newState: Record<string, any>;
+    diff: Record<string, DiffEntry>;
+    modifiedBy: string;
+    role: string;
+    userAgent: string;
+    requestUrl: string;
+    timestamp: string;
+}
+
+// ─── Manager Specific DTOs ───
+
+export interface AssignedLeadDTO {
+    id: number;
+    lead: LeadResponseDTO;
+    counselor: CounselorDTO;
+    assignedBy: string;
+    assignedAt: string;
+    status: string;
+}
+
+export interface ContactedLeadDTO {
+    id: number;
+    lead: LeadResponseDTO;
+    assignedTo: CounselorDTO;
+    assignedBy: UserDTO;
+    contactedAt: string;
+    status: LeadStatus;
+    notes?: string;
+}

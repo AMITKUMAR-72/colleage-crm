@@ -5,7 +5,7 @@ import { AffiliateService } from '@/services/affiliateService';
 import { AffiliateDTO, AffiliateActive } from '@/types/api';
 import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
-import { Building2, Mail, CreditCard, Percent, Search, ShieldCheck, ShieldAlert, Edit2, UserCircle2, ChevronDown } from 'lucide-react';
+import { Building2, Mail, CreditCard, Percent, Search, ShieldCheck, ShieldAlert, Edit2, UserCircle2, ChevronDown, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AffiliateManager() {
@@ -155,26 +155,26 @@ export default function AffiliateManager() {
             {/* Main List View */}
             <div style={{ display: showModal ? 'none' : 'block' }} className="space-y-8">
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 w-full md:w-[60%] lg:w-[40%] xl:w-1/3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 w-full sm:w-[65%] lg:w-[45%] xl:w-1/3">
                         <select
-                            className="p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer whitespace-nowrap"
+                            className="p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer whitespace-nowrap"
                             value={searchType}
                             onChange={(e) => setSearchType(e.target.value as any)}
                         >
-                            <option value="ALL">All Affiliates</option>
+                            <option value="ALL">All Partners</option>
                             <option value="EMAIL">By Email</option>
-                            <option value="COMPANY_NAME">By Company Name</option>
+                            <option value="COMPANY_NAME">By Company</option>
                             <option value="STATUS">By Status</option>
                         </select>
 
                         {searchType === 'EMAIL' || searchType === 'COMPANY_NAME' ? (
                             <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder={searchType === 'EMAIL' ? 'Enter email... (Press Enter)' : 'Enter company name... (Press Enter)'}
-                                    className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
+                                    placeholder="Search..."
+                                    className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
                                     value={searchValue}
                                     onChange={(e) => setSearchValue(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -182,11 +182,10 @@ export default function AffiliateManager() {
                             </div>
                         ) : searchType === 'STATUS' ? (
                             <select
-                                className="flex-1 p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer"
+                                className="flex-1 p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer"
                                 value={searchStatus}
                                 onChange={(e) => {
                                     setSearchStatus(e.target.value as AffiliateActive);
-                                    // Triggering search immediately when status dropdown changes since no button is available
                                     handleSearch();
                                 }}
                             >
@@ -203,8 +202,9 @@ export default function AffiliateManager() {
                                 setFormData({ companyName: '', email: '', password: '', commissionPercent: '10.0', payoutMethod: 'Bank Transfer' });
                                 setShowModal(true);
                             }}
-                            className="flex items-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg shadow-indigo-600/20"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4d0101] text-white px-6 py-3.5 sm:py-3 rounded-2xl hover:bg-[#600202] active:scale-[0.98] transition-all font-bold shadow-lg shadow-rose-900/10"
                         >
+                            <Plus className="w-4 h-4 sm:hidden" />
                             Add Affiliate
                         </button>
                     )}
@@ -219,9 +219,9 @@ export default function AffiliateManager() {
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4 font-bold">Company</th>
-                                    <th className="px-6 py-4 font-bold">Contact</th>
-                                    <th className="px-6 py-4 font-bold">Status</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold text-xs sm:text-sm">Partner</th>
+                                    <th className="hidden sm:table-cell px-6 py-4 font-bold text-xs sm:text-sm">Contact</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold text-right text-xs sm:text-sm">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -232,23 +232,29 @@ export default function AffiliateManager() {
                                             onClick={() => handleViewDetails(affiliate.id)}
                                             className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
                                         >
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 sm:px-6 py-4">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm shrink-0">
+                                                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm shrink-0 text-xs">
                                                         {affiliate.companyName.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <span className="font-bold text-slate-800 uppercase tracking-tight">{affiliate.companyName}</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-800 uppercase tracking-tight text-xs sm:text-sm">{affiliate.companyName}</span>
+                                                        <div className="sm:hidden flex items-center gap-1 mt-0.5 text-[10px] text-slate-500 font-medium truncate max-w-[120px]">
+                                                            <Mail className="w-2.5 h-2.5" />
+                                                            {affiliate.email}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                                                    <Mail className="w-4 h-4 text-indigo-400 shrink-0" />
+                                            <td className="hidden sm:table-cell px-6 py-4">
+                                                <div className="flex items-center gap-1.5 text-slate-600 font-medium text-xs">
+                                                    <Mail className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                                                     {affiliate.email}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className={`w-fit px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase border ${affiliate.active === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                            <td className="px-4 sm:px-6 py-4 text-right">
+                                                <div className={`ml-auto w-fit px-2 py-0.5 rounded-md text-[9px] font-bold tracking-widest uppercase border ${affiliate.active === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                                                     {affiliate.active}
                                                 </div>
                                             </td>
@@ -277,110 +283,107 @@ export default function AffiliateManager() {
                 style={{ display: showModal ? 'flex' : 'none', backgroundColor: 'transparent' }}
             >
                 <div className="bg-white rounded-[1.2rem] w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
-                    <div className=" from-indigo-600 to-purple-600 p-8 text-white relative text-center">
-                        <img src="/raffles-logo.png" alt="Raffles" className="h-24 w-auto object-contain mx-auto mb-4" />
-                        <h3 className="text-2xl text-black font-semibold tracking-tight font-poppins">
+                    <div className="from-indigo-600 to-purple-600 p-6 sm:p-8 text-white relative text-center">
+                        <img src="/raffles-logo.png" alt="Raffles" className="h-16 sm:h-24 w-auto object-contain mx-auto mb-4" />
+                        <h3 className="text-xl sm:text-2xl text-black font-semibold tracking-tight font-poppins">
                             {editingAffiliate ? 'Modify Affiliate' : 'Create Affiliate'}
                         </h3>
-                        <p className="opacity-80 text-black font-medium text-sm mt-1 max-w-md mx-auto">
+                        <p className="opacity-80 text-black font-medium text-[10px] sm:text-sm mt-1 max-w-md mx-auto px-4">
                             {editingAffiliate ? 'Update the details of the affiliate partner.' : 'Fill in the details to register a new affiliate partner.'}
                         </p>
                         <button
                             onClick={() => setShowModal(false)}
-                            className="absolute top-8 right-8 w-10 h-10 bg-black/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors font-bold text-white"
+                            className="absolute top-4 right-4 sm:top-8 sm:right-8 w-8 h-8 sm:w-10 sm:h-10 bg-black/10 hover:bg-black/20 rounded-xl sm:rounded-2xl flex items-center justify-center transition-colors font-bold text-black"
                         >
                             ✕
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                        <div className="grid grid-cols-2 gap-12">
-                            <div className="col-span-1">
+                    <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+                            <div>
                                 <label htmlFor="companyName" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Company Name</label>
                                 <div className="relative">
-
                                     <input
                                         id="companyName"
                                         required
-                                        className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.companyName}
                                         onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                                        placeholder="ENTER THE NAME OF COMPANY"
+                                        placeholder="ENTER COMPANY NAME"
                                     />
                                 </div>
                             </div>
-                            <div className="col-span-1">
+                            <div>
                                 <label htmlFor="affiliateEmail" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Email</label>
                                 <div className="relative">
                                     <input
                                         id="affiliateEmail"
                                         required
                                         type="email"
-                                        className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        placeholder="ENTER THE EMAIL"
+                                        placeholder="PARTNER@EMAIL.COM"
                                     />
                                 </div>
                             </div>
-                            <div className="col-span-1">
+                            <div>
                                 <label htmlFor="affiliatePassword" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">
-                                    {editingAffiliate ? 'Change Password (optional)' : 'Password'}
+                                    {editingAffiliate ? 'New Password' : 'Password'}
                                 </label>
                                 <input
                                     id="affiliatePassword"
                                     required={!editingAffiliate}
                                     type="password"
-                                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
+                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                     value={formData.password}
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                    placeholder={editingAffiliate ? "Leave blank to keep current" : "ENTER PASSWORD"}
+                                    placeholder={editingAffiliate ? "Optional update" : "••••••••"}
                                 />
                             </div>
-                            <div className="col-span-1">
-                                <label htmlFor="commissionPercent" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Commission Percent</label>
+                            <div>
+                                <label htmlFor="commissionPercent" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Commission (%)</label>
                                 <div className="relative">
-                                    <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         id="commissionPercent"
                                         required
                                         type="text"
-                                        className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.commissionPercent}
                                         onChange={e => setFormData({ ...formData, commissionPercent: e.target.value })}
-                                        placeholder="ENTER COMMISSION PERCENT"
+                                        placeholder="10.0"
                                     />
                                 </div>
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
                                 <label htmlFor="payoutMethod" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Payout Method</label>
                                 <div className="relative">
-                                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         id="payoutMethod"
                                         required
-                                        className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.payoutMethod}
                                         onChange={e => setFormData({ ...formData, payoutMethod: e.target.value })}
-                                        placeholder="ENTER PAYOUT METHOD"
+                                        placeholder="Bank Transfer / PayPal"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="pt-4 flex gap-4">
+                        <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
                             <button
                                 type="button"
                                 onClick={() => setShowModal(false)}
-                                className="flex-1 py-4 rounded-2xl border border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-all"
+                                className="order-2 sm:order-1 flex-1 py-3.5 sm:py-4 rounded-2xl border border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-all"
                             >
                                 Dismiss
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 py-4 rounded-2xl bg-[#4d0101]  from-indigo-600 to-purple-600 text-white font-black shadow-xl shadow-indigo-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-[#4d0101] text-white font-black shadow-xl shadow-rose-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                {editingAffiliate ? 'Update Affiliate' : 'Confirm Registration'}
+                                {editingAffiliate ? 'Update' : 'Register'}
                             </button>
                         </div>
                     </form>
