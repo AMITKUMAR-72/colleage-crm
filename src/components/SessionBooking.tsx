@@ -73,13 +73,11 @@ export default function SessionBooking() {
                     </div>
                 )}
                 {sessions.map((session, index) => {
-                    // Type-safe slot calculation
-                    const slotsLeft = session.availableSlots ?? 
-                        ((Number(session.maxSlots) || 0) - (Number(session.bookedSlots) || 0));
+                    // Type-safe slot calculation matching api.ts
+                    const slotsLeft = session.availableSlots ?? 0;
 
-                    // Type-safe date handling
-                    const sessionDate = session.date || 
-                        (session.startTime?.includes('T') ? session.startTime : undefined);
+                    // Type-safe date handling matching api.ts
+                    const sessionDate = session.startTime;
 
                     return (
                         <div

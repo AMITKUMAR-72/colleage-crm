@@ -12,14 +12,6 @@ export default function ManagerDashboard() {
 
     return (
         <DashboardLayout>
-<<<<<<< HEAD
-            {/* Header & Tabs */}
-            <div className="mb-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Manager Control Center</h1>
-                        <p className="text-slate-500 font-medium text-sm">Strategic oversight and team performance monitoring.</p>
-=======
             <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-12 md:pt-0">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -38,12 +30,17 @@ export default function ManagerDashboard() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-                <div className="lg:col-span-3">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group text-center h-full flex flex-col justify-center">
-                        <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-green-600">Lead Reassignment</h3>
-                        <p className="text-sm text-gray-500">Quick actions for timed-out leads.</p>
->>>>>>> f1fecf6a1b6dbef865b14d16ca3ad2d1260887be
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div
+                    onClick={() => window.location.href = '/timeout-leads'}
+                    className="w-full md:w-72 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group flex items-center gap-4"
+                >
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                        <History className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-rose-600 transition-colors">Reassignment</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Timed-out Leads</p>
                     </div>
                 </div>
 

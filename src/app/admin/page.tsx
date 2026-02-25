@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import LeadInbox from '@/components/LeadInbox';
 import CounselorManager from '@/components/admin/CounselorManager';
 import AuditMonitor from '@/components/admin/AuditMonitor';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
     const searchParams = useSearchParams();
     const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'COUNSELORS' | 'MONITOR' | null : null;
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS' | 'MONITOR'>(tabParam || 'OVERVIEW');
@@ -19,7 +19,7 @@ export default function AdminDashboard() {
     }, [tabParam]);
 
     return (
-        <DashboardLayout>
+        <>
             <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-12 md:pt-0">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -92,6 +92,16 @@ export default function AdminDashboard() {
             ) : (
                 <AuditMonitor />
             )}
+        </>
+    );
+}
+
+export default function AdminDashboard() {
+    return (
+        <DashboardLayout>
+            <Suspense fallback={<div className="p-20 text-center font-black text-slate-400 uppercase tracking-widest animate-pulse">Initializing Portal...</div>}>
+                <AdminDashboardContent />
+            </Suspense>
         </DashboardLayout>
     );
 }

@@ -41,9 +41,12 @@ type SearchType = 'ALL' | 'ID' | 'EMAIL' | 'SOURCE' | 'COURSE' | 'SCORE' | 'DATE
 
 interface MyLeadsFeedProps {
     counselorId: number;
+    counselorType?: string;
+    onLeadsUpdate?: (leads: LeadResponseDTO[]) => void;
+    onActionComplete?: () => void;
 }
 
-export default function MyLeadsFeed({ counselorId }: MyLeadsFeedProps) {
+export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate, onActionComplete }: MyLeadsFeedProps) {
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [loading, setLoading] = useState(true);
@@ -60,9 +63,11 @@ export default function MyLeadsFeed({ counselorId }: MyLeadsFeedProps) {
         setLoading(true);
         try {
             const response = await CounselorService.getAssignedLeads(page, 10);
-            setLeads(response.content || []);
+            const content = response.content || [];
+            setLeads(content);
             setTotalPages(response.totalPages || 0);
             setSearching(false);
+            if (onLeadsUpdate) onLeadsUpdate(content);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to load leads');
         } finally {
@@ -116,6 +121,7 @@ export default function MyLeadsFeed({ counselorId }: MyLeadsFeedProps) {
             }
             setLeads(results);
             setTotalPages(1);
+            if (onLeadsUpdate) onLeadsUpdate(results);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Search failed');
             setLeads([]);
@@ -141,6 +147,7 @@ export default function MyLeadsFeed({ counselorId }: MyLeadsFeedProps) {
             await CounselorService.updateLeadScore(leadId, newScore);
             setLeads(prev => prev.map(l => (l.id === leadId) ? { ...l, score: newScore } : l));
             toast.success('Score updated');
+            if (onActionComplete) onActionComplete();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to update score');
         }
@@ -151,6 +158,7 @@ export default function MyLeadsFeed({ counselorId }: MyLeadsFeedProps) {
             await CounselorService.updateLeadStatus(leadId, newStatus);
             setLeads(prev => prev.map(l => (l.id === leadId) ? { ...l, status: newStatus as LeadStatus } : l));
             toast.success('Status updated');
+            if (onActionComplete) onActionComplete();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to update status');
         }
@@ -161,6 +169,7 @@ export default function MyLeadsFeed({ counselorId }: MyLeadsFeedProps) {
             await CounselorService.updateLeadCourse(leadId, courseName);
             setLeads(prev => prev.map(l => (l.id === leadId) ? { ...l, course: { id: 0, course: courseName } } : l));
             toast.success('Course updated');
+            if (onActionComplete) onActionComplete();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to update course');
         }
