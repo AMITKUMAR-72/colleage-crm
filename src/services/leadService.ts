@@ -1,7 +1,7 @@
 import api from './api';
 import { LeadRequestDTO, LeadResponseDTO, NoteDTO, LeadStatus, LeadScore, PageResponse, CreateNoteRequestDTO } from '@/types/api';
 
-const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'list', 'rows'] as const;
+const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'lead', 'list', 'rows'] as const;
 const WRAPPER_KEYS = ['data', 'result', 'response', 'responseObject', 'payload'] as const;
 
 const parseIfString = (value: unknown): unknown => {
@@ -134,35 +134,34 @@ export const LeadService = {
         startDate?: string,
         endDate?: string
     }) => {
-        // If searching by email, use the working email endpoint
-        if (params.email) {
-            try {
+        try {
+            // If searching by email, use the working email endpoint
+            if (params.email) {
                 const lead = await LeadService.getLeadByEmail(params.email);
                 return lead ? [lead] : [];
-            } catch (error) {
-                return [];
             }
+
+            const extractArray = (res: any) => res?.data?.lead || res?.data?.content || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
+
+            if (params.name && params.name.length >= 2) return extractArray(await api.get(`/api/leads/searchBy/name/${encodeURIComponent(params.name)}`));
+            if (params.course) return extractArray(await api.get(`/api/leads/searchBy/course/${encodeURIComponent(params.course)}`));
+            if (params.status) return extractArray(await api.get(`/api/leads/searchBy/status/${encodeURIComponent(params.status)}`));
+            if (params.campaign) return extractArray(await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(params.campaign)}`));
+            if (params.score) return extractArray(await api.get(`/api/leads/searchBy/score/${encodeURIComponent(params.score)}`));
+            
+            if (params.startDate && params.endDate) {
+                let start = params.startDate;
+                let end = params.endDate;
+                if (start.length === 16) start += ':00';
+                if (end.length === 16) end += ':00';
+                return extractArray(await api.get(`/api/leads/date-range/start/${start}/end/${end}`));
+            }
+
+            return [];
+        } catch (error: any) {
+            console.error("Search API Error:", error.message || error);
+            return [];
         }
-
-        const extractArray = (res: any) => res?.lead || res?.content || (Array.isArray(res) ? res : []);
-
-        if (params.name) return extractArray((await api.get(`/api/leads/searchBy/name/${params.name}`)).data);
-        if (params.course) return extractArray((await api.get(`/api/leads/searchBy/course/${params.course}`)).data);
-        if (params.status) return extractArray((await api.get(`/api/leads/searchBy/status/${params.status}`)).data);
-        if (params.campaign) return extractArray((await api.get(`/api/leads/searchBy/campaign/${params.campaign}`)).data);
-        if (params.score) return extractArray((await api.get(`/api/leads/searchBy/score/${params.score}`)).data);
-        if (params.startDate && params.endDate) {
-            let start = params.startDate;
-            let end = params.endDate;
-            if (start.length === 16) start += ':00';
-            if (end.length === 16) end += ':00';
-            return extractArray((await api.get(`/api/leads/date-range/start/${start}/end/${end}`)).data);
-        }
-
-        // Counselor fallback: use paginated recent leads which is public, 
-        // instead of /api/leads which is restricted to Admin/Manager.
-        const pageResponse = await api.get<PageResponse<LeadResponseDTO>>('/api/leads/recent/page/0/size/50');
-        return pageResponse.data.content;
     },
 
     getSourceByCount: async (campaign: string) => {
@@ -171,12 +170,18 @@ export const LeadService = {
     },
 
     updateLeadStatus: async (id: number, status: LeadStatus) => {
-        const response = await api.post<LeadResponseDTO>(`/api/leads/id/${id}/updateStatus/${status}`);
+        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${id}/status/${status}`);
         return response.data;
     },
 
     updateLeadScore: async (id: number, score: LeadScore) => {
-        const response = await api.post<LeadResponseDTO>(`/api/leads/id/${id}/updateScore/${score}`);
+        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${id}/score/${score}`);
+        return response.data;
+    },
+
+    assignLeadToCounselor: async (leadEmail: string, counselorId: number) => {
+        // Base assignment (Admin/Manager level)
+        const response = await api.post<LeadResponseDTO>(`/api/leads/${leadEmail}/assign/counselor/${counselorId}`);
         return response.data;
     },
 
@@ -242,7 +247,12 @@ export const LeadService = {
     },
 
     async getAffiliateLeads() {
-        const response = await api.get<LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
-        return response.data;
+        // The api interceptor already unwraps the outer 'data' field.
+        // The unwrapped data is { count: number, lead: LeadResponseDTO[] }
+        const response = await api.get<{ lead: LeadResponseDTO[] } | LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
+
+        const data = response.data as any;
+        if (Array.isArray(data)) return data;
+        return data?.lead || data?.content || [];
     }
 };

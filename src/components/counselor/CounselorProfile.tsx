@@ -9,17 +9,18 @@ interface Props {
     email: string;
     onProfileLoaded?: (counselor: CounselorDTO) => void;
     onProfileError?: () => void;
+    refetchTrigger?: number;
 }
 
 const STATUS_OPTIONS: { value: CounselorStatus; label: string; color: string }[] = [
-    { value: 'AVAILABLE', label: 'Available', color: 'bg-green-100 text-green-700 border-green-200' },
-    { value: 'BUSY', label: 'Busy', color: 'bg-red-100 text-red-700 border-red-200' },
-    { value: 'ON_LEAVE', label: 'On Leave', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-    { value: 'UNAVAILABLE', label: 'Unavailable', color: 'bg-gray-100 text-gray-700 border-gray-200' },
-    { value: 'SUSPENDED', label: 'Suspended', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    { value: 'AVAILABLE', label: 'Available', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { value: 'BUSY', label: 'Busy', color: 'bg-rose-50 text-rose-700 border-rose-100' },
+    { value: 'ON_LEAVE', label: 'On Leave', color: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { value: 'UNAVAILABLE', label: 'Unavailable', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+    { value: 'SUSPENDED', label: 'Suspended', color: 'bg-gray-100 text-gray-400 border-gray-200' },
 ];
 
-export default function CounselorProfile({ email, onProfileLoaded, onProfileError }: Props) {
+export default function CounselorProfile({ email, onProfileLoaded, onProfileError, refetchTrigger }: Props) {
     const [counselor, setCounselor] = useState<CounselorDTO | null>(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
@@ -44,7 +45,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
 
     useEffect(() => {
         loadProfile();
-    }, [loadProfile]);
+    }, [loadProfile, refetchTrigger]);
 
     const handleStatusChange = async (status: CounselorStatus) => {
         if (!counselor) return;
@@ -89,9 +90,10 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Header gradient */}
-            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-24 relative">
-                <div className="absolute -bottom-8 left-6">
-                    <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-2xl font-bold text-indigo-600 border-4 border-white">
+            <div className="bg-gradient-to-br from-[#4d0101] via-[#600202] to-[#800303] h-28 relative">
+                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+                <div className="absolute -bottom-10 left-8">
+                    <div className="w-20 h-20 rounded-2xl bg-white shadow-2xl flex items-center justify-center text-3xl font-black text-[#600202] border-4 border-white transform transition-transform hover:rotate-3">
                         {counselor.name.charAt(0).toUpperCase()}
                     </div>
                 </div>
@@ -125,9 +127,9 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                     </div>
                     <button
                         onClick={() => editing ? handleSaveProfile() : setEditing(true)}
-                        className="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition"
+                        className="px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl bg-slate-900 text-white border border-slate-900 hover:bg-[#600202] transition-all shadow-sm"
                     >
-                        {editing ? '💾 Save' : '✏️ Edit'}
+                        {editing ? 'Save Changes' : 'Edit Profile'}
                     </button>
                 </div>
 
