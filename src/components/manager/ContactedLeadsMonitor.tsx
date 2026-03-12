@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ManagerService } from '@/services/managerService';
 import { ContactedLeadDTO } from '@/types/api';
-
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import LoadingButton from '@/components/ui/LoadingButton';
 
 export default function ContactedLeadsMonitor() {
     const [contacts, setContacts] = useState<ContactedLeadDTO[]>([]);
@@ -59,12 +59,14 @@ export default function ContactedLeadsMonitor() {
                             className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none w-48 md:w-64 font-bold"
                         />
                     </div>
-                    <button
+                    <LoadingButton
+                        loading={loading}
+                        loadingText="SYNCING..."
                         onClick={loadContacts}
                         className="px-4 py-2.5 bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all border border-slate-100 text-[10px] font-black uppercase tracking-widest"
                     >
-                        {loading ? 'SYNCING...' : 'REFRESH'}
-                    </button>
+                        REFRESH
+                    </LoadingButton>
                 </div>
             </div>
 

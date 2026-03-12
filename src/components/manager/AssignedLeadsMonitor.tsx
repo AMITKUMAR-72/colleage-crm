@@ -3,15 +3,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ManagerService } from '@/services/managerService';
 import { AssignedLeadDTO } from '@/types/api';
-
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import LoadingButton from '@/components/ui/LoadingButton';
 
 export default function AssignedLeadsMonitor() {
     const [assignments, setAssignments] = useState<AssignedLeadDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [initialised, setInitialised] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
     const loadAssignments = useCallback(async () => {
@@ -21,7 +22,6 @@ export default function AssignedLeadsMonitor() {
             const data = await ManagerService.getAllAssignedLeads(page, 10);
             console.log('[AssignedLeadsMonitor] Data received:', data);
 
-            // Handle different possible backend response structures
             const rawData = data as any;
             let content: any[] = [];
             if (rawData?.content) content = rawData.content;
@@ -29,10 +29,18 @@ export default function AssignedLeadsMonitor() {
             else if (Array.isArray(rawData)) content = rawData;
             else if (rawData && typeof rawData === 'object' && (rawData.name || rawData.id)) content = [rawData];
 
-            const totalPages = rawData?.totalPages || (content.length > 0 ? 1 : 0);
+            const tp = rawData?.totalPages || (content.length > 0 ? 1 : 0);
 
             setAssignments(content);
-            setTotalPages(totalPages);
+            setTotalPages(tp);
+
+            // First load: jump to last page (most recent assignments first)
+            if (!initialised && tp > 1) {
+                setInitialised(true);
+                setPage(tp - 1);
+                return;
+            }
+            setInitialised(true);
         } catch (error) {
             console.error('[AssignedLeadsMonitor] Error:', error);
             toast.error('Failed to fetch lead assignments');
@@ -40,7 +48,7 @@ export default function AssignedLeadsMonitor() {
         } finally {
             setLoading(false);
         }
-    }, [page]);
+    }, [page, initialised]);
 
     useEffect(() => {
         loadAssignments();
@@ -65,12 +73,14 @@ export default function AssignedLeadsMonitor() {
                             className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:ring-2 focus:ring-green-500 outline-none w-48 md:w-64 font-bold"
                         />
                     </div>
-                    <button
+                    <LoadingButton
+                        loading={loading}
+                        loadingText="SYNCING..."
                         onClick={loadAssignments}
                         className="px-4 py-2.5 bg-slate-50 text-slate-400 hover:text-green-600 rounded-xl hover:bg-green-50 transition-all border border-slate-100 text-[10px] font-black uppercase tracking-widest"
                     >
-                        {loading ? 'SYNCING...' : 'REFRESH'}
-                    </button>
+                        REFRESH
+                    </LoadingButton>
                 </div>
             </div>
 
@@ -179,18 +189,18 @@ export default function AssignedLeadsMonitor() {
                         </p>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => setPage(p => Math.max(0, p - 1))}
-                                disabled={page === 0}
-                                className="px-4 py-2 text-[10px] font-black text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-all font-mono"
-                            >
-                                PREV
-                            </button>
-                            <button
                                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                                 disabled={page >= totalPages - 1}
                                 className="px-4 py-2 text-[10px] font-black text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-all font-mono"
                             >
-                                NEXT
+                                ← NEWER
+                            </button>
+                            <button
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                className="px-4 py-2 text-[10px] font-black text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-all font-mono"
+                            >
+                                OLDER →
                             </button>
                         </div>
                     </div>

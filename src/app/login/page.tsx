@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
+import LoadingButton from '@/components/ui/LoadingButton';
 
 const SignIn: React.FC = () => {
     const { login, user, isLoading: authLoading } = useAuth();
@@ -103,13 +104,14 @@ const SignIn: React.FC = () => {
                                     )}
 
 
-                                    <button
-                                        className="w-full h-14 bg-[#4d0101] hover:bg-[#4d0101] text-white font-bold text-lg rounded-lg transition-colors duration-200 shadow-lg shadow-primary/10 active:scale-[0.98] mt-2 flex justify-center items-center disabled:opacity-70 disabled:cursor-not-allowed"
+                                    <LoadingButton
                                         type="submit"
-                                        disabled={isLoading}
+                                        loading={isLoading}
+                                        loadingText="Please wait..."
+                                        className="w-full h-14 bg-[#4d0101] hover:bg-[#4d0101] text-white font-bold text-lg rounded-lg transition-colors duration-200 shadow-lg shadow-primary/10 active:scale-[0.98] mt-2 flex justify-center items-center"
                                     >
-                                        {isLoading ? 'Please wait...' : 'Login'}
-                                    </button>
+                                        Login
+                                    </LoadingButton>
                                 </div>
                             </form>
                         </div>

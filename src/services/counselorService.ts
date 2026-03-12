@@ -76,20 +76,19 @@ export const CounselorService = {
     searchLeadsByScore: async (score: string) => {
         const response = await api.get(`/api/counselor/leads/search/score/${encodeURIComponent(score.toUpperCase())}`);
         const data = response.data as any;
-        // The interceptor might have already unwrapped 'data', so we check for nested 'content'
-        return data?.content || data?.data || (Array.isArray(data) ? data : []);
+        return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
     searchLeadsByCourse: async (course: string) => {
         const response = await api.get(`/api/counselor/leads/search/course/${encodeURIComponent(course)}`);
         const data = response.data as any;
-        return data?.content || data?.data || (Array.isArray(data) ? data : []);
+        return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
     searchLeadsByDate: async (date: string) => {
         const response = await api.get(`/api/counselor/leads/search/date/${date}`);
         const data = response.data as any;
-        return data?.content || data?.data || (Array.isArray(data) ? data : []);
+        return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
     updateLeadScore: async (leadId: number, score: LeadScore) => {

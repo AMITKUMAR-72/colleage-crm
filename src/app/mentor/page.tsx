@@ -6,6 +6,8 @@ import { MentorService, MentorDTO } from '@/services/mentorService';
 import MentorManager from '@/components/admin/MentorManager';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
+import { useAsync } from '@/hooks/useAsync';
+import LoadingButton from '@/components/ui/LoadingButton';
 
 function MentorDashboard() {
     const [profile, setProfile] = useState<MentorDTO | null>(null);
@@ -14,6 +16,9 @@ function MentorDashboard() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<Partial<MentorDTO>>({});
+    const { run: runUpdateProfile, loading: savingProfile } = useAsync(
+        (data: Partial<MentorDTO>) => MentorService.updateMyProfile(data)
+    );
 
     const loadData = async () => {
         try {
@@ -48,8 +53,8 @@ function MentorDashboard() {
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const updated = await MentorService.updateMyProfile(formData);
-            setProfile(updated);
+            const updated = await runUpdateProfile(formData);
+            if (updated) setProfile(updated);
             setIsEditing(false);
             toast.success('Profile updated successfully');
         } catch (error) {
@@ -100,9 +105,10 @@ function MentorDashboard() {
                                     <input type="text" name="departmentName" value={formData.departmentName || ''} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" />
                                 </div>
                                 <div className="flex gap-2 pt-2">
-                                    <button type="submit" className="bg-[#4d0101] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#600202] active:scale-95 transition-all w-full md:w-auto">
+                                    <LoadingButton type="submit" loading={savingProfile} loadingText="Saving..."
+                                        className="bg-[#4d0101] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#600202] active:scale-95 transition-all w-full md:w-auto">
                                         Save Changes
-                                    </button>
+                                    </LoadingButton>
                                     <button type="button" onClick={() => { setIsEditing(false); setFormData(profile || {}); }} className="bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-bold hover:bg-gray-300 transition-colors w-full md:w-auto">
                                         Cancel
                                     </button>

@@ -29,6 +29,7 @@ export default function TimeoutLeadInbox() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
+    const [initialised, setInitialised] = useState(false); // tracks if we've jumped to last page
     const [filters, setFilters] = useState<TimeoutLeadFilters>({ email: '', name: '', counselorEmail: '', startDate: '', endDate: '' });
 
     const [reassigning, setReassigning] = useState<LeadResponseDTO | null>(null);
@@ -40,7 +41,8 @@ export default function TimeoutLeadInbox() {
         setIsReassignLoading(true);
         try {
             await TimeOutService.reassignLead(counselorId, reassigning.id, reassigning.email);
-            toast.success('Lead reassigned successfully');
+            const counselor = counselors.find(c => c.counselorId === counselorId);
+            toast.success(`Lead assigned to counselor ${counselor?.name || counselorId}`);
             setReassigning(null);
             fetchLeads();
         } catch (error) {
@@ -61,6 +63,7 @@ export default function TimeoutLeadInbox() {
                 setLeads(results);
                 setTotalPages(1);
                 setPage(0);
+                setInitialised(true);
             } else {
                 const response: any = await TimeOutService.getAllTimedOutLeads(page, 50);
 
@@ -69,7 +72,16 @@ export default function TimeoutLeadInbox() {
 
                 const totalCount = response.count ?? response.totalElements ?? 0;
                 const calculatedPages = totalCount > 0 ? Math.ceil(totalCount / 50) : 1;
-                setTotalPages(response.totalPages || calculatedPages);
+                const tp = response.totalPages || calculatedPages;
+                setTotalPages(tp);
+
+                // First load: jump to last page (most recent data)
+                if (!initialised && tp > 1) {
+                    setInitialised(true);
+                    setPage(tp - 1); // triggers re-fetch with last page
+                    return;
+                }
+                setInitialised(true);
             }
         } catch (error) {
             console.error('Failed to fetch timeout leads', error);
@@ -78,7 +90,7 @@ export default function TimeoutLeadInbox() {
         } finally {
             setLoading(false);
         }
-    }, [filters, page]);
+    }, [filters, page, initialised]);
 
     useEffect(() => {
         fetchLeads();
@@ -100,18 +112,18 @@ export default function TimeoutLeadInbox() {
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
+                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={page >= totalPages - 1}
+                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
+                        >
+                            ← Newer
+                        </button>
+                        <button
                             onClick={() => setPage(p => Math.max(0, p - 1))}
                             disabled={page === 0}
                             className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
-                            Prev
-                        </button>
-                        <button
-                            onClick={() => setPage(p => p + 1)}
-                            disabled={page >= totalPages - 1}
-                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
-                        >
-                            Next
+                            Older →
                         </button>
                     </div>
                 </div>
@@ -151,7 +163,7 @@ export default function TimeoutLeadInbox() {
                                         </td>
                                         <td className="hidden md:table-cell px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-xs">
-                                                {typeof lead.course === 'object' ? lead.course.course : String(lead.course || '—')}
+                                                {typeof lead.course === 'object' ? lead.course.course : String(lead.course || 'not a')}
                                             </span>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">

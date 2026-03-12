@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import LeadInbox from '@/components/LeadInbox';
 import CounselorManager from '@/components/admin/CounselorManager';
@@ -10,21 +10,33 @@ import { LeadService } from '@/services/leadService';
 
 function AdminDashboardContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'COUNSELORS' | 'MONITOR' | null : null;
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS' | 'MONITOR'>(tabParam || 'OVERVIEW');
     const [leadsCount, setLeadsCount] = useState(0);
+    const statsFetchedRef = useRef(false);
 
+    // Sync tab from URL param on load/navigation
     useEffect(() => {
+        if (tabParam && tabParam !== activeTab) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
+
+    // Only fetch overview stats when the OVERVIEW tab is active
+    useEffect(() => {
+        if (activeTab !== 'OVERVIEW') return;
+        if (statsFetchedRef.current) return;
+        statsFetchedRef.current = true;
+
         const fetchStats = async () => {
             try {
                 console.log("[AdminDashboard] Fetching stats via RecentLeads...");
                 const leadsData = await LeadService.getRecentLeads(0, 1);
 
-
                 let count = 0;
                 if (leadsData && typeof leadsData === 'object') {
                     const l = leadsData as any;
-                    // Check for count in all known nested formats
                     const explicitCount = l.count ?? l.data?.count ?? l.totalElements ?? l.data?.totalElements;
 
                     if (typeof explicitCount === 'number') {
@@ -42,13 +54,13 @@ function AdminDashboardContent() {
             }
         };
         fetchStats();
-    }, []);
+    }, [activeTab]);
 
-    useEffect(() => {
-        if (tabParam) {
-            setActiveTab(tabParam);
-        }
-    }, [tabParam]);
+    // Sync active tab to URL so reload preserves the correct tab
+    const handleTabChange = (tab: 'OVERVIEW' | 'COUNSELORS' | 'MONITOR') => {
+        setActiveTab(tab);
+        router.replace(`?tab=${tab}`, { scroll: false });
+    };
 
     return (
         <>
@@ -74,7 +86,7 @@ function AdminDashboardContent() {
             <div className="relative mb-8">
                 <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 w-full overflow-x-auto no-scrollbar">
                     <button
-                        onClick={() => setActiveTab('OVERVIEW')}
+                        onClick={() => handleTabChange('OVERVIEW')}
                         className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'OVERVIEW'
                             ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
@@ -83,7 +95,7 @@ function AdminDashboardContent() {
                         Overview
                     </button>
                     <button
-                        onClick={() => setActiveTab('COUNSELORS')}
+                        onClick={() => handleTabChange('COUNSELORS')}
                         className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'COUNSELORS'
                             ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
@@ -92,7 +104,7 @@ function AdminDashboardContent() {
                         Counselors
                     </button>
                     <button
-                        onClick={() => setActiveTab('MONITOR')}
+                        onClick={() => handleTabChange('MONITOR')}
                         className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'MONITOR'
                             ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'

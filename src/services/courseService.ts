@@ -3,9 +3,9 @@ import { CourseDTO } from '@/types/api';
 
 export const CourseService = {
     async createCourse(course: string, department: string) {
-        const response = await api.post<CourseDTO>('/api/course/create', { 
+        const response = await api.post<CourseDTO>('/api/course/create', {
             course,
-            department 
+            department
         });
         return response.data;
     },
@@ -14,7 +14,7 @@ export const CourseService = {
         return response.data;
     },
     async getAllCourses() {
-        const response = await api.get<CourseDTO[]>('/api/course');
+        const response = await api.get<CourseDTO[]>('/api/department/name');
         return response.data;
     },
     async getCourseByName(name: string) {

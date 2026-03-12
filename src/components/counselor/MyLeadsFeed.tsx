@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import LeadNotes from '../LeadNotes';
+import LoadingButton from '@/components/ui/LoadingButton';
 
 const SCORE_COLORS: Record<string, string> = {
     'HOT': 'bg-rose-100 text-rose-700',
@@ -17,28 +18,26 @@ const SCORE_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-    'NEW': 'bg-amber-100 text-amber-700 border-amber-200',
+
     'TELECALLER_ASSIGNED': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-    'QUALIFIED': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+
     'COUNSELOR_ASSIGNED': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    'EXTERNAL_ASSIGNED': 'bg-violet-100 text-violet-700 border-violet-200',
-    'ADMISSION_IN_PROCESS': 'bg-amber-100 text-amber-700 border-amber-200',
-    'ADMISSION_DONE': 'bg-green-100 text-green-800 border-green-200',
+
     'LOST': 'bg-slate-100 text-slate-700 border-slate-200',
     'UNASSIGNED': 'bg-gray-100 text-gray-600 border-gray-200',
     'CONTACTED': 'bg-blue-100 text-blue-700 border-blue-200',
     'INTERESTED': 'bg-rose-100 text-rose-700 border-rose-200',
-    'TIMED_OUT': 'bg-rose-100 text-rose-700 border-rose-200',
-    'REASSIGNED': 'bg-pink-100 text-pink-700 border-pink-200',
+
+
 };
 
 const ALL_STATUSES: LeadStatus[] = [
-    'NEW', 'QUALIFIED', 'COUNSELOR_ASSIGNED', 'ADMISSION_IN_PROCESS', 'ADMISSION_DONE', 'LOST', 'CONTACTED', 'INTERESTED'
+    'COUNSELOR_ASSIGNED', 'LOST', 'CONTACTED', 'INTERESTED'
 ];
 
 const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
 
-type SearchType = 'ALL' | 'ID' | 'EMAIL' | 'SOURCE' | 'COURSE' | 'SCORE' | 'DATE';
+type SearchType = 'ALL' | 'ID' | 'EMAIL' | 'COURSE' | 'SCORE' | 'DATE';
 
 interface MyLeadsFeedProps {
     counselorId: number;
@@ -87,9 +86,35 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
         }
     }, []);
 
+    // Normalize any backend response shape into a flat LeadResponseDTO[]
+    const normalizeResults = (raw: any): LeadResponseDTO[] => {
+        if (!raw) return [];
+        // Already a plain array
+        if (Array.isArray(raw)) return raw;
+        // Full wrapper not yet unwrapped: { success, data: { lead: [...] }, ... }
+        if (raw.data && Array.isArray(raw.data.lead)) return raw.data.lead;
+        // Full wrapper not yet unwrapped: { success, data: { content: [...] }, ... }
+        if (raw.data && Array.isArray(raw.data.content)) return raw.data.content;
+        // Full wrapper not yet unwrapped: { success, data: [...], ... }
+        if (Array.isArray(raw.data)) return raw.data;
+        // Interceptor already unwrapped — inner object: { lead: [...], count: N }
+        if (Array.isArray(raw.lead)) return raw.lead;
+        // Interceptor already unwrapped — inner object: { content: [...] }
+        if (Array.isArray(raw.content)) return raw.content;
+        // Other common keys
+        if (Array.isArray(raw.leads)) return raw.leads;
+        if (Array.isArray(raw.results)) return raw.results;
+        // Single lead object (ID / EMAIL search)
+        if (typeof raw === 'object' && (raw.id != null || raw.leadId != null)) return [raw];
+        return [];
+    };
+
     const handleSearch = async () => {
+        console.log('[handleSearch] START — type:', searchType, '| value:', searchValue);
+
         if (searchType === 'ALL' || !searchValue.trim()) {
             setPage(0);
+            setSearching(false);
             loadLeads();
             return;
         }
@@ -97,35 +122,40 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
         setLoading(true);
         setSearching(true);
         try {
-            let results: LeadResponseDTO[] = [];
+            let raw: any;
             const val = searchValue.trim();
+
+            console.log('[handleSearch] calling service for:', searchType, val);
 
             switch (searchType) {
                 case 'ID':
-                    const lead = await CounselorService.searchLeadById(parseInt(val));
-                    results = lead ? [lead] : [];
+                    raw = await CounselorService.searchLeadById(parseInt(val));
                     break;
                 case 'EMAIL':
-                    const leadByEmail = await CounselorService.searchLeadByEmail(val);
-                    results = leadByEmail ? [leadByEmail] : [];
-                    break;
-                case 'SOURCE':
-                    results = await CounselorService.searchLeadsBySource(val);
+                    raw = await CounselorService.searchLeadByEmail(val);
                     break;
                 case 'COURSE':
-                    results = await CounselorService.searchLeadsByCourse(val);
+                    raw = await CounselorService.searchLeadsByCourse(val);
                     break;
                 case 'SCORE':
-                    results = await CounselorService.searchLeadsByScore(val as LeadScore);
+                    raw = await CounselorService.searchLeadsByScore(val as LeadScore);
                     break;
                 case 'DATE':
-                    results = await CounselorService.searchLeadsByDate(val);
+                    raw = await CounselorService.searchLeadsByDate(val);
                     break;
             }
+
+            console.log('[handleSearch] service returned raw:', raw);
+
+            const results = normalizeResults(raw);
+
+            console.log('[handleSearch] normalizeResults =>', results);
+
             setLeads(results);
             setTotalPages(1);
             if (onLeadsUpdate) onLeadsUpdate(results);
         } catch (err: any) {
+            console.error('[handleSearch] ❌ CATCH ERROR:', err);
             toast.error(err.response?.data?.message || 'Search failed');
             setLeads([]);
         } finally {
@@ -135,7 +165,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
 
     useEffect(() => {
         if (counselorId && !searching) loadLeads();
-    }, [counselorId, loadLeads, searching]);
+    }, [counselorId, loadLeads]); // intentionally NOT watching `searching` — just initial load
 
     useEffect(() => {
         loadCourses();
@@ -238,9 +268,8 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                         placeholder={
                                             searchType === 'ID' ? "Enter Lead ID..." :
                                                 searchType === 'EMAIL' ? "Enter Email..." :
-                                                    searchType === 'SOURCE' ? "Enter Source..." :
-                                                        searchType === 'COURSE' ? "Enter Course Name..." :
-                                                            "Search assigned leads..."
+                                                    searchType === 'COURSE' ? "Enter Course Name..." :
+                                                        "Search assigned leads..."
                                         }
                                         value={searchValue}
                                         onChange={(e) => setSearchValue(e.target.value)}
@@ -261,18 +290,19 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                             <option value="ALL">All Leads</option>
                             <option value="ID">By ID</option>
                             <option value="EMAIL">By Email</option>
-                            <option value="SOURCE">By Source</option>
                             <option value="COURSE">By Course</option>
                             <option value="SCORE">By Score</option>
                             <option value="DATE">By Date</option>
                         </select>
-                        <button
+                        <LoadingButton
+                            loading={loading}
+                            loadingText="Searching..."
                             onClick={handleSearch}
-                            disabled={loading || (searchType !== 'ALL' && !searchValue)}
+                            disabled={searchType !== 'ALL' && !searchValue}
                             className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#600202] transition-all shadow-lg shadow-rose-900/20 disabled:opacity-50 active:scale-95"
                         >
                             Search
-                        </button>
+                        </LoadingButton>
                         {(searching || searchValue) && (
                             <button
                                 onClick={() => {
@@ -301,12 +331,14 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                             {searching ? 'Filter Active' : `Total Leads: ${leads.length}`}
                         </p>
                     </div>
-                    <button
+                    <LoadingButton
+                        loading={loading}
                         onClick={loadLeads}
                         className="p-2.5 rounded-xl hover:bg-white hover:shadow-sm transition-all text-slate-400 hover:text-indigo-600 border border-transparent hover:border-slate-100"
+                        title="Refresh leads"
                     >
                         <RotateCcw className="w-4 h-4" />
-                    </button>
+                    </LoadingButton>
                 </div>
 
                 {loading ? (

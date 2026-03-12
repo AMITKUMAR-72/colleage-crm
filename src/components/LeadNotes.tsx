@@ -5,6 +5,8 @@ import { NoteService } from '@/services/noteService';
 import { NoteDTO } from '@/types/api';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useAsyncMap } from '@/hooks/useAsync';
+import LoadingButton from '@/components/ui/LoadingButton';
 
 interface LeadNotesProps {
     leadId: number;
@@ -14,6 +16,7 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
     const [notes, setNotes] = useState<NoteDTO[]>([]);
     const [noteText, setNoteText] = useState('');
     const [loading, setLoading] = useState(false);
+    const { runWithKey: runDelete, isLoadingKey: isDeletingNote } = useAsyncMap(NoteService.deleteNote);
 
     const loadNotes = useCallback(async () => {
         try {
@@ -43,7 +46,7 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
         } catch (err: any) {
             const serverMessage = err.response?.data?.message || err.response?.data?.error;
             const errorMessage = serverMessage || (err instanceof Error ? err.message : 'Failed to add note');
-            
+
             if (err.response?.status === 403) {
                 toast.error('Access Denied: Only assigned counselors or Admins can add notes');
             } else {
@@ -57,7 +60,7 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
     const handleDelete = async (noteId: number) => {
         if (!confirm('Delete this note?')) return;
         try {
-            await NoteService.deleteNote(noteId);
+            await runDelete(noteId, noteId);
             setNotes(prev => prev.filter(n => n.noteId !== noteId));
             toast.success('Note deleted');
         } catch {
@@ -68,7 +71,7 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
     return (
         <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
             <h4 className="font-bold text-gray-700 mb-3">Notes & Activity</h4>
-            
+
             <div className="max-h-60 overflow-y-auto space-y-3 mb-4 pr-1">
                 {notes.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-2">No notes yet.</p>
@@ -79,12 +82,13 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
                             <div className="flex justify-end text-xs text-gray-400">
                                 <span>{n.createdAt ? format(new Date(n.createdAt), 'MMM d, h:mm a') : ''}</span>
                             </div>
-                            <button 
+                            <LoadingButton
+                                loading={isDeletingNote(n.noteId)}
                                 onClick={() => handleDelete(n.noteId)}
                                 className="absolute top-1 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
                             >
                                 ×
-                            </button>
+                            </LoadingButton>
                         </div>
                     ))
                 )}
@@ -98,15 +102,16 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
                     className="w-full p-3 pr-10 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-[#dbb212] outline-none"
                     rows={2}
                 />
-                <button
+                <LoadingButton
                     type="submit"
-                    disabled={loading || !noteText.trim()}
+                    loading={loading}
+                    disabled={!noteText.trim()}
                     className="absolute bottom-2 right-2 text-blue-600 hover:text-blue-800 disabled:opacity-50"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                     </svg>
-                </button>
+                </LoadingButton>
             </form>
         </div>
     );

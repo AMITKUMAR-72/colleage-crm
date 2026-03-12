@@ -38,6 +38,7 @@ export default function LeadInbox() {
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
+    const [initialised, setInitialised] = useState(false);
     const [filters, setFilters] = useState<LeadFilters>({ email: '', status: '', course: '', campaign: '', score: '' });
 
     const fetchLeads = useCallback(async () => {
@@ -60,27 +61,34 @@ export default function LeadInbox() {
                 console.log(results);
                 setTotalPages(1);
                 setPage(0);
+                setInitialised(true);
 
             } else {
                 let response: any;
                 const pageSize = 15;
 
                 if (role === 'COUNSELOR') {
-                    // Counselor specific leads API
                     response = await CounselorService.getAssignedLeads(page, 20);
                 } else {
-                    // Admin/Manager generic leads API - Now fetching unassigned leads specifically
                     response = await LeadService.getUnassignedRecentLeads(page, 10);
                 }
 
-                // Handle both Spring Data Page object and custom response format
                 const newLeads = response.lead || response.content || (Array.isArray(response) ? response : []);
                 setLeads(newLeads);
 
                 const totalCount = response.count ?? response.totalElements ?? 0;
                 const size = response.size || pageSize;
                 const calculatedPages = totalCount > 0 ? Math.ceil(totalCount / size) : 1;
-                setTotalPages(response.totalPages || calculatedPages);
+                const tp = response.totalPages || calculatedPages;
+                setTotalPages(tp);
+
+                // First load: jump to last page (most recent data first)
+                if (!initialised && tp > 1) {
+                    setInitialised(true);
+                    setPage(tp - 1);
+                    return;
+                }
+                setInitialised(true);
 
                 console.log('Fetched leads for role', role, ':', response);
             }
@@ -92,7 +100,7 @@ export default function LeadInbox() {
         } finally {
             setLoading(false);
         }
-    }, [filters, page]);
+    }, [filters, page, initialised]);
 
     const handleViewLead = async (id: number) => {
         try {
@@ -142,18 +150,18 @@ export default function LeadInbox() {
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
+                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={page >= totalPages - 1}
+                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
+                        >
+                            ← Newer
+                        </button>
+                        <button
                             onClick={() => setPage(p => Math.max(0, p - 1))}
                             disabled={page === 0}
                             className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
-                            Prev
-                        </button>
-                        <button
-                            onClick={() => setPage(p => p + 1)}
-                            disabled={page >= totalPages - 1}
-                            className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
-                        >
-                            Next
+                            Older →
                         </button>
                     </div>
                 </div>

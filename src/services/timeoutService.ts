@@ -68,25 +68,9 @@ export const TimeOutService = {
 
         return []; // Should not reach here ordinarily
     },
-    // Hit the PUT endpoint to reassign timed out lead
+    // Reassign a timed-out lead to a different counselor
     reassignLead: async (counselorId: number, leadId: number, leadEmail: string) => {
-        try {
-            // Trying endpoint with lead ID in path in case they abbreviated the URL in the prompt
-            const response = await api.post(`/api/timedOutLeads/${leadEmail}/counselor/${counselorId}`);
-            return response.data;
-        } catch (err: any) {
-            // Fallback to exactly literal endpoint if 404
-            if (err.response?.status === 404) {
-                try {
-                    const literalResponse = await api.put(`/api/timedOutLeads/counselor/${counselorId}`, { leadId, email: leadEmail });
-                    return literalResponse.data;
-                } catch {
-                    // Final fallback to the assign API from timeOutLeads path if nothing else works
-                    const fb = await api.post(`/api/timedOutLeads/${leadEmail}/assign/counselor/${counselorId}`);
-                    return fb.data;
-                }
-            }
-            throw err;
-        }
+        const response = await api.post(`/api/leads/timeout/assign/${leadId}/${counselorId}`);
+        return response.data;
     }
 };

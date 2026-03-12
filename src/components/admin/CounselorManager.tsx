@@ -31,6 +31,10 @@ export default function CounselorManager() {
     });
 
     const handleViewDetails = async (id: number) => {
+        if (!id || isNaN(id)) {
+            toast.error('Invalid counselor ID');
+            return;
+        }
         try {
             const details = await CounselorService.getCounselorById(id);
             setSelectedCounselorDetails(details);
@@ -57,8 +61,24 @@ export default function CounselorManager() {
 
     const loadCounselors = async () => {
         try {
-            const data = await CounselorService.getAllCounselors();
-            setCounselors(Array.isArray(data) ? data : []);
+            const raw = await CounselorService.getAllCounselors();
+
+            // Handle all possible backend response shapes:
+            // 1. Plain array:              [{ ... }, { ... }]
+            // 2. Wrapped:                  { data: [...] }
+            // 3. Named key:               { counselors: [...] }
+            // 4. Interceptor already unwrapped → raw is already array
+            let list: CounselorDTO[] = [];
+            if (Array.isArray(raw)) {
+                list = raw;
+            } else if (raw && typeof raw === 'object') {
+                const obj = raw as any;
+                // Try common wrapper key names
+                const arr = obj.data ?? obj.counselors ?? obj.content ?? obj.items ?? [];
+                list = Array.isArray(arr) ? arr : [];
+            }
+
+            setCounselors(list);
         } catch (error) {
             console.error('Failed to load counselors', error);
             toast.error('Failed to load counselors');
@@ -168,7 +188,7 @@ export default function CounselorManager() {
                                     <tr
                                         key={c.counselorId}
                                         className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
-                                        onClick={() => handleViewDetails(c.counselorId)}
+                                        onClick={() => c.counselorId && !isNaN(c.counselorId) && handleViewDetails(c.counselorId)}
                                     >
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>

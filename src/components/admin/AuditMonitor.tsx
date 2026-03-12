@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import LoadingButton from '@/components/ui/LoadingButton';
 
 export default function AuditMonitor() {
     const [logs, setLogs] = useState<AuditLogDTO[]>([]);
@@ -55,12 +56,14 @@ export default function AuditMonitor() {
                     <p className="text-slate-500 font-medium text-sm mt-1">Real-time tracking of all administrative actions and system changes.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button
+                    <LoadingButton
+                        loading={loading}
                         onClick={loadLogs}
                         className="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-slate-100 transition-all border border-slate-100"
+                        title="Refresh logs"
                     >
-                        <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                    </button>
+                        <RefreshCcw className="w-5 h-5" />
+                    </LoadingButton>
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
