@@ -50,9 +50,7 @@ export const CounselorService = {
     // ─── Counselor Lead Management ───
     getAssignedLeads: async (page: number, size: number) => {
         const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/counselor/leads/all/${page}/${size}`);
-        // Handle potential backend wrapper
-        const data = (response as any).data?.content ? (response as any).data : response.data;
-        return data;
+        return response.data;
     },
 
     searchLeadById: async (id: number) => {

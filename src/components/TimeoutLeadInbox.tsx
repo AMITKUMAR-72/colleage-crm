@@ -22,6 +22,8 @@ const STATUS_COLORS: Record<string, string> = {
     CONTACTED: 'bg-blue-100 text-blue-700 border-blue-200',
     TIMED_OUT: 'bg-rose-100 text-rose-700 border-rose-200',
     REASSIGNED: 'bg-pink-100 text-pink-700 border-pink-200',
+    IN_A_SESSION: 'bg-violet-100 text-violet-700 border-violet-200',
+    QUEUED: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
 };
 
 export default function TimeoutLeadInbox() {
@@ -163,7 +165,7 @@ export default function TimeoutLeadInbox() {
                                         </td>
                                         <td className="hidden md:table-cell px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-xs">
-                                                {typeof lead.course === 'object' ? lead.course.course : String(lead.course || 'not a')}
+                                                {typeof lead.course === 'object' ? lead.course.course : (lead.course || 'N/A')}
                                             </span>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">

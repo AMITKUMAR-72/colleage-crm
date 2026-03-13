@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = 'http://apis.rafunirp.com';
+const BACKEND_BASE = process.env.BACKEND_URL || 'http://localhost:8080';
 
 async function handler(
     request: NextRequest,
     { params }: { params: Promise<{ path: string[] }> }
 ) {
     const { path } = await params;
-    const backendUrl = `${BACKEND_BASE}/auth/${path.join('/')}${request.nextUrl.search}`;
+    const backendUrl = `${BACKEND_BASE.replace(/\/$/, '')}/auth/${path.join('/')}${request.nextUrl.search}`;
 
     const forwardHeaders: Record<string, string> = {
         'Accept': 'application/json',
     };
+
+    const contentType = request.headers.get('content-type');
+    if (contentType) {
+        forwardHeaders['Content-Type'] = contentType;
+    }
 
     const authorization = request.headers.get('authorization');
     if (authorization) {
@@ -19,14 +24,11 @@ async function handler(
     }
 
     const method = request.method.toUpperCase();
-    if (['POST', 'PUT', 'PATCH'].includes(method)) {
-        forwardHeaders['Content-Type'] = 'application/json';
-    }
+    let body: ArrayBuffer | undefined;
 
-    let body: string | undefined;
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
         try {
-            body = await request.text();
+            body = await request.arrayBuffer();
         } catch {
             body = undefined;
         }

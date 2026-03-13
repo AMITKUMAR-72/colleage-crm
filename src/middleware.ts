@@ -14,7 +14,13 @@ export function middleware(request: NextRequest) {
         requestHeaders.delete('referer');
 
         // Critical: Set the Host header to the target backend domain so NGINX routes it!
-        requestHeaders.set('host', 'apis.rafunirp.com');
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+        try {
+            const host = new URL(backendUrl).host;
+            requestHeaders.set('host', host);
+        } catch {
+            requestHeaders.set('host', 'apis.rafunirp.com');
+        }
 
         // Proceed to the rewrite proxy setup in next.config.ts with the sanitized headers
         return NextResponse.next({

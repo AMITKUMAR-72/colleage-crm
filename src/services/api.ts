@@ -60,7 +60,12 @@ api.interceptors.request.use(
         // GET and DELETE must NOT have Content-Type — many backends return 500 if they see it.
         const method = config.method?.toLowerCase();
         if (method === 'post' || method === 'put' || method === 'patch') {
-            config.headers['Content-Type'] = 'application/json';
+            // Only set application/json if we are NOT sending FormData.
+            // When sending FormData (like bulk-upload), we MUST let the browser/Axios
+            // set the Content-Type automatically (to include the boundary string).
+            if (!(config.data instanceof FormData)) {
+                config.headers['Content-Type'] = 'application/json';
+            }
         } else {
             // Explicitly delete in case Axios added it from somewhere else
             delete config.headers['Content-Type'];

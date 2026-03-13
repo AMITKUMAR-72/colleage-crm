@@ -15,7 +15,9 @@ export type LeadStatus =
     | 'CONTACTED'
     | 'INTERESTED'
     | 'TIMED_OUT'
-    | 'REASSIGNED';
+    | 'REASSIGNED'
+    | 'IN_A_SESSION'
+    | 'QUEUED';
 
 // matches backend Scores.java
 export type LeadScore = 'HOT' | 'WARM' | 'COLD';
@@ -71,6 +73,7 @@ export interface LeadResponseDTO {
     campaign?: { id: number; name: string };   // backend returns Campaigns entity
     score: LeadScore;
     timedOutAt?: string;
+    createdAt?: string;
 }
 
 // Matches backend Lead_Request_DTO.java

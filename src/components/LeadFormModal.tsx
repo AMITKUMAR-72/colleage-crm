@@ -163,10 +163,19 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                                 onChange={e => setFormData({ ...formData, status: e.target.value as LeadStatus })}
                             >
                                 <option value="NEW">New</option>
+                                <option value="TELECALLER_ASSIGNED">Telecaller Assigned</option>
+                                <option value="INTERESTED">Interested</option>
+                                <option value="COUNSELOR_ASSIGNED">Counselor Assigned</option>
+                                <option value="EXTERNAL_ASSIGNED">External Assigned</option>
+                                <option value="ADMISSION_IN_PROCESS">Admission In Process</option>
+                                <option value="ADMISSION_DONE">Admission Done</option>
+                                <option value="LOST">Lost</option>
+                                <option value="UNASSIGNED">Unassigned</option>
                                 <option value="CONTACTED">Contacted</option>
-                                <option value="QUALIFIED">Qualified</option>
-                                <option value="NOT_INTERESTED">Not Interested</option>
                                 <option value="TIMED_OUT">Timed Out</option>
+                                <option value="REASSIGNED">Reassigned</option>
+                                <option value="IN_A_SESSION">In A Session</option>
+                                <option value="QUEUED">Queued</option>
                             </select>
                         </div>
                         <div>

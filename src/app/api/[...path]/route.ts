@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = 'http://apis.rafunirp.com';
+const BACKEND_BASE = process.env.BACKEND_URL || 'http://localhost:8080';
 
 /**
- * Catch-all server-side proxy for /api/* → apis.rafunirp.com/api/*
+ * Catch-all server-side proxy for /api/* → BACKEND_BASE/api/*
  *
  * WHY this exists instead of next.config.ts rewrites:
  * - Browser GET requests through the rewrite proxy pass browser-generated
@@ -17,34 +17,36 @@ async function handler(
     { params }: { params: Promise<{ path: string[] }> }
 ) {
     const { path } = await params;
-    const backendUrl = `${BACKEND_BASE}/api/${path.join('/')}${request.nextUrl.search}`;
+    const backendUrl = `${BACKEND_BASE.replace(/\/$/, '')}/api/${path.join('/')}${request.nextUrl.search}`;
 
     // Only forward these safe headers — strip all browser-generated noise
     const forwardHeaders: Record<string, string> = {
         'Accept': 'application/json',
     };
 
+    const contentType = request.headers.get('content-type');
+    if (contentType) {
+        forwardHeaders['Content-Type'] = contentType;
+    }
+
     const authorization = request.headers.get('authorization');
     if (authorization) {
         forwardHeaders['Authorization'] = authorization;
     }
 
-    // For mutation methods, forward Content-Type
     const method = request.method.toUpperCase();
-    if (['POST', 'PUT', 'PATCH'].includes(method)) {
-        forwardHeaders['Content-Type'] = 'application/json';
-    }
+    let body: ArrayBuffer | undefined;
 
-    let body: string | undefined;
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
         try {
-            body = await request.text();
+            body = await request.arrayBuffer();
         } catch {
             body = undefined;
         }
     }
 
     try {
+        console.log(`[Proxy] Fetching: ${method} ${backendUrl}`);
         const backendResponse = await fetch(backendUrl, {
             method,
             headers: forwardHeaders,
@@ -53,6 +55,7 @@ async function handler(
             redirect: 'follow',
         });
 
+        console.log(`[Proxy] Status: ${backendResponse.status} from ${backendUrl}`);
         const responseText = await backendResponse.text();
 
         return new NextResponse(responseText, {

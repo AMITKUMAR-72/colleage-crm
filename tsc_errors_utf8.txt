@@ -1,0 +1,9 @@
+﻿src/components/counselor/MyLeadsFeed.tsx(102,27): error TS2339: Property 'data' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(102,53): error TS2339: Property 'data' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(102,71): error TS2339: Property 'data' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(103,27): error TS2339: Property 'content' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(103,56): error TS2339: Property 'content' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(103,77): error TS2339: Property 'content' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(104,27): error TS2339: Property 'data' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(104,62): error TS2339: Property 'data' does not exist on type 'never'.
+src/components/counselor/MyLeadsFeed.tsx(104,88): error TS2339: Property 'data' does not exist on type 'never'.

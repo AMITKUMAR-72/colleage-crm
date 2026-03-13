@@ -80,7 +80,7 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
                         <div key={n.noteId} className="bg-white p-3 rounded-lg shadow-sm text-sm relative group">
                             <p className="text-gray-800 mb-1">{n.note}</p>
                             <div className="flex justify-end text-xs text-gray-400">
-                                <span>{n.createdAt ? format(new Date(n.createdAt), 'MMM d, h:mm a') : ''}</span>
+                                <span>{n.createdAt && !isNaN(new Date(n.createdAt).getTime()) ? format(new Date(n.createdAt), 'MMM d, h:mm a') : '—'}</span>
                             </div>
                             <LoadingButton
                                 loading={isDeletingNote(n.noteId)}

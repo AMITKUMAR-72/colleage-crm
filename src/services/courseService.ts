@@ -14,7 +14,7 @@ export const CourseService = {
         return response.data;
     },
     async getAllCourses() {
-        const response = await api.get<CourseDTO[]>('/api/department/name');
+        const response = await api.get<CourseDTO[]>('/api/course/name');
         return response.data;
     },
     async getCourseByName(name: string) {

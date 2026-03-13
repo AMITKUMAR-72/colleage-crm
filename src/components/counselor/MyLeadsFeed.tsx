@@ -5,7 +5,7 @@ import { CounselorService } from '@/services/counselorService';
 import { CourseService } from '@/services/courseService';
 import { LeadResponseDTO, LeadStatus, LeadScore, CourseDTO } from '@/types/api';
 import {
-    Search, RotateCcw, Mail, Globe, BookOpen, ChevronDown, GraduationCap, Phone
+    Search, RotateCcw, Mail, Globe, BookOpen, ChevronDown, GraduationCap, Phone, MapPin
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import LeadNotes from '../LeadNotes';
@@ -18,21 +18,37 @@ const SCORE_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-
     'TELECALLER_ASSIGNED': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-
     'COUNSELOR_ASSIGNED': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-
     'LOST': 'bg-slate-100 text-slate-700 border-slate-200',
     'UNASSIGNED': 'bg-gray-100 text-gray-600 border-gray-200',
     'CONTACTED': 'bg-blue-100 text-blue-700 border-blue-200',
     'INTERESTED': 'bg-rose-100 text-rose-700 border-rose-200',
-
-
+    'NEW': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    'EXTERNAL_ASSIGNED': 'bg-orange-100 text-orange-700 border-orange-200',
+    'ADMISSION_IN_PROCESS': 'bg-amber-100 text-amber-700 border-amber-200',
+    'ADMISSION_DONE': 'bg-green-100 text-green-700 border-green-200',
+    'TIMED_OUT': 'bg-red-100 text-red-700 border-red-200',
+    'REASSIGNED': 'bg-purple-100 text-purple-700 border-purple-200',
+    'IN_A_SESSION': 'bg-violet-100 text-violet-700 border-violet-200',
+    'QUEUED': 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
 };
 
 const ALL_STATUSES: LeadStatus[] = [
-    'COUNSELOR_ASSIGNED', 'LOST', 'CONTACTED', 'INTERESTED'
+    'NEW',
+    'TELECALLER_ASSIGNED',
+    'INTERESTED',
+    'COUNSELOR_ASSIGNED',
+    'EXTERNAL_ASSIGNED',
+    'ADMISSION_IN_PROCESS',
+    'ADMISSION_DONE',
+    'LOST',
+    'UNASSIGNED',
+    'CONTACTED',
+    'TIMED_OUT',
+    'REASSIGNED',
+    'IN_A_SESSION',
+    'QUEUED'
 ];
 
 const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
@@ -61,33 +77,8 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
     const [searchType, setSearchType] = useState<SearchType>('ALL');
     const [searchValue, setSearchValue] = useState('');
 
-    const loadLeads = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await CounselorService.getAssignedLeads(page, 10);
-            const content = response.content || [];
-            setLeads(content);
-            setTotalPages(response.totalPages || 0);
-            setSearching(false);
-            if (onLeadsUpdate) onLeadsUpdate(content);
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to load leads');
-        } finally {
-            setLoading(false);
-        }
-    }, [page]);
-
-    const loadCourses = useCallback(async () => {
-        try {
-            const data = await CourseService.getAllCourses();
-            setCourses(data);
-        } catch (err) {
-            console.error('Failed to load courses', err);
-        }
-    }, []);
-
     // Normalize any backend response shape into a flat LeadResponseDTO[]
-    const normalizeResults = (raw: any): LeadResponseDTO[] => {
+    const normalizeResults = useCallback((raw: any): LeadResponseDTO[] => {
         if (!raw) return [];
         // Already a plain array
         if (Array.isArray(raw)) return raw;
@@ -107,7 +98,47 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
         // Single lead object (ID / EMAIL search)
         if (typeof raw === 'object' && (raw.id != null || raw.leadId != null)) return [raw];
         return [];
-    };
+    }, []);
+
+    const loadLeads = useCallback(async () => {
+        setLoading(true);
+        try {
+            console.log('[loadLeads] Fetching page:', page, 'for counselorId:', counselorId);
+            const raw = await CounselorService.getAssignedLeads(page, 10);
+            console.log('[loadLeads] Raw response:', raw);
+            const results = normalizeResults(raw);
+            console.log('[loadLeads] Normalized results:', results);
+            setLeads(results);
+            
+            // Extract pagination info if available
+            if (raw && typeof raw === 'object') {
+                const tp = raw.totalPages || (results.length > 0 ? 1 : 0);
+                setTotalPages(tp);
+            }
+        } catch (error) {
+            console.error('Failed to fetch leads', error);
+            toast.error('Could not load your leads');
+            setLeads([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [page, counselorId, normalizeResults]);
+
+    const loadCourses = useCallback(async () => {
+        try {
+            const raw: any = await CourseService.getAllCourses();
+            // Normalize results similarly to leads
+            let data: CourseDTO[] = [];
+            if (Array.isArray(raw)) data = raw;
+            else if (raw?.data && Array.isArray(raw.data)) data = raw.data;
+            else if (raw?.content && Array.isArray(raw.content)) data = raw.content;
+            else if (raw?.data?.content && Array.isArray(raw.data.content)) data = raw.data.content;
+            
+            setCourses(data);
+        } catch (err) {
+            console.error('Failed to load courses', err);
+        }
+    }, []);
 
     const handleSearch = async () => {
         console.log('[handleSearch] START — type:', searchType, '| value:', searchValue);
@@ -164,8 +195,8 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
     };
 
     useEffect(() => {
-        if (counselorId && !searching) loadLeads();
-    }, [counselorId, loadLeads]); // intentionally NOT watching `searching` — just initial load
+        if (!searching) loadLeads();
+    }, [loadLeads, searching]); 
 
     useEffect(() => {
         loadCourses();
@@ -222,6 +253,9 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
         try {
             await CounselorService.updateLeadCourse(leadId, courseName);
             setLeads(prev => prev.map(l => (l.id === leadId) ? { ...l, course: { id: 0, course: courseName } } : l));
+            if (selectedLead?.id === leadId) {
+                setSelectedLead(prev => prev ? { ...prev, course: { id: 0, course: courseName } } : null);
+            }
             toast.success('Course updated');
             if (onActionComplete) onActionComplete();
         } catch (err: any) {
@@ -324,20 +358,31 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
 
             {/* Leads Table */}
             <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                <div className="px-8 py-6 border-b border-slate-100/50 flex items-center justify-between bg-gradient-to-r from-slate-50/50 to-white/30 backdrop-blur-sm">
                     <div>
-                        <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Assigned Portfolio</h3>
-                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">
-                            {searching ? 'Filter Active' : `Total Leads: ${leads.length}`}
+                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                            Assigned Portfolio
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        </h3>
+                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                            {searching ? (
+                                <span className="text-indigo-500 flex items-center gap-1">
+                                    <Search className="w-3 h-3" /> filter active
+                                </span>
+                            ) : (
+                                <>
+                                    <span className="text-slate-500">{leads.length}</span> active leads
+                                </>
+                            )}
                         </p>
                     </div>
                     <LoadingButton
                         loading={loading}
                         onClick={loadLeads}
-                        className="p-2.5 rounded-xl hover:bg-white hover:shadow-sm transition-all text-slate-400 hover:text-indigo-600 border border-transparent hover:border-slate-100"
-                        title="Refresh leads"
+                        className="p-3 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-indigo-500/10 transition-all text-slate-400 hover:text-indigo-600 border border-slate-100/50 group"
+                        title="Sync leads"
                     >
-                        <RotateCcw className="w-4 h-4" />
+                        <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
                     </LoadingButton>
                 </div>
 
@@ -357,41 +402,52 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                 ) : (
                     <div className="divide-y divide-slate-50">
                         {leads.map(lead => (
-                            <div key={lead.id || lead.leadId} className="group transition-all hover:bg-slate-50/30">
+                            <div key={lead.id || lead.leadId} className="group transition-all hover:bg-indigo-50/10">
                                 <div
-                                    className="px-8 py-5 flex items-center gap-6 cursor-pointer relative"
+                                    className="px-8 py-6 flex items-center gap-6 cursor-pointer relative"
                                     onClick={() => openDetails(lead)}
                                 >
-                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 bg-transparent group-hover:bg-[#dbb212]" />
+                                    {/* Accent line on hover */}
+                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 bg-transparent group-hover:bg-[#dbb212] group-hover:shadow-[0_0_15px_rgba(219,178,18,0.5)]" />
 
-                                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
-                                        {lead.name.charAt(0).toUpperCase()}
+                                    {/* Modernized Avatar */}
+                                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-base shrink-0 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
+                                        <div className="w-full h-full rounded-2xl bg-gradient-to-br from-slate-50 to-white flex items-center justify-center border border-white">
+                                            {lead.name.charAt(0).toUpperCase()}
+                                        </div>
                                     </div>
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-3">
-                                            <p className="font-bold text-slate-900 truncate uppercase tracking-tight">{lead.name}</p>
-                                            <span className="text-[9px] font-black text-slate-300 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">ID: {lead.id || lead.leadId}</span>
+                                            <p className="text-sm font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-indigo-600 transition-colors">{lead.name}</p>
+                                            <span className="text-[8px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100 uppercase tracking-widest whitespace-nowrap">ID: {lead.id || lead.leadId}</span>
                                         </div>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <span className="text-[10px] text-slate-500 font-bold">{lead.email}</span>
+                                        <div className="flex items-center gap-3 mt-1.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <Mail className="w-3 h-3 text-slate-300" />
+                                                <span className="text-[11px] text-slate-500 font-bold lowercase tracking-tight">{lead.email}</span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-6 shrink-0">
-                                        {/* Dynamic Category Labels based on status */}
-                                        <div className="hidden md:flex flex-col items-end">
-                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-1">Portfolio Segment</span>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">
-                                                {lead.status === 'TELECALLER_ASSIGNED' ? 'General' :
-                                                    lead.status === 'CONTACTED' ? 'Warm Segment' :
-                                                        lead.status === 'INTERESTED' ? 'Hot Segment' : 'Active'}
+                                    <div className="flex items-center gap-8 shrink-0">
+                                        {/* Simplified Source info */}
+                                        <div className="hidden lg:flex flex-col items-end">
+                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Origin</span>
+                                            <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
+                                                <Globe className="w-3 h-3 opacity-30" />
+                                                {lead.campaign?.name || 'Manual'}
                                             </span>
                                         </div>
-                                        <span className={`px-2 py-1 rounded-md text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
-                                            {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
-                                        </span>
-                                        <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90" />
+                                        {/* Status Badge with Soft Glow */}
+                                        <div className="flex flex-col items-end gap-1.5">
+                                            <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border transition-all duration-300 group-hover:shadow-lg ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
+                                                {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                                            </span>
+                                        </div>
+                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 group-hover:text-slate-900 group-hover:bg-white group-hover:shadow-sm transition-all duration-300 transform group-hover:translate-x-1">
+                                            <ChevronDown className="w-5 h-5 -rotate-90" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -400,64 +456,128 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                 )}
             </div>
 
-            {/* Lead Details Popup */}
+            {/* Premium Lead Details Popup */}
             {selectedLead && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setSelectedLead(null)} />
-                    <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-200">
-                        {/* Left Side: Info & Actions */}
-                        <div className="flex-1 overflow-y-auto p-8 border-r border-slate-100">
-                            <div className="flex justify-between items-start mb-8">
-                                <div>
-                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{selectedLead.name}</h2>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded border border-slate-100">Lead ID: {selectedLead.id}</span>
-                                        <span className={`px-2 py-1 rounded-md text-[9px] font-black tracking-widest uppercase ${STATUS_COLORS[selectedLead.status]}`}>
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300" onClick={() => setSelectedLead(null)} />
+                    <div className="bg-white/95 w-full max-w-5xl max-h-[92vh] rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] relative z-10 overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-500 border border-white/50">
+                        
+                        {/* Left Side: Modern Information Canvas */}
+                        <div className="flex-1 overflow-y-auto p-10 border-r border-slate-100/50 bg-white">
+                            <div className="flex justify-between items-start mb-12">
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg shadow-slate-900/20">Lead Card</div>
+                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{selectedLead.id}</span>
+                                    </div>
+                                    <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{selectedLead.name}</h2>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
+                                            <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
+                                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Intake: {selectedLead.intake || 'N/A'}</span>
+                                        </div>
+                                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border shadow-sm ${STATUS_COLORS[selectedLead.status] || 'bg-slate-100'}`}>
                                             {selectedLead.status?.replace(/_/g, ' ')}
-                                        </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <button onClick={() => setSelectedLead(null)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">✕</button>
+                                <div className="flex flex-col items-end gap-3 text-right">
+                                    <button 
+                                        onClick={() => setSelectedLead(null)} 
+                                        className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 hover:rotate-90 group"
+                                    >
+                                        <Search className="w-5 h-5 -rotate-45 group-hover:scale-110" />
+                                    </button>
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Registration Date</p>
+                                        <p className="text-[10px] font-extrabold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 inline-block">
+                                            {selectedLead.createdAt && !isNaN(new Date(selectedLead.createdAt).getTime()) ? new Date(selectedLead.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="space-y-6">
-                                {/* Status Update: Mark as Contacted */}
-                                {selectedLead.status !== 'CONTACTED' && selectedLead.status !== 'INTERESTED' && (
-                                    <div className="p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
-                                        <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Initial Action Required</label>
-                                        <button
-                                            disabled={updateProcessing}
-                                            onClick={() => selectedLead && handleStatusChange(selectedLead.id, 'CONTACTED')}
-                                            className={`w-full py-4 rounded-2xl text-[11px] font-black tracking-widest transition-all shadow-lg active:scale-95 ${updateProcessing ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-blue-200'}`}
-                                        >
-                                            {updateProcessing ? 'PROCESSING...' : 'MARK AS CONTACTED'}
-                                        </button>
+                            {/* Info Grid - Glass Design */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+                                <div className="group p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[2rem] border border-slate-100/50 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/20">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-8 h-8 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-amber-500 transition-colors">
+                                            <MapPin className="w-4 h-4" />
+                                        </div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Current Residence</p>
                                     </div>
-                                )}
-
-                                {/* Conditional: Target Program Update - Always show if course is null (and contacted/interested) */}
-                                {(selectedLead.status === 'CONTACTED' || selectedLead.status === 'INTERESTED') && getCourseName(selectedLead.course) === null && (
-                                    <div className="p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/50">
-                                        <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
-                                            <GraduationCap className="w-4 h-4 text-indigo-500" /> Target Program Update
-                                        </label>
-                                        <select
-                                            disabled={updateProcessing}
-                                            value=""
-                                            onChange={(e) => selectedLead && handleCourseChange(selectedLead.id, e.target.value)}
-                                            className="w-full text-xs font-bold bg-white border border-slate-200 rounded-2xl p-4 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all cursor-pointer text-slate-900 shadow-sm disabled:opacity-50"
-                                        >
-                                            <option value="">Enrollment Subject...</option>
-                                            {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
-                                        </select>
+                                    <p className="text-sm font-extrabold text-slate-700 leading-relaxed pl-1">{selectedLead.address || 'Address not provided'}</p>
+                                </div>
+                                <div className="group p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[2rem] border border-slate-100/50 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/20">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-8 h-8 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-500 transition-colors">
+                                            <Globe className="w-4 h-4" />
+                                        </div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead Origin / Web Source</p>
                                     </div>
-                                )}
+                                    <p className="text-sm font-extrabold text-slate-700 truncate pl-1">{selectedLead.campaign?.name || 'Manual CRM Entry'}</p>
+                                </div>
+                            </div>
 
-                                {/* Conditional: Priority Update - only show after Program is updated/exists */}
+                            <div className="space-y-8">
+                                {/* Improved Status & Program Interaction */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Status Column */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Update Workflow Status</label>
+                                        <div className="group relative">
+                                            <select
+                                                disabled={updateProcessing}
+                                                value={selectedLead.status}
+                                                onChange={(e) => selectedLead && handleStatusChange(selectedLead.id, e.target.value)}
+                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-[1.5rem] p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 hover:bg-white outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
+                                            >
+                                                {ALL_STATUSES.map(status => (
+                                                    <option key={status} value={status}>
+                                                        {status.replace(/_/g, ' ')}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover:text-slate-900 transition-colors">
+                                                <ChevronDown className="w-5 h-5" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Program Column */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Assigned Academic Program</label>
+                                        <div className="group relative">
+                                            <select
+                                                disabled={updateProcessing}
+                                                value={getCourseName(selectedLead.course) || ""}
+                                                onChange={(e) => selectedLead && handleCourseChange(selectedLead.id, e.target.value)}
+                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-[1.5rem] p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 hover:bg-white outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
+                                            >
+                                                <option value="" disabled>{getCourseName(selectedLead.course) || 'Assign Program...'}</option>
+                                                {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
+                                            </select>
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover:text-indigo-500 transition-colors">
+                                                <GraduationCap className="w-5 h-5" />
+                                            </div>
+                                        </div>
+                                        {getCourseName(selectedLead.course) && (
+                                            <div className="ml-2 flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                                                <div className="w-1 h-1 rounded-full bg-indigo-500" />
+                                                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">Current: {getCourseName(selectedLead.course)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Premium Score Selector */}
                                 {getCourseName(selectedLead.course) !== null && (
-                                    <div className="p-6 bg-slate-50/50 rounded-[2rem] border border-slate-100">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Update Priority</label>
-                                        <div className="flex gap-2">
+                                    <div className="p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Investment Score / Interest</label>
+                                            <span className="text-[10px] font-extrabold text-slate-400 bg-white px-3 py-1 rounded-lg border border-slate-100 shadow-sm">Current: {selectedLead.score}</span>
+                                        </div>
+                                        <div className="flex gap-4">
                                             {ALL_SCORES.map(s => {
                                                 const isCurrent = selectedLead.score === s;
                                                 const isDisabled = !isCurrent && (
@@ -470,9 +590,11 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                                         key={s}
                                                         disabled={updateProcessing || isDisabled || isCurrent}
                                                         onClick={() => selectedLead && handleScoreChange(selectedLead.id, s)}
-                                                        className={`flex-1 py-3 rounded-2xl text-[10px] font-black transition-all ${isCurrent ? SCORE_COLORS[s] + ' shadow-md scale-105' : isDisabled ? 'bg-slate-50 text-slate-200 border border-slate-100 cursor-not-allowed opacity-50' : 'bg-white text-slate-400 border border-slate-100 hover:bg-slate-50'}`}
+                                                        className={`flex-1 group relative overflow-hidden transition-all duration-500 rounded-3xl p-4 flex flex-col items-center gap-2 border-2 ${isCurrent ? SCORE_COLORS[s] + ' border-current shadow-xl scale-105' : isDisabled ? 'bg-slate-50/50 text-slate-200 border-slate-100 cursor-not-allowed opacity-40' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-lg'}`}
                                                     >
-                                                        {updateProcessing && !isCurrent && !isDisabled ? '...' : s}
+                                                        <span className="text-xs font-black uppercase tracking-widest relative z-10">{s}</span>
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-current animate-pulse' : 'bg-slate-200'} relative z-10`} />
+                                                        {isCurrent && <div className="absolute inset-0 bg-white/40 animate-pulse" />}
                                                     </button>
                                                 );
                                             })}
@@ -480,23 +602,43 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                     </div>
                                 )}
 
-                                {/* Contact Area */}
-                                <div className="bg-slate-900 p-6 rounded-[2rem] flex items-center justify-between text-white shadow-xl shadow-slate-900/20">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Phone Contact</p>
-                                        <p className="text-xl font-black tracking-tight">{selectedLead.phone}</p>
-                                        <p className="text-[11px] text-slate-400 font-medium">{selectedLead.email}</p>
+                                {/* Call to Action - Super Bold */}
+                                <div className="group relative overflow-hidden bg-slate-900 p-8 rounded-[3rem] shadow-2xl shadow-slate-900/40 transition-all active:scale-[0.98]">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+                                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-white">
+                                        <div className="space-y-2 text-center md:text-left">
+                                            <div className="flex items-center justify-center md:justify-start gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Communication Portal</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase">{selectedLead.phone}</p>
+                                                <div className="flex items-center justify-center md:justify-start gap-2 opacity-60">
+                                                    <Mail className="w-3.5 h-3.5" />
+                                                    <p className="text-xs font-extrabold truncate lowercase">{selectedLead.email}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a 
+                                            href={`tel:${selectedLead.phone}`} 
+                                            className="w-24 h-24 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-[2.5rem] flex items-center justify-center hover:scale-110 hover:shadow-[0_20px_50px_rgba(219,178,18,0.3)] transition-all duration-500 shadow-xl group border-4 border-white/10"
+                                        >
+                                            <Phone className="w-10 h-10 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />
+                                        </a>
                                     </div>
-                                    <a href={`tel:${selectedLead.phone}`} className="w-14 h-14 bg-[#dbb212] text-[#600202] rounded-2xl flex items-center justify-center hover:scale-105 transition-transform animate-pulse shadow-lg shadow-[#dbb212]/20">
-                                        <Phone className="w-6 h-6" fill="currentColor" />
-                                    </a>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right Side: Notes */}
-                        <div className="w-full md:w-[350px] bg-slate-50 overflow-y-auto p-8">
-                            <LeadNotes leadId={selectedLead.id} />
+                        {/* Right Side: Activity & Notes Sideboard */}
+                        <div className="w-full md:w-[400px] bg-slate-50/80 backdrop-blur-xl overflow-y-auto p-10 flex flex-col">
+                            <div className="mb-10">
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Lead Logs</h3>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contextual intelligence & notes</p>
+                            </div>
+                            <div className="flex-1">
+                                <LeadNotes leadId={selectedLead.id} />
+                            </div>
                         </div>
                     </div>
                 </div>
