@@ -21,7 +21,8 @@ const SignIn: React.FC = () => {
                 : user.role === 'MANAGER' ? '/manager'
                     : user.role === 'COUNSELOR' ? '/counselor/leads'
                         : user.role === 'AFFILIATE' ? '/affiliate'
-                            : '/login';
+                            : user.role === 'MENTOR' ? '/mentor'
+                                : '/login';
             router.push(path);
         }
     }, [user, authLoading, router]);

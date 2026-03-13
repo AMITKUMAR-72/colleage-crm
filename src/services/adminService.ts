@@ -1,5 +1,5 @@
 import api from './api';
-import { DepartmentDTO, CourseDTO } from '@/types/api';
+import { DepartmentDTO, CourseDTO, ConfigDTO, SlaUpdateResponseDTO, MaxCapacityUpdateResponseDTO } from '@/types/api';
 
 // Re-export for backward compatibility if needed, but prefer using @/types/api directly
 export type Department = DepartmentDTO;
@@ -50,3 +50,35 @@ export const AdminService = {
         await api.delete(`/api/course/${id}`);
     }
 };
+
+// ─── System Config Service ────────────────────────────────────────────────────
+export const ConfigService = {
+    /** GET /api/config — fetch current global SLA hours and max capacity */
+    getConfig: async (): Promise<ConfigDTO> => {
+        const response = await api.get<any>('/api/config');
+        const raw = response.data;
+        // The interceptor may or may not have unwrapped the outer { data: {...} } layer.
+        // Defensively dig until we find { maxCapacity, slaHours }.
+        const payload: any =
+            (typeof raw?.maxCapacity === 'number' ? raw : null) ??
+            (typeof raw?.data?.maxCapacity === 'number' ? raw.data : null) ??
+            raw;
+        return {
+            maxCapacity: Number(payload?.maxCapacity ?? 0),
+            slaHours: Number(payload?.slaHours ?? 0),
+        };
+    },
+
+    /** PATCH /api/config/slaHours/{hours} — update global SLA timer */
+    updateSlaHours: async (hours: number): Promise<SlaUpdateResponseDTO> => {
+        const response = await api.patch<SlaUpdateResponseDTO>(`/api/config/slaHours/${hours}`);
+        return response.data;
+    },
+
+    /** PATCH /api/config/maxCapacity/{value} — update global counselor max capacity */
+    updateMaxCapacity: async (value: number): Promise<MaxCapacityUpdateResponseDTO> => {
+        const response = await api.patch<MaxCapacityUpdateResponseDTO>(`/api/config/maxCapacity/${value}`);
+        return response.data;
+    },
+};
+

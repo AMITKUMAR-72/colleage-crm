@@ -1,12 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // API and Auth proxying is handled by server-side Route Handlers:
-  //   src/app/api/[...path]/route.ts  → http://apis.rafunirp.com/api/*
-  //   src/app/auth/[...path]/route.ts → http://apis.rafunirp.com/auth/*
-  //
-  // This gives us full control over which headers are forwarded,
-  // preventing browser-generated headers from causing 500s on the backend.
+  async headers() {
+    return [
+      {
+        // Add CORS headers for all routes in case it's needed for assets or internal APIs
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+          { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
+        ]
+      }
+    ]
+  }
 };
 
 export default nextConfig;

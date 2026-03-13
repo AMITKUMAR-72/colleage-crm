@@ -19,8 +19,11 @@ export default function CounselorPerformance() {
     const loadCounselors = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await CounselorService.getAllCounselors();
-            setCounselors(data || []);
+            const raw: any = await CounselorService.getAllCounselors();
+            const list: CounselorDTO[] = Array.isArray(raw)
+                ? raw
+                : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.list ?? [];
+            setCounselors(list);
         } catch (error) {
             toast.error('Failed to fetch counselors');
         } finally {

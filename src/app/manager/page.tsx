@@ -3,26 +3,25 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import LeadInbox from '@/components/LeadInbox';
+import ManagerLeadInbox from '@/components/manager/ManagerLeadInbox';
 import AssignedLeadsMonitor from '@/components/manager/AssignedLeadsMonitor';
 import ContactedLeadsMonitor from '@/components/manager/ContactedLeadsMonitor';
-import CounselorPerformance from '@/components/manager/CounselorPerformance';
 
 function ManagerDashboardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT' | 'COUNSELORS' | null : null;
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT' | 'COUNSELORS'>(tabParam || 'OVERVIEW');
+    const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT' | null : null;
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT'>(tabParam || 'OVERVIEW');
 
     // Sync tab from URL param on load/navigation
     useEffect(() => {
         if (tabParam && tabParam !== activeTab) {
             setActiveTab(tabParam);
         }
-    }, [tabParam]);
+    }, [tabParam, activeTab]);
 
     // Sync active tab to URL so reload preserves the correct tab
-    const handleTabChange = (tab: 'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT' | 'COUNSELORS') => {
+    const handleTabChange = (tab: 'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT') => {
         setActiveTab(tab);
         router.replace(`?tab=${tab}`, { scroll: false });
     };
@@ -59,7 +58,7 @@ function ManagerDashboardContent() {
                 </div>
 
                 {/* Responsive Tabs Navigation */}
-                <div className="relative mb-8">
+                <div className="relative">
                     <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 w-full overflow-x-auto no-scrollbar">
                         <button
                             onClick={() => handleTabChange('OVERVIEW')}
@@ -88,15 +87,6 @@ function ManagerDashboardContent() {
                         >
                             ENGAGEMENT
                         </button>
-                        <button
-                            onClick={() => handleTabChange('COUNSELORS')}
-                            className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'COUNSELORS'
-                                ? 'bg-white text-emerald-600 shadow-lg shadow-emerald-900/5 translate-y-[-1px]'
-                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                                }`}
-                        >
-                            COUNSELORS
-                        </button>
                     </div>
                 </div>
             </div>
@@ -104,7 +94,7 @@ function ManagerDashboardContent() {
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {activeTab === 'OVERVIEW' && (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div onClick={() => handleTabChange('ASSIGNMENTS')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group text-left">
                                 <h3 className="font-black text-slate-800 text-sm group-hover:text-green-600 uppercase tracking-tight">Assignment Logs</h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Review Distribution</p>
@@ -113,21 +103,16 @@ function ManagerDashboardContent() {
                                 <h3 className="font-black text-slate-800 text-sm group-hover:text-indigo-600 uppercase tracking-tight">Team Engagement</h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Contact Metrics</p>
                             </div>
-                            <div onClick={() => handleTabChange('COUNSELORS')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group text-left">
-                                <h3 className="font-black text-slate-800 text-sm group-hover:text-emerald-600 uppercase tracking-tight">Team Performance</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Counselor Analytics</p>
-                            </div>
                         </div>
 
                         <div className="w-full">
-                            <LeadInbox />
+                            <ManagerLeadInbox />
                         </div>
                     </>
                 )}
 
                 {activeTab === 'ASSIGNMENTS' && <AssignedLeadsMonitor />}
                 {activeTab === 'ENGAGEMENT' && <ContactedLeadsMonitor />}
-                {activeTab === 'COUNSELORS' && <CounselorPerformance />}
             </div>
         </DashboardLayout>
     );
@@ -140,4 +125,3 @@ export default function ManagerDashboard() {
         </Suspense>
     );
 }
-

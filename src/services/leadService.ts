@@ -100,7 +100,7 @@ export const LeadService = {
     // Returns Spring Data Page (paginated)
     getRecentLeads: async (page: number, size: number) => {
         const response = await api.get(`/api/leads/recent/page/${page}/size/${size}`);
-        return response.data;
+        return toPageResponse(response.data);
     },
 
     getUnassignedRecentLeads: async (page: number = 0, size: number = 10) => {
@@ -235,7 +235,7 @@ export const LeadService = {
         return response.data;
     },
 
-    // Note: Backend has typo "GoogelForm" — must match exactly
+    // Note: Backend highlighting typo "GoogelForm" — must match exactly
     async integrateGoogleForm(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/integration/GoogelForm', data);
         return response.data;
@@ -254,5 +254,17 @@ export const LeadService = {
         const data = response.data as any;
         if (Array.isArray(data)) return data;
         return data?.lead || data?.content || [];
-    }
+    },
+
+    /** POST /api/leads/bulk-assign/{counselorId} */
+    bulkAssignLeads: async (counselorId: number, leadIds: number[]) => {
+        const response = await api.post(`/api/leads/bulk-assign/${counselorId}`, { leadIds });
+        return response.data;
+    },
+
+    /** POST /api/assignedLeads/bulk-reassign/{counselorId} */
+    bulkReassignLeads: async (counselorId: number, leadIds: number[]) => {
+        const response = await api.post(`/api/assignedLeads/bulk-reassign/${counselorId}`, { leadIds });
+        return response.data;
+    },
 };
