@@ -99,57 +99,57 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                 </div>
             </div>
 
-            <div className="pt-12 px-6 pb-6">
+            <div className="pt-10 md:pt-12 px-4 md:px-6 pb-6">
                 {/* Name & Info */}
-                <div className="flex items-start justify-between mb-4">
-                    <div>
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
+                    <div className="flex-1 min-w-0">
                         {editing ? (
                             <input
                                 value={editForm.name}
                                 onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                className="text-xl font-bold text-gray-900 border-b-2 border-indigo-300 focus:border-[#dbb212] outline-none bg-transparent"
+                                className="text-xl font-bold text-gray-900 border-b-2 border-indigo-300 focus:border-[#dbb212] outline-none bg-transparent w-full"
                             />
                         ) : (
-                            <h2 className="text-xl font-bold text-gray-900">{counselor.name}</h2>
+                            <h2 className="text-xl font-bold text-gray-900 truncate">{counselor.name}</h2>
                         )}
-                        <p className="text-sm text-gray-500 mt-1">{counselor.email}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${currentStatusConfig?.color || 'bg-gray-100'}`}>
+                        <p className="text-sm text-gray-500 mt-1 truncate">{counselor.email}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${currentStatusConfig?.color || 'bg-gray-100'}`}>
                                 {currentStatusConfig?.label || counselor.status}
                             </span>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
                                 {counselor.counselorType}
                             </span>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-                                {counselor.priority} Priority
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
+                                {counselor.priority}
                             </span>
                         </div>
                     </div>
                     <button
                         onClick={() => editing ? handleSaveProfile() : setEditing(true)}
-                        className="px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl bg-slate-900 text-white border border-slate-900 hover:bg-[#600202] transition-all shadow-sm"
+                        className="w-full sm:w-auto px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-slate-900 text-white border border-slate-900 hover:bg-[#600202] transition-all shadow-sm active:scale-95"
                     >
-                        {editing ? 'Save Changes' : 'Edit Profile'}
+                        {editing ? 'Save Profile' : 'Edit Profile'}
                     </button>
                 </div>
 
                 {/* Details grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <p className="text-2xl font-bold text-indigo-600">{counselor.totalLeads}</p>
-                        <p className="text-xs text-gray-500 mt-1">Total Leads</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+                    <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">
+                        <p className="text-2xl font-black text-indigo-600 leading-none">{counselor.totalLeads}</p>
+                        <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Total Leads</p>
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <p className="text-sm font-medium text-gray-700">{counselor.phone || '—'}</p>
-                        <p className="text-xs text-gray-500 mt-1">Phone</p>
+                    <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">
+                        <p className="text-sm font-black text-gray-700 truncate leading-none">{counselor.phone || '—'}</p>
+                        <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Phone</p>
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <p className="text-sm font-medium text-gray-700">{counselor.department || '—'}</p>
-                        <p className="text-xs text-gray-500 mt-1">Department</p>
+                    <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">
+                        <p className="text-sm font-black text-gray-700 truncate leading-none">{counselor.department || '—'}</p>
+                        <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Dept</p>
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <p className="text-sm font-medium text-gray-700">ID: {counselor.counselorId}</p>
-                        <p className="text-xs text-gray-500 mt-1">Counselor ID</p>
+                    <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">
+                        <p className="text-sm font-black text-gray-700 leading-none">#{counselor.counselorId}</p>
+                        <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">ID</p>
                     </div>
                 </div>
 

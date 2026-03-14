@@ -29,6 +29,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 router.push('/login');
             } else if (path.startsWith('/affiliate') && role !== 'AFFILIATE' && role !== 'ADMIN') {
                 router.push('/login');
+            } else if (path.startsWith('/mentor') && role !== 'MENTOR' && role !== 'ADMIN') {
+                router.push('/login');
             }
         }
     }, [user, role, isLoading, pathname, router]);
@@ -53,6 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="w-full max-w-[1600px] mx-auto"
                     >
                         {children}
                     </motion.div>

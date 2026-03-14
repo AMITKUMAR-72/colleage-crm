@@ -224,3 +224,24 @@ export interface ContactedLeadDTO {
     assignedAt: string;
     notes?: string;
 }
+
+// ─── System Config ───
+
+/** GET /api/config response shape */
+export interface ConfigDTO {
+    maxCapacity: number;
+    slaHours: number;
+}
+
+/** PATCH /api/config/slaHours/{hours} response shape */
+export interface SlaUpdateResponseDTO {
+    slaHours: number;
+    activeTimersAdjusted: number;
+    message: string;
+}
+
+/** PATCH /api/config/maxCapacity/{value} response shape */
+export interface MaxCapacityUpdateResponseDTO {
+    maxCapacity: number;
+    message?: string;
+}

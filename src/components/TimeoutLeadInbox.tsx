@@ -37,6 +37,39 @@ export default function TimeoutLeadInbox() {
     const [reassigning, setReassigning] = useState<LeadResponseDTO | null>(null);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [isReassignLoading, setIsReassignLoading] = useState(false);
+    const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
+    const [isBulkReassignModalOpen, setIsBulkReassignModalOpen] = useState(false);
+
+    const handleBulkReassign = async (counselorId: number) => {
+        if (selectedLeads.length === 0) return;
+        setIsReassignLoading(true);
+        try {
+            await TimeOutService.bulkReassignTimeoutLeads(counselorId, selectedLeads);
+            const counselor = counselors.find(c => c.counselorId === counselorId);
+            toast.success(`${selectedLeads.length} leads assigned to counselor: ${counselor?.name || counselorId}`);
+            setSelectedLeads([]);
+            setIsBulkReassignModalOpen(false);
+            fetchLeads();
+        } catch (error) {
+            toast.error('Failed to reassign leads');
+        } finally {
+            setIsReassignLoading(false);
+        }
+    };
+
+    const toggleLeadSelection = (leadId: number) => {
+        setSelectedLeads(prev =>
+            prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
+        );
+    };
+
+    const toggleAllLeads = () => {
+        if (selectedLeads.length === leads.length) {
+            setSelectedLeads([]);
+        } else {
+            setSelectedLeads(leads.map(lead => lead.id));
+        }
+    };
 
     const handleReassign = async (counselorId: number) => {
         if (!reassigning) return;
@@ -106,11 +139,21 @@ export default function TimeoutLeadInbox() {
 
             <div className="glass-card rounded-2xl overflow-hidden mb-12 relative bg-white shadow-sm border border-gray-100">
                 <div className="p-4 sm:p-5 border-b border-slate-100/50 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <h2 className="font-black text-slate-800 tracking-tight">Timed-Out Leads Feed</h2>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-                            {leads.length} Leads Found • Page {page + 1} of {totalPages}
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <div>
+                            <h2 className="font-black text-slate-800 tracking-tight">Timed-Out Leads Feed</h2>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
+                                {leads.length} Leads Found • Page {page + 1} of {totalPages}
+                            </p>
+                        </div>
+                        {selectedLeads.length > 0 && (
+                            <button
+                                onClick={() => setIsBulkReassignModalOpen(true)}
+                                className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md animate-in fade-in zoom-in"
+                            >
+                                Bulk Reassign ({selectedLeads.length})
+                            </button>
+                        )}
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
@@ -143,6 +186,14 @@ export default function TimeoutLeadInbox() {
                         <table className="w-full text-sm text-left whitespace-nowrap">
                             <thead className="text-xs text-slate-500 bg-slate-50/50 border-b border-slate-100/50 uppercase font-bold tracking-wider">
                                 <tr>
+                                    <th className="px-4 py-4 w-12 text-center">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                            checked={leads.length > 0 && selectedLeads.length === leads.length}
+                                            onChange={toggleAllLeads}
+                                        />
+                                    </th>
                                     <th className="px-4 sm:px-6 py-4">Lead</th>
                                     <th className="hidden sm:table-cell px-6 py-4">Contact</th>
                                     <th className="hidden md:table-cell px-6 py-4">Course</th>
@@ -153,6 +204,16 @@ export default function TimeoutLeadInbox() {
                             <tbody className="divide-y divide-slate-100/50">
                                 {leads.map((lead) => (
                                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer group">
+                                        <td className="px-4 py-4 text-center">
+                                            <div onClick={(e) => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                                    checked={selectedLeads.includes(lead.id)}
+                                                    onChange={() => toggleLeadSelection(lead.id)}
+                                                />
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-slate-800 text-sm">{lead.name || 'Unknown'}</div>
                                             <div className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">{lead.id}</div>
@@ -196,18 +257,18 @@ export default function TimeoutLeadInbox() {
             </div>
 
             {/* Reassign Modal */}
-            {reassigning && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 p-4" onClick={() => setReassigning(null)}>
+            {(reassigning || isBulkReassignModalOpen) && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 p-4" onClick={() => { setReassigning(null); setIsBulkReassignModalOpen(false); }}>
                     <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
                         <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
                             <div>
-                                <h3 className="font-black text-slate-900 text-lg">Reassign Lead</h3>
+                                <h3 className="font-black text-slate-900 text-lg">{isBulkReassignModalOpen ? 'Bulk Reassign Leads' : 'Reassign Lead'}</h3>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                                    {reassigning.name}
+                                    {isBulkReassignModalOpen ? `${selectedLeads.length} leads selected` : reassigning?.name}
                                 </p>
                             </div>
                             <button
-                                onClick={() => setReassigning(null)}
+                                onClick={() => { setReassigning(null); setIsBulkReassignModalOpen(false); }}
                                 className="px-4 py-2 text-[10px] items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors font-black uppercase tracking-widest"
                             >
                                 Close
@@ -218,7 +279,7 @@ export default function TimeoutLeadInbox() {
                                 counselors.filter(c => c.status === 'AVAILABLE').map(c => (
                                     <button
                                         key={c.counselorId}
-                                        onClick={() => handleReassign(c.counselorId)}
+                                        onClick={() => isBulkReassignModalOpen ? handleBulkReassign(c.counselorId) : handleReassign(c.counselorId)}
                                         disabled={isReassignLoading}
                                         className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
                                     >
@@ -228,7 +289,7 @@ export default function TimeoutLeadInbox() {
                                             </div>
                                             <div className="flex flex-col items-start leading-tight">
                                                 <span className="text-sm font-bold text-slate-700">{c.name}</span>
-                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.department}</span>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.counselorType} • {c.department}</span>
                                             </div>
                                         </div>
                                         <div className="p-1 px-2 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest">
@@ -242,7 +303,7 @@ export default function TimeoutLeadInbox() {
                         </div>
                         <div className="p-4 bg-slate-50/50 flex justify-end">
                             <button
-                                onClick={() => setReassigning(null)}
+                                onClick={() => { setReassigning(null); setIsBulkReassignModalOpen(false); }}
                                 className="px-6 py-2.5 text-xs font-black text-slate-500 hover:text-slate-700 transition-all uppercase tracking-widest"
                             >
                                 Cancel

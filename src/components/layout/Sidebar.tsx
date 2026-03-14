@@ -99,7 +99,7 @@ export default function Sidebar() {
             {/* Mobile hamburger trigger — rendered in DashboardLayout header */}
             <button
                 onClick={() => setMobileOpen(true)}
-                className="fixed top-4 left-4 z-40 md:hidden p-2 bg-slate-900/90 backdrop-blur-sm rounded-xl text-white shadow-lg border border-white/10"
+                className="fixed top-4 left-4 z-[45] md:hidden p-2.5 bg-slate-900 text-white rounded-xl shadow-2xl border border-white/10 active:scale-95 transition-transform"
                 aria-label="Open menu"
             >
                 <Menu className="w-5 h-5" />
@@ -108,21 +108,21 @@ export default function Sidebar() {
             {/* Mobile overlay */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[48] md:hidden transition-opacity"
                     onClick={() => setMobileOpen(false)}
                 />
             )}
 
             {/* Mobile sidebar (slide-in) */}
             <aside
-                className={`fixed left-0 top-0 h-screen w-72 glass-sidebar text-slate-300 flex flex-col z-50 transition-transform duration-300 ease-out md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed left-0 top-0 h-full w-72 glass-sidebar text-slate-300 flex flex-col z-[50] transition-transform duration-300 ease-out md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 {sidebarContent}
             </aside>
 
             {/* Desktop sidebar (always visible) */}
-            <aside className="hidden md:flex w-64 glass-sidebar h-screen fixed left-0 top-0 text-slate-300 flex-col z-50">
+            <aside className="hidden md:flex w-64 glass-sidebar h-screen fixed left-0 top-0 text-slate-300 flex-col z-[50]">
                 {sidebarContent}
             </aside>
         </>

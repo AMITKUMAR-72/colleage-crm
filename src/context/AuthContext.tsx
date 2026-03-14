@@ -90,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             case 'MANAGER': router.push('/manager'); break;
             case 'COUNSELOR': router.push('/counselor/leads'); break;
             case 'AFFILIATE': router.push('/affiliate'); break;
+            case 'MENTOR': router.push('/mentor'); break;
             default: router.push('/login');
         }
     };

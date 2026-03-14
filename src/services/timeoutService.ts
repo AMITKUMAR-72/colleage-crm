@@ -72,5 +72,10 @@ export const TimeOutService = {
     reassignLead: async (counselorId: number, leadId: number, leadEmail: string) => {
         const response = await api.post(`/api/leads/timeout/assign/${leadId}/${counselorId}`);
         return response.data;
+    },
+    // Bulk reassign
+    bulkReassignTimeoutLeads: async (counselorId: number, leadIds: number[]) => {
+        const response = await api.post(`/api/leads/timeout/bulk-assign/${counselorId}`, leadIds);
+        return response.data;
     }
 };

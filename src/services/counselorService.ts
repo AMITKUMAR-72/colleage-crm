@@ -102,5 +102,11 @@ export const CounselorService = {
     updateLeadCourse: async (leadId: number, courseName: string) => {
         const response = await api.put<LeadResponseDTO>(`/api/counselor/lead/${leadId}/course/${courseName}`);
         return response.data;
-    }
+    },
+
+    /** POST /api/counselors/manual-assign/lead/{leadId}/counselor/{counselorId} */
+    manualAssignLead: async (leadId: number, counselorId: number) => {
+        const response = await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}`);
+        return response.data;
+    },
 };

@@ -10,6 +10,7 @@ import CounselorManager from '@/components/admin/CounselorManager';
 import AffiliateManager from '@/components/admin/AffiliateManager';
 import MentorManager from '@/components/admin/MentorManager';
 import AuditMonitor from '@/components/admin/AuditMonitor';
+import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
 
 export default function ManagementHub() {
     const [activeTab, setActiveTab] = useState('courses');
@@ -22,6 +23,7 @@ export default function ManagementHub() {
         { id: 'mentors', label: 'Mentors', component: <MentorManager /> },
         { id: 'campaigns', label: 'Campaign Sources', component: <CampaignManager /> },
         { id: 'roles', label: 'Roles', component: <RoleManager /> },
+        { id: 'config', label: 'Config', component: <SystemConfigPanel /> },
         { id: 'audit', label: 'Monitor', component: <AuditMonitor /> },
     ];
 

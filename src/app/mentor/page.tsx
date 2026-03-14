@@ -6,19 +6,12 @@ import { MentorService, MentorDTO } from '@/services/mentorService';
 import MentorManager from '@/components/admin/MentorManager';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
-import { useAsync } from '@/hooks/useAsync';
-import LoadingButton from '@/components/ui/LoadingButton';
 
 function MentorDashboard() {
     const [profile, setProfile] = useState<MentorDTO | null>(null);
     const [sessions, setSessions] = useState<any[]>([]);
     const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState<Partial<MentorDTO>>({});
-    const { run: runUpdateProfile, loading: savingProfile } = useAsync(
-        (data: Partial<MentorDTO>) => MentorService.updateMyProfile(data)
-    );
 
     const loadData = async () => {
         try {
@@ -31,7 +24,6 @@ function MentorDashboard() {
 
             if (profData) {
                 setProfile(profData);
-                setFormData(profData);
             }
             setSessions(Array.isArray(sessData) ? sessData : []);
             setUpcomingSessions(Array.isArray(upcomingData) ? upcomingData : []);
@@ -45,22 +37,6 @@ function MentorDashboard() {
     useEffect(() => {
         loadData();
     }, []);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleUpdateProfile = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const updated = await runUpdateProfile(formData);
-            if (updated) setProfile(updated);
-            setIsEditing(false);
-            toast.success('Profile updated successfully');
-        } catch (error) {
-            toast.error('Failed to update profile');
-        }
-    };
 
     return (
         <DashboardLayout>
@@ -79,42 +55,9 @@ function MentorDashboard() {
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-fit">
                         <div className="flex justify-between items-center mb-6 border-b border-gray-50 pb-4">
                             <h2 className="text-xl font-bold text-gray-800">My Profile</h2>
-                            {!isEditing && (
-                                <button onClick={() => setIsEditing(true)} className="text-indigo-600 font-bold text-xs bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition-colors">
-                                    Edit Profile
-                                </button>
-                            )}
                         </div>
 
-                        {isEditing ? (
-                            <form onSubmit={handleUpdateProfile} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-600 mb-1">Name</label>
-                                    <input type="text" name="name" value={formData.name || ''} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-600 mb-1">Email</label>
-                                    <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-600 mb-1">Phone</label>
-                                    <input type="text" name="phone" value={formData.phone || ''} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-600 mb-1">Department</label>
-                                    <input type="text" name="departmentName" value={formData.departmentName || ''} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" />
-                                </div>
-                                <div className="flex gap-2 pt-2">
-                                    <LoadingButton type="submit" loading={savingProfile} loadingText="Saving..."
-                                        className="bg-[#4d0101] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#600202] active:scale-95 transition-all w-full md:w-auto">
-                                        Save Changes
-                                    </LoadingButton>
-                                    <button type="button" onClick={() => { setIsEditing(false); setFormData(profile || {}); }} className="bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-bold hover:bg-gray-300 transition-colors w-full md:w-auto">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        ) : profile ? (
+                        {profile ? (
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -158,10 +101,14 @@ function MentorDashboard() {
                                     {upcomingSessions.map((session, idx) => (
                                         <div key={idx} className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/50 flex justify-between items-center">
                                             <div>
-                                                <p className="font-bold text-indigo-900">{session.title || 'Session'}</p>
-                                                <p className="text-sm text-indigo-700">{session.date ? new Date(session.date).toLocaleString() : 'Date TBD'}</p>
+                                                <p className="font-bold text-indigo-900">{session.department || 'Session'} • {session.location || 'No Location'}</p>
+                                                <p className="text-sm text-indigo-700">
+                                                    {session.startTime ? new Date(session.startTime).toLocaleString() : 'Date TBD'} 
+                                                    <span className="opacity-50 mx-1.5">•</span> 
+                                                    {session.currentCount}/{session.maxCapacity} Seats
+                                                </p>
                                             </div>
-                                            <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">UPCOMING</span>
+                                            <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full uppercase tracking-wider">{session.status || 'UPCOMING'}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -179,10 +126,15 @@ function MentorDashboard() {
                                 <div className="space-y-3">
                                     {sessions.map((session, idx) => (
                                         <div key={idx} className="p-4 rounded-xl border border-gray-200 bg-gray-50 flex justify-between items-center">
-                                            <div>
-                                                <p className="font-bold text-gray-800">{session.title || 'Session'}</p>
-                                                <p className="text-sm text-gray-500">{session.date ? new Date(session.date).toLocaleString() : 'Date TBD'}</p>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-gray-800">{session.department || 'Session'} • {session.location || 'No Location'}</p>
+                                                <p className="text-sm text-gray-500">
+                                                    {session.startTime ? new Date(session.startTime).toLocaleString() : 'Date TBD'}
+                                                    <span className="opacity-50 mx-1.5">•</span> 
+                                                    {session.currentCount}/{session.maxCapacity} Seats
+                                                </p>
                                             </div>
+                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${session.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>{session.status || 'OPEN'}</span>
                                         </div>
                                     ))}
                                 </div>

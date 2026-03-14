@@ -5,9 +5,9 @@ import toast from 'react-hot-toast';
 // Set this to true to force Mock Data even if backend is online
 const STANDALONE_DEMO = false;
 
-// Use same-origin requests so Next.js rewrites can proxy to backend without CORS issues in browser.
+// Use direct backend URL to bypass proxy
 // If needed, override with NEXT_PUBLIC_API_BASE_URL (e.g. in production deployments).
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://apis.rafunirp.com';
 
 // Global in-flight request counter — incremented before each request, decremented after
 let _pendingCount = 0;

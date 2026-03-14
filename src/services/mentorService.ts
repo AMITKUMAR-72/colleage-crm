@@ -56,14 +56,14 @@ export const MentorService = {
 
     // Get my sessions (Mentor)
     getMySessions: async () => {
-        const response = await api.get<any[]>('/api/mentors/my-sessions');
-        return response.data;
+        const response = await api.get<any>('/api/mentors/my-sessions');
+        return response.data?.data || response.data || [];
     },
 
     // Get upcoming sessions (Mentor)
     getMyUpcomingSessions: async () => {
-        const response = await api.get<any[]>('/api/mentors/my-upcoming-sessions');
-        return response.data;
+        const response = await api.get<any>('/api/mentors/my-upcoming-sessions');
+        return response.data?.data || response.data || [];
     },
 
     // Update my profile (Mentor)

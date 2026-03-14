@@ -11,8 +11,36 @@ export const DepartmentService = {
         return response.data;
     },
     async getAllDepartments() {
-        const response = await api.get<DepartmentDTO[]>('/api/department');
-        return response.data;
+        const response = await api.get<any>('/api/department');
+        let data = response.data;
+
+        // Handle raw string (truncated JSON) with more flexible regex
+        if (typeof data === 'string') {
+            const matches = [...data.matchAll(/"id":(\d+),"(?:department|departmentName|name|dept)":"([^"]+)"/g)];
+            data = matches.map(m => ({ id: parseInt(m[1]), department: m[2] }));
+        }
+
+        // Handle paginated response
+        if (data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.content)) {
+            data = data.content;
+        }
+
+        if (Array.isArray(data)) {
+            return data.map((item, index) => {
+                if (typeof item === 'string') return { id: index, department: item };
+                if (item && typeof item === 'object') {
+                    // Check many possible fields
+                    const rawName = item.department ?? item.departmentName ?? item.name ?? item.dept ?? item.department_name ?? item.dept_name ?? 'Unknown';
+                    const name = typeof rawName === 'object' ? (rawName.department ?? rawName.departmentName ?? rawName.name ?? rawName.dept ?? 'Unknown') : rawName;
+                    return {
+                        id: item.id ?? index,
+                        department: String(name || 'Unknown')
+                    };
+                }
+                return item;
+            });
+        }
+        return Array.isArray(data) ? data : [];
     },
     async getDepartmentByName(name: string) {
         const response = await api.get<DepartmentDTO>(`/api/department/name/${name}`);

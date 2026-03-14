@@ -274,104 +274,106 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
     return (
         <div className="space-y-4">
             {/* Search and Filters Header */}
-            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 flex gap-2">
-                        <div className="relative flex-1">
+            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-4 md:p-6">
+                <div className="flex flex-col lg:flex-row gap-4">
+                    <div className="flex flex-col sm:flex-row flex-1 gap-3">
+                        <div className="relative flex-1 min-w-0">
                             {searchType === 'DATE' ? (
                                 <input
                                     type="date"
                                     value={searchValue}
                                     onChange={(e) => setSearchValue(e.target.value)}
-                                    className="w-full pl-4 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
                                 />
                             ) : searchType === 'SCORE' ? (
                                 <select
                                     value={searchValue}
                                     onChange={(e) => setSearchValue(e.target.value)}
-                                    className="w-full pl-4 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold uppercase tracking-widest"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold uppercase tracking-widest cursor-pointer"
                                 >
                                     <option value="">Select Score</option>
                                     {ALL_SCORES.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             ) : (
-                                <>
+                                <div className="relative">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <input
                                         type="text"
                                         placeholder={
-                                            searchType === 'ID' ? "Enter Lead ID..." :
-                                                searchType === 'EMAIL' ? "Enter Email..." :
-                                                    searchType === 'COURSE' ? "Enter Course Name..." :
-                                                        "Search assigned leads..."
+                                            searchType === 'ID' ? "ID..." :
+                                                searchType === 'EMAIL' ? "Email..." :
+                                                    searchType === 'COURSE' ? "Course..." :
+                                                        "Search leads..."
                                         }
                                         value={searchValue}
                                         onChange={(e) => setSearchValue(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium placeholder:text-slate-400"
+                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium placeholder:text-slate-400"
                                     />
-                                </>
+                                </div>
                             )}
                         </div>
-                        <select
-                            value={searchType}
-                            onChange={(e) => {
-                                setSearchType(e.target.value as SearchType);
-                                setSearchValue('');
-                            }}
-                            className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:ring-4 focus:ring-indigo-500/10 outline-none cursor-pointer"
-                        >
-                            <option value="ALL">All Leads</option>
-                            <option value="ID">By ID</option>
-                            <option value="EMAIL">By Email</option>
-                            <option value="COURSE">By Course</option>
-                            <option value="SCORE">By Score</option>
-                            <option value="DATE">By Date</option>
-                        </select>
-                        <LoadingButton
-                            loading={loading}
-                            loadingText="Searching..."
-                            onClick={handleSearch}
-                            disabled={searchType !== 'ALL' && !searchValue}
-                            className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#600202] transition-all shadow-lg shadow-rose-900/20 disabled:opacity-50 active:scale-95"
-                        >
-                            Search
-                        </LoadingButton>
-                        {(searching || searchValue) && (
-                            <button
-                                onClick={() => {
+                        <div className="flex gap-2">
+                            <select
+                                value={searchType}
+                                onChange={(e) => {
+                                    setSearchType(e.target.value as SearchType);
                                     setSearchValue('');
-                                    setSearchType('ALL');
-                                    setSearching(false);
-                                    setPage(0);
-                                    loadLeads();
                                 }}
-                                className="p-3 text-slate-400 hover:text-slate-600 transition-colors"
-                                title="Reset Search"
+                                className="flex-1 sm:flex-initial px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:ring-4 focus:ring-indigo-500/10 outline-none cursor-pointer"
                             >
-                                <RotateCcw className="w-5 h-5" />
-                            </button>
-                        )}
+                                <option value="ALL">All Type</option>
+                                <option value="ID">ID</option>
+                                <option value="EMAIL">Email</option>
+                                <option value="COURSE">Course</option>
+                                <option value="SCORE">Score</option>
+                                <option value="DATE">Date</option>
+                            </select>
+                            <LoadingButton
+                                loading={loading}
+                                loadingText="..."
+                                onClick={handleSearch}
+                                disabled={searchType !== 'ALL' && !searchValue}
+                                className="px-5 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#600202] transition-all shadow-lg shadow-rose-900/20 disabled:opacity-50 active:scale-95"
+                            >
+                                Search
+                            </LoadingButton>
+                            {(searching || searchValue) && (
+                                <button
+                                    onClick={() => {
+                                        setSearchValue('');
+                                        setSearchType('ALL');
+                                        setSearching(false);
+                                        setPage(0);
+                                        loadLeads();
+                                    }}
+                                    className="p-3 text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 border border-slate-200 rounded-2xl"
+                                    title="Reset Search"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Leads Table */}
             <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                <div className="px-8 py-6 border-b border-slate-100/50 flex items-center justify-between bg-gradient-to-r from-slate-50/50 to-white/30 backdrop-blur-sm">
+                <div className="px-5 py-4 md:px-8 md:py-6 border-b border-slate-100/50 flex items-center justify-between bg-gradient-to-r from-slate-50/50 to-white/30 backdrop-blur-sm">
                     <div>
-                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                            Assigned Portfolio
+                        <h3 className="text-base md:text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                            Lead Portfolio
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         </h3>
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                        <p className="text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
                             {searching ? (
                                 <span className="text-indigo-500 flex items-center gap-1">
-                                    <Search className="w-3 h-3" /> filter active
+                                    <Search className="w-3 h-3" /> search active
                                 </span>
                             ) : (
                                 <>
-                                    <span className="text-slate-500">{leads.length}</span> active leads
+                                    <span className="text-slate-500">{leads.length}</span> results
                                 </>
                             )}
                         </p>
@@ -379,7 +381,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                     <LoadingButton
                         loading={loading}
                         onClick={loadLeads}
-                        className="p-3 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-indigo-500/10 transition-all text-slate-400 hover:text-indigo-600 border border-slate-100/50 group"
+                        className="p-2.5 rounded-xl hover:bg-white hover:shadow-xl hover:shadow-indigo-500/10 transition-all text-slate-400 hover:text-indigo-600 border border-slate-100/50 group"
                         title="Sync leads"
                     >
                         <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
@@ -387,66 +389,59 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                 </div>
 
                 {loading ? (
-                    <div className="p-24 text-center">
+                    <div className="p-16 md:p-24 text-center">
                         <div className="inline-block w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin" />
                         <p className="text-[10px] font-black text-slate-400 mt-6 uppercase tracking-[0.3em] animate-pulse">Syncing Portfolio...</p>
                     </div>
                 ) : leads.length === 0 ? (
-                    <div className="p-24 text-center">
-                        <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 border border-slate-100">
-                            <BookOpen className="w-10 h-10 text-slate-200" />
+                    <div className="p-16 md:p-24 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-2xl md:w-20 md:h-20 md:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 border border-slate-100">
+                            <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-slate-200" />
                         </div>
-                        <p className="text-slate-400 font-black text-lg uppercase tracking-tight">No Leads Found</p>
-                        <p className="text-xs text-slate-400 mt-2 font-medium">Your portfolio is currently empty or filtered.</p>
+                        <p className="text-slate-400 font-black text-base md:text-lg uppercase tracking-tight">No Leads Found</p>
+                        <p className="text-[10px] md:text-xs text-slate-400 mt-2 font-medium">Your portfolio is currently empty.</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-50">
                         {leads.map(lead => (
                             <div key={lead.id || lead.leadId} className="group transition-all hover:bg-indigo-50/10">
                                 <div
-                                    className="px-8 py-6 flex items-center gap-6 cursor-pointer relative"
+                                    className="px-5 py-4 md:px-8 md:py-6 flex items-center gap-4 md:gap-6 cursor-pointer relative"
                                     onClick={() => openDetails(lead)}
                                 >
                                     {/* Accent line on hover */}
-                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 bg-transparent group-hover:bg-[#dbb212] group-hover:shadow-[0_0_15px_rgba(219,178,18,0.5)]" />
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-[#dbb212] group-hover:shadow-[0_0_15px_rgba(219,178,18,0.5)]" />
 
                                     {/* Modernized Avatar */}
-                                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-base shrink-0 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
-                                        <div className="w-full h-full rounded-2xl bg-gradient-to-br from-slate-50 to-white flex items-center justify-center border border-white">
+                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-sm md:text-base shrink-0 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
+                                        <div className="w-full h-full rounded-xl md:rounded-2xl bg-gradient-to-br from-slate-50 to-white flex items-center justify-center border border-white">
                                             {lead.name.charAt(0).toUpperCase()}
                                         </div>
                                     </div>
 
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                                             <p className="text-sm font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-indigo-600 transition-colors">{lead.name}</p>
-                                            <span className="text-[8px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100 uppercase tracking-widest whitespace-nowrap">ID: {lead.id || lead.leadId}</span>
+                                            <span className="text-[7px] md:text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-lg border border-slate-100 uppercase tracking-widest whitespace-nowrap">ID: {lead.id || lead.leadId}</span>
                                         </div>
-                                        <div className="flex items-center gap-3 mt-1.5">
-                                            <div className="flex items-center gap-1.5">
-                                                <Mail className="w-3 h-3 text-slate-300" />
-                                                <span className="text-[11px] text-slate-500 font-bold lowercase tracking-tight">{lead.email}</span>
+                                        <div className="flex items-center gap-3 mt-1">
+                                            <div className="flex items-center gap-1.5 truncate">
+                                                <Mail className="w-3 h-3 text-slate-300 shrink-0" />
+                                                <span className="text-[10px] md:text-[11px] text-slate-500 font-bold lowercase tracking-tight truncate">{lead.email}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-8 shrink-0">
-                                        {/* Simplified Source info */}
-                                        <div className="hidden lg:flex flex-col items-end">
-                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Origin</span>
-                                            <span className="text-[10px] font-extrabold text-slate-500 uppercase flex items-center gap-1">
-                                                <Globe className="w-3 h-3 opacity-30" />
-                                                {lead.campaign?.name || 'Manual'}
-                                            </span>
-                                        </div>
-                                        {/* Status Badge with Soft Glow */}
+                                    <div className="flex items-center gap-3 md:gap-8 shrink-0">
+                                        {/* Status Badge */}
                                         <div className="flex flex-col items-end gap-1.5">
-                                            <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border transition-all duration-300 group-hover:shadow-lg ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
-                                                {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                                            <span className={`px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest uppercase border transition-all duration-300 group-hover:shadow-lg ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
+                                                <span className="hidden sm:inline">{lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}</span>
+                                                <span className="sm:hidden">{lead.status?.substring(0, 4)}..</span>
                                             </span>
                                         </div>
-                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 group-hover:text-slate-900 group-hover:bg-white group-hover:shadow-sm transition-all duration-300 transform group-hover:translate-x-1">
-                                            <ChevronDown className="w-5 h-5 -rotate-90" />
+                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl flex items-center justify-center text-slate-300 group-hover:text-slate-900 group-hover:bg-white group-hover:shadow-sm transition-all duration-300 transform group-hover:translate-x-1">
+                                            <ChevronDown className="w-4 h-4 md:w-5 md:h-5 -rotate-90" />
                                         </div>
                                     </div>
                                 </div>
@@ -458,79 +453,79 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
 
             {/* Premium Lead Details Popup */}
             {selectedLead && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300" onClick={() => setSelectedLead(null)} />
-                    <div className="bg-white/95 w-full max-w-5xl max-h-[92vh] rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] relative z-10 overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-500 border border-white/50">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300" onClick={() => setSelectedLead(null)} />
+                    <div className="bg-white w-full max-w-5xl max-h-[95vh] rounded-[2rem] md:rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.3)] relative z-10 overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-500 border border-white/50">
                         
-                        {/* Left Side: Modern Information Canvas */}
-                        <div className="flex-1 overflow-y-auto p-10 border-r border-slate-100/50 bg-white">
-                            <div className="flex justify-between items-start mb-12">
-                                <div className="space-y-3">
+                        {/* Left Side: Information Canvas */}
+                        <div className="flex-1 overflow-y-auto p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100/50 bg-white">
+                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 md:mb-12">
+                                <div className="space-y-3 flex-1 min-w-0">
                                     <div className="flex items-center gap-3">
                                         <div className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg shadow-slate-900/20">Lead Card</div>
                                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{selectedLead.id}</span>
                                     </div>
-                                    <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{selectedLead.name}</h2>
-                                    <div className="flex flex-wrap items-center gap-3">
+                                    <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter leading-tight break-words">{selectedLead.name}</h2>
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
                                             <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
-                                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Intake: {selectedLead.intake || 'N/A'}</span>
+                                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Intake: {selectedLead.intake || 'N/A'}</span>
                                         </div>
-                                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border shadow-sm ${STATUS_COLORS[selectedLead.status] || 'bg-slate-100'}`}>
+                                        <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border shadow-sm ${STATUS_COLORS[selectedLead.status] || 'bg-slate-100'}`}>
                                             {selectedLead.status?.replace(/_/g, ' ')}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-3 text-right">
+                                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start w-full sm:w-auto gap-4">
                                     <button 
                                         onClick={() => setSelectedLead(null)} 
-                                        className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 hover:rotate-90 group"
+                                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 md:hover:rotate-90 group"
                                     >
-                                        <Search className="w-5 h-5 -rotate-45 group-hover:scale-110" />
+                                        <RotateCcw className="w-5 h-5 group-hover:scale-110" />
                                     </button>
-                                    <div>
-                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Registration Date</p>
-                                        <p className="text-[10px] font-extrabold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 inline-block">
-                                            {selectedLead.createdAt && !isNaN(new Date(selectedLead.createdAt).getTime()) ? new Date(selectedLead.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Registered</p>
+                                        <p className="text-[9px] md:text-[10px] font-extrabold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 inline-block font-mono">
+                                            {selectedLead.createdAt && !isNaN(new Date(selectedLead.createdAt).getTime()) ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Info Grid - Glass Design */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-                                <div className="group p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[2rem] border border-slate-100/50 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/20">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-amber-500 transition-colors">
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 mb-8 md:mb-10">
+                                <div className="group p-4 md:p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100/50 transition-all">
+                                    <div className="flex items-center gap-3 mb-2 md:mb-3">
+                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400">
                                             <MapPin className="w-4 h-4" />
                                         </div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Current Residence</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Residence</p>
                                     </div>
-                                    <p className="text-sm font-extrabold text-slate-700 leading-relaxed pl-1">{selectedLead.address || 'Address not provided'}</p>
+                                    <p className="text-xs md:text-sm font-extrabold text-slate-700 leading-relaxed pl-1">{selectedLead.address || 'Not provided'}</p>
                                 </div>
-                                <div className="group p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[2rem] border border-slate-100/50 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/20">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-8 h-8 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-500 transition-colors">
+                                <div className="group p-4 md:p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100/50 transition-all">
+                                    <div className="flex items-center gap-3 mb-2 md:mb-3">
+                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400">
                                             <Globe className="w-4 h-4" />
                                         </div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead Origin / Web Source</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</p>
                                     </div>
-                                    <p className="text-sm font-extrabold text-slate-700 truncate pl-1">{selectedLead.campaign?.name || 'Manual CRM Entry'}</p>
+                                    <p className="text-xs md:text-sm font-extrabold text-slate-700 truncate pl-1">{selectedLead.campaign?.name || 'Manual CRM'}</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-8">
-                                {/* Improved Status & Program Interaction */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="space-y-6 md:space-y-8">
+                                {/* Status & Program Interaction */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                     {/* Status Column */}
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Update Workflow Status</label>
+                                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Status Workflow</label>
                                         <div className="group relative">
                                             <select
                                                 disabled={updateProcessing}
                                                 value={selectedLead.status}
                                                 onChange={(e) => selectedLead && handleStatusChange(selectedLead.id, e.target.value)}
-                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-[1.5rem] p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 hover:bg-white outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
+                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
                                             >
                                                 {ALL_STATUSES.map(status => (
                                                     <option key={status} value={status}>
@@ -538,46 +533,40 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                                     </option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover:text-slate-900 transition-colors">
-                                                <ChevronDown className="w-5 h-5" />
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                                <ChevronDown className="w-4 h-4 md:w-5 md:h-5" />
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Program Column */}
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Assigned Academic Program</label>
+                                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Academic Program</label>
                                         <div className="group relative">
                                             <select
                                                 disabled={updateProcessing}
                                                 value={getCourseName(selectedLead.course) || ""}
                                                 onChange={(e) => selectedLead && handleCourseChange(selectedLead.id, e.target.value)}
-                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-[1.5rem] p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 hover:bg-white outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
+                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
                                             >
                                                 <option value="" disabled>{getCourseName(selectedLead.course) || 'Assign Program...'}</option>
                                                 {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
                                             </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300 group-hover:text-indigo-500 transition-colors">
-                                                <GraduationCap className="w-5 h-5" />
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                                <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />
                                             </div>
                                         </div>
-                                        {getCourseName(selectedLead.course) && (
-                                            <div className="ml-2 flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                                                <div className="w-1 h-1 rounded-full bg-indigo-500" />
-                                                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">Current: {getCourseName(selectedLead.course)}</span>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
 
                                 {/* Premium Score Selector */}
                                 {getCourseName(selectedLead.course) !== null && (
-                                    <div className="p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Investment Score / Interest</label>
-                                            <span className="text-[10px] font-extrabold text-slate-400 bg-white px-3 py-1 rounded-lg border border-slate-100 shadow-sm">Current: {selectedLead.score}</span>
+                                    <div className="p-5 md:p-8 bg-slate-50/50 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                        <div className="flex items-center justify-between mb-4 md:mb-6">
+                                            <label className="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Investment Score</label>
+                                            <span className="text-[9px] md:text-[10px] font-extrabold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-sm">Current: {selectedLead.score}</span>
                                         </div>
-                                        <div className="flex gap-4">
+                                        <div className="flex gap-2 md:gap-4">
                                             {ALL_SCORES.map(s => {
                                                 const isCurrent = selectedLead.score === s;
                                                 const isDisabled = !isCurrent && (
@@ -590,11 +579,10 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                                         key={s}
                                                         disabled={updateProcessing || isDisabled || isCurrent}
                                                         onClick={() => selectedLead && handleScoreChange(selectedLead.id, s)}
-                                                        className={`flex-1 group relative overflow-hidden transition-all duration-500 rounded-3xl p-4 flex flex-col items-center gap-2 border-2 ${isCurrent ? SCORE_COLORS[s] + ' border-current shadow-xl scale-105' : isDisabled ? 'bg-slate-50/50 text-slate-200 border-slate-100 cursor-not-allowed opacity-40' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-lg'}`}
+                                                        className={`flex-1 group relative overflow-hidden transition-all duration-500 rounded-2xl md:rounded-3xl p-3 md:p-4 flex flex-col items-center gap-1.5 md:gap-2 border-2 ${isCurrent ? SCORE_COLORS[s] + ' border-current shadow-lg md:shadow-xl md:scale-105' : isDisabled ? 'bg-slate-50/50 text-slate-200 border-slate-100 cursor-not-allowed opacity-40' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200 hover:text-indigo-600'}`}
                                                     >
-                                                        <span className="text-xs font-black uppercase tracking-widest relative z-10">{s}</span>
-                                                        <div className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-current animate-pulse' : 'bg-slate-200'} relative z-10`} />
-                                                        {isCurrent && <div className="absolute inset-0 bg-white/40 animate-pulse" />}
+                                                        <span className="text-[9px] md:text-xs font-black uppercase tracking-widest relative z-10">{s}</span>
+                                                        <div className={`w-1 md:w-1.5 h-1 md:h-1.5 rounded-full ${isCurrent ? 'bg-current animate-pulse' : 'bg-slate-200'} relative z-10`} />
                                                     </button>
                                                 );
                                             })}
@@ -602,39 +590,36 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                     </div>
                                 )}
 
-                                {/* Call to Action - Super Bold */}
-                                <div className="group relative overflow-hidden bg-slate-900 p-8 rounded-[3rem] shadow-2xl shadow-slate-900/40 transition-all active:scale-[0.98]">
+                                {/* Call to Action Section */}
+                                <div className="group relative overflow-hidden bg-slate-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl transition-all active:scale-[0.98]">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
-                                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-white">
-                                        <div className="space-y-2 text-center md:text-left">
+                                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-white text-center md:text-left">
+                                        <div className="space-y-2">
                                             <div className="flex items-center justify-center md:justify-start gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Communication Portal</p>
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Direct Contact</p>
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase">{selectedLead.phone}</p>
-                                                <div className="flex items-center justify-center md:justify-start gap-2 opacity-60">
-                                                    <Mail className="w-3.5 h-3.5" />
-                                                    <p className="text-xs font-extrabold truncate lowercase">{selectedLead.email}</p>
-                                                </div>
+                                                <p className="text-2xl md:text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase break-all">{selectedLead.phone}</p>
+                                                <p className="text-[10px] md:text-xs font-extrabold opacity-60 truncate lowercase max-w-[250px] mx-auto md:mx-0">{selectedLead.email}</p>
                                             </div>
                                         </div>
                                         <a 
                                             href={`tel:${selectedLead.phone}`} 
-                                            className="w-24 h-24 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-[2.5rem] flex items-center justify-center hover:scale-110 hover:shadow-[0_20px_50px_rgba(219,178,18,0.3)] transition-all duration-500 shadow-xl group border-4 border-white/10"
+                                            className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-3xl md:rounded-[2.5rem] flex items-center justify-center hover:scale-110 transition-all duration-500 shadow-xl group border-4 border-white/10"
                                         >
-                                            <Phone className="w-10 h-10 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />
+                                            <Phone className="w-8 h-8 md:w-10 md:h-10 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />
                                         </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right Side: Activity & Notes Sideboard */}
-                        <div className="w-full md:w-[400px] bg-slate-50/80 backdrop-blur-xl overflow-y-auto p-10 flex flex-col">
-                            <div className="mb-10">
+                        {/* Right Side: Activity & Notes */}
+                        <div className="w-full md:w-[350px] lg:w-[400px] bg-slate-50/80 backdrop-blur-xl h-[400px] md:h-auto overflow-y-auto p-6 md:p-10 flex flex-col">
+                            <div className="mb-6 md:mb-10">
                                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Lead Logs</h3>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contextual intelligence & notes</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Context & Intelligence</p>
                             </div>
                             <div className="flex-1">
                                 <LeadNotes leadId={selectedLead.id} />
