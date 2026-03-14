@@ -104,7 +104,8 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
         setLoading(true);
         try {
             console.log('[loadLeads] Fetching page:', page, 'for counselorId:', counselorId);
-            const raw = await CounselorService.getAssignedLeads(page, 10);
+            const PAGE_SIZE = 100;
+            const raw = await CounselorService.getAssignedLeads(page, PAGE_SIZE);
             console.log('[loadLeads] Raw response:', raw);
             const results = normalizeResults(raw);
             console.log('[loadLeads] Normalized results:', results);
@@ -112,7 +113,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
             
             // Extract pagination info if available
             if (raw && typeof raw === 'object') {
-                const tp = raw.totalPages || (results.length > 0 ? 1 : 0);
+                const tp = raw.totalPages ?? (raw as any).data?.totalPages ?? (results.length === PAGE_SIZE ? page + 2 : page + 1);
                 setTotalPages(tp);
             }
         } catch (error) {
@@ -447,6 +448,40 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+                
+                {/* Footer Pagination */}
+                {!searching && !loading && leads.length > 0 && (
+                    <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            {loading ? 'Updating…' : `Showing Page ${page + 1}`}
+                        </p>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    setPage(p => Math.max(0, p - 1));
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                disabled={page === 0 || loading}
+                                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 transition-all text-slate-600 shadow-sm"
+                            >
+                                ← Prev
+                            </button>
+                            <span className="px-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center bg-white border border-slate-100 rounded-xl shadow-sm">
+                                {page + 1} / {totalPages || 1}
+                            </span>
+                            <button
+                                onClick={() => {
+                                    setPage(p => Math.min(Math.max(0, totalPages - 1), p + 1));
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                disabled={page >= (totalPages - 1) || loading}
+                                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 transition-all text-slate-600 shadow-sm"
+                            >
+                                Next →
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
