@@ -94,8 +94,8 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
                 onClick={handleOpen}
                 disabled={leadIds.length === 0}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${leadIds.length > 0
-                        ? 'bg-[#4d0101] text-white hover:bg-[#600202]'
-                        : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                    ? 'bg-[#4d0101] text-white hover:bg-[#600202]'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
                     }`}
             >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
@@ -220,15 +220,16 @@ export default function ManagerLeadInbox() {
         }
     };
 
-    const getCampaignDisplay = (lead: LeadResponseDTO) => {
-        const c = lead.campaign as any;
-        return c?.name || String(lead.campaign || '—');
+    const getCourseDisplay = (lead: LeadResponseDTO | null) => {
+        if (!lead || !lead.course) return 'Not Available';
+        if (typeof lead.course === 'object') return lead.course.course || 'Not Available';
+        return String(lead.course);
     };
 
-    const getCourseDisplay = (lead: LeadResponseDTO) => {
-        if (!lead.course) return '—';
-        if (typeof lead.course === 'object') return (lead.course as any).course || '—';
-        return String(lead.course);
+    const getCampaignDisplay = (lead: LeadResponseDTO | null) => {
+        if (!lead || !lead.campaign) return '—';
+        const c = lead.campaign as any;
+        return c?.name || String(c.campaign || '—');
     };
 
     return (
@@ -277,8 +278,10 @@ export default function ManagerLeadInbox() {
                                         className="w-4 h-4 rounded border-slate-300 text-[#4d0101] focus:ring-[#4d0101]/20 cursor-pointer"
                                     />
                                 </th>
-                                <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Lead Identity</th>
-                                <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Requirements</th>
+                                <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Lead Name</th>
+                                <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Phone</th>
+                                <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">intake</th>
+                                <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">course</th>
                                 <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Campaign</th>
                                 <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</th>
                                 <th className="px-5 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Actions</th>
@@ -313,23 +316,29 @@ export default function ManagerLeadInbox() {
                                         </td>
                                         <td className="px-5 py-4">
                                             <div className="font-bold text-slate-800">{lead.name}</div>
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">#{lead.id} • {lead.phone}</div>
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{lead.id} • {lead.phone}</div>
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            <div className="font-bold text-slate-800">{lead.phone}</div>
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            <div className="font-bold text-slate-800">{lead.intake}</div>
                                         </td>
                                         <td className="px-5 py-4">
                                             <div className="text-xs font-bold text-slate-700">{getCourseDisplay(lead)}</div>
-                                            <div className="text-[10px] text-slate-400 font-medium uppercase">{lead.intake || 'Any Intake'}</div>
                                         </td>
                                         <td className="px-5 py-4">
                                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">{getCampaignDisplay(lead)}</span>
                                         </td>
                                         <td className="px-5 py-4">
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-gray-50'}`}>
-                                                {lead.status?.replace(/_/g, ' ')}
+                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[String(lead.status)] || 'bg-gray-50'}`}>
+                                                {String(lead.status || '').replace(/_/g, ' ')}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-right">
                                             <button className="text-[10px] font-black text-[#4d0101] uppercase tracking-widest hover:underline">Details</button>
                                         </td>
+
                                     </tr>
                                 ))
                             )}
@@ -392,8 +401,8 @@ export default function ManagerLeadInbox() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-4 bg-white border border-slate-100 rounded-2xl">
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead Status</label>
-                                    <div className={`mt-2 inline-block px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${STATUS_COLORS[selectedLead.status]}`}>
-                                        {selectedLead.status?.replace(/_/g, ' ')}
+                                    <div className={`mt-2 inline-block px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${STATUS_COLORS[String(selectedLead.status)]}`}>
+                                        {String(selectedLead.status || '').replace(/_/g, ' ')}
                                     </div>
                                 </div>
                                 <div className="p-4 bg-white border border-slate-100 rounded-2xl">

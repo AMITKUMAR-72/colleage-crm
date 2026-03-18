@@ -144,18 +144,18 @@ export default function MentorManager() {
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
                 <div className="flex-1">
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <h2 className="text-xl font-bold text-gray-800">Mentors</h2>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <input
                                 type="text"
                                 placeholder="Search by name..."
                                 value={searchName}
                                 onChange={(e) => setSearchName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#dbb212] w-64 text-black"
+                                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#dbb212] w-full sm:w-64 text-black"
                             />
-                            <button onClick={handleSearch} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-blue-700 active:scale-95 transition-all text-sm">
+                            <button onClick={handleSearch} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-blue-700 active:scale-95 transition-all text-sm w-full sm:w-auto">
                                 Search
                             </button>
                         </div>
@@ -169,8 +169,8 @@ export default function MentorManager() {
                                 <thead className="text-xs text-slate-500 bg-slate-50 border-b border-gray-100 uppercase font-bold text-black">
                                     <tr>
                                         <th className="px-6 py-4">Name</th>
-                                        <th className="px-6 py-4">Email</th>
-                                        <th className="px-6 py-4">Department</th>
+                                        <th className="hidden sm:table-cell px-6 py-4">Email</th>
+                                        <th className="hidden md:table-cell px-6 py-4">Department</th>
                                         <th className="px-6 py-4 text-center">Actions</th>
                                     </tr>
                                 </thead>
@@ -183,14 +183,17 @@ export default function MentorManager() {
                                         mentors.map(mentor => (
                                             <tr key={mentor.id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-6 py-4 font-bold text-gray-800">
-                                                    <button onClick={() => mentor.id && mentor.email && handleMentorClick(mentor.id, mentor.email)} className="hover:text-blue-600 hover:underline">{mentor.name}</button>
+                                                    <button onClick={() => mentor.id && mentor.email && handleMentorClick(mentor.id, mentor.email)} className="hover:text-blue-600 hover:underline text-left">
+                                                        {mentor.name}
+                                                        <div className="sm:hidden text-xs text-gray-500 font-normal mt-1 block">{mentor.email}</div>
+                                                    </button>
                                                 </td>
-                                                <td className="px-6 py-4 text-gray-600">{mentor.email}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded border border-purple-100 text-xs font-bold">{mentor.departmentName || '—'}</span>
+                                                <td className="hidden sm:table-cell px-6 py-4 text-gray-600">{mentor.email}</td>
+                                                <td className="hidden md:table-cell px-6 py-4">
+                                                    <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded border border-purple-100 text-xs font-bold whitespace-normal inline-block">{mentor.departmentName || '—'}</span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <button onClick={() => handleEditClick(mentor)} className="text-indigo-600 font-bold hover:underline text-xs bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                                                    <button onClick={() => handleEditClick(mentor)} className="text-indigo-600 font-bold hover:underline text-xs bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 whitespace-nowrap">
                                                         Edit / Update
                                                     </button>
                                                 </td>

@@ -208,8 +208,7 @@ export default function DepartmentManager() {
                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                 <tr>
                                     <th className="px-4 sm:px-6 py-4 font-bold text-sm">Department</th>
-                                    <th className="hidden sm:table-cell px-6 py-4 font-bold text-sm">Metrics</th>
-                                    <th className="px-4 sm:px-6 py-4 font-bold text-right text-sm">Actions</th>
+                                     <th className="px-4 sm:px-6 py-4 font-bold text-right text-sm">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -228,18 +227,7 @@ export default function DepartmentManager() {
                                                     <span className="text-[10px] text-slate-400 font-bold">{(dept.counselors || []).length} CNSL</span>
                                                 </div>
                                             </td>
-                                            <td className="hidden sm:table-cell px-6 py-4">
-                                                <div className="flex gap-4">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="font-bold text-slate-800">{(dept.courses || []).length}</span>
-                                                        <span className="text-[10px] text-slate-400">COURSES</span>
-                                                    </div>
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="font-bold text-slate-800">{(dept.counselors || []).length}</span>
-                                                        <span className="text-[10px] text-slate-400">COUNSELORS</span>
-                                                    </div>
-                                                </div>
-                                            </td>
+
                                             <td className="px-4 sm:px-6 py-4 text-right">
                                                 <button
                                                     onClick={(e) => {

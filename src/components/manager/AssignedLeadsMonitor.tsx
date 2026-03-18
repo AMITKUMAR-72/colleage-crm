@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ManagerService } from '@/services/managerService';
 import { LeadService } from '@/services/leadService';
 import { CounselorService } from '@/services/counselorService';
-import { AssignedLeadDTO, CounselorDTO } from '@/types/api';
+import { AssignedLeadDTO, CounselorDTO, LeadStatus } from '@/types/api';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import LoadingButton from '@/components/ui/LoadingButton';
@@ -122,35 +122,70 @@ export default function AssignedLeadsMonitor() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [initialised, setInitialised] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
+
+    // ─── Filter States ────────────────────────────────────────────────────────
+    const [filterType, setFilterType] = useState<'ALL' | 'COUNSELOR' | 'STATUS' | 'LEAD_ID' | 'LEAD_NAME' | 'DATE_RANGE'>('ALL');
+    const [filterValue, setFilterValue] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [isPagingEnabled, setIsPagingEnabled] = useState(true);
+    const [allCounselors, setAllCounselors] = useState<CounselorDTO[]>([]);
+
+    useEffect(() => {
+        const fetchCounselors = async () => {
+            try {
+                const raw: any = await CounselorService.getAllCounselors();
+                const list: CounselorDTO[] = Array.isArray(raw)
+                    ? raw
+                    : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
+                setAllCounselors(list);
+            } catch (err) {
+                console.error('Failed to load counselors for filter', err);
+            }
+        };
+        fetchCounselors();
+    }, []);
 
     const loadAssignments = useCallback(async () => {
         setLoading(true);
         try {
-            console.log(`[AssignedLeadsMonitor] Fetching page ${page}...`);
-            const data = await ManagerService.getAllAssignedLeads(page, 10);
-            console.log('[AssignedLeadsMonitor] Data received:', data);
+            let data: any;
 
-            const rawData = data as any;
-            let content: any[] = [];
-            if (rawData?.content) content = rawData.content;
-            else if (rawData?.leads) content = rawData.leads;
-            else if (Array.isArray(rawData)) content = rawData;
-            else if (rawData && typeof rawData === 'object' && (rawData.name || rawData.id)) content = [rawData];
+            if (filterType === 'ALL' || (!filterValue && filterType !== 'DATE_RANGE')) {
+                data = await ManagerService.getAllAssignedLeads(page, 10);
+                setIsPagingEnabled(true);
+            } else {
+                setIsPagingEnabled(false);
+                switch (filterType) {
+                    case 'COUNSELOR':
+                        data = await ManagerService.getAssignmentsByCounselor(Number(filterValue));
+                        break;
+                    case 'STATUS':
+                        data = await ManagerService.getAssignmentsByStatus(filterValue);
+                        break;
+                    case 'LEAD_ID':
+                        data = await ManagerService.getAssignmentsByLead(Number(filterValue));
+                        break;
+                    case 'LEAD_NAME':
+                        data = await ManagerService.getAssignmentsByLeadName(filterValue);
+                        break;
+                    case 'DATE_RANGE':
+                        if (startDate && endDate) {
+                            data = await ManagerService.getAssignmentsByDateRange(startDate, endDate);
+                        } else {
+                            data = [];
+                        }
+                        break;
+                }
+            }
 
-            const tp = rawData?.totalPages || (content.length > 0 ? 1 : 0);
+            const content = data?.content || (Array.isArray(data) ? data : []);
+            const tp = data?.totalPages || (content.length > 0 ? (isPagingEnabled ? data.totalPages : 1) : 0);
 
             setAssignments(content);
-            setTotalPages(tp);
-
-            if (!initialised && tp > 1) {
-                setInitialised(true);
-                setPage(tp - 1);
-                return;
-            }
-            setInitialised(true);
+            setTotalPages(tp || (content.length > 0 ? 1 : 0));
         } catch (error) {
             console.error('[AssignedLeadsMonitor] Error:', error);
             toast.error('Failed to fetch lead assignments');
@@ -158,11 +193,17 @@ export default function AssignedLeadsMonitor() {
         } finally {
             setLoading(false);
         }
-    }, [page, initialised]);
+    }, [page, filterType, filterValue, startDate, endDate, isPagingEnabled]);
 
     useEffect(() => {
         loadAssignments();
     }, [loadAssignments]);
+
+    const handleFilterSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setPage(0);
+        loadAssignments();
+    };
 
     const toggleSelection = (id: number) => {
         setSelectedLeadIds(prev =>
@@ -191,22 +232,6 @@ export default function AssignedLeadsMonitor() {
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Monitor all lead-to-counselor distributions</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <BulkReassignButton
-                        leadIds={selectedLeadIds}
-                        onAssigned={() => {
-                            setSelectedLeadIds([]);
-                            loadAssignments();
-                        }}
-                    />
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Search data..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:ring-2 focus:ring-[#4d0101]/20 outline-none w-48 md:w-64 font-bold"
-                        />
-                    </div>
                     <LoadingButton
                         loading={loading}
                         loadingText="SYNCING..."
@@ -216,6 +241,122 @@ export default function AssignedLeadsMonitor() {
                         REFRESH
                     </LoadingButton>
                 </div>
+            </div>
+
+            {/* ─── Filters Bar ──────────────────────────────────────────────── */}
+            <form onSubmit={handleFilterSubmit} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Filter By</label>
+                    <select
+                        value={filterType}
+                        onChange={(e) => {
+                            setFilterType(e.target.value as any);
+                            setFilterValue('');
+                        }}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#4d0101]/10"
+                    >
+                        <option value="ALL">Show All (Default)</option>
+                        <option value="LEAD_NAME">Lead Name</option>
+                        <option value="STATUS">Status</option>
+                        <option value="COUNSELOR">Counselor</option>
+                        <option value="LEAD_ID">Lead ID</option>
+                        <option value="DATE_RANGE">Date Range</option>
+                    </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Search Value</label>
+                    {filterType === 'STATUS' ? (
+                        <select
+                            value={filterValue}
+                            onChange={(e) => setFilterValue(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#4d0101]/10"
+                        >
+                            <option value="">Select Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="CONTACTED">Contacted</option>
+                            <option value="TRANSFERRED">Transferred</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="TIMED_OUT">Timed Out</option>
+                            <option value="FAKE">Fake</option>
+                        </select>
+                    ) : filterType === 'COUNSELOR' ? (
+                        <select
+                            value={filterValue}
+                            onChange={(e) => setFilterValue(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#4d0101]/10"
+                        >
+                            <option value="">Select Counselor</option>
+                            {allCounselors.map(c => (
+                                <option key={c.counselorId} value={c.counselorId}>
+                                    {c.name} ({c.counselorType})
+                                </option>
+                            ))}
+                        </select>
+                    ) : filterType === 'DATE_RANGE' ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#4d0101]/10"
+                            />
+                            <span className="text-slate-300 font-bold text-xs uppercase">to</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#4d0101]/10"
+                            />
+                        </div>
+                    ) : (
+                        <input
+                            type={filterType.includes('ID') ? 'number' : 'text'}
+                            placeholder={filterType === 'ALL' ? "Search in results below..." : `Enter ${filterType.replace('_', ' ').toLowerCase()}...`}
+                            value={searchTerm || filterValue}
+                            onChange={(e) => {
+                                if (filterType === 'ALL') setSearchTerm(e.target.value);
+                                else setFilterValue(e.target.value);
+                            }}
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#4d0101]/10 font-mono"
+                        />
+                    )}
+                </div>
+
+                <div className="flex gap-2">
+                    <button
+                        type="submit"
+                        className="flex-1 px-6 py-2.5 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md active:scale-95"
+                    >
+                        Apply Filter
+                    </button>
+                    {(filterValue || filterType !== 'ALL' || startDate || endDate) && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setFilterType('ALL');
+                                setFilterValue('');
+                                setSearchTerm('');
+                                setStartDate('');
+                                setEndDate('');
+                                setPage(0);
+                            }}
+                            className="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all"
+                        >
+                            Clear
+                        </button>
+                    )}
+                </div>
+            </form>
+
+            <div className="flex justify-end">
+                <BulkReassignButton
+                    leadIds={selectedLeadIds}
+                    onAssigned={() => {
+                        setSelectedLeadIds([]);
+                        loadAssignments();
+                    }}
+                />
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -255,6 +396,7 @@ export default function AssignedLeadsMonitor() {
                                 </tr>
                             ) : (
                                 assignments.filter(a => {
+                                    if (filterType !== 'ALL') return true;
                                     const item = a as any;
                                     const leadName = (a.lead?.name || item.leadName || item.name || '').toLowerCase();
                                     const counselorName = (a.counselor?.name || item.assignedTo?.name || item.counselorEmail || '').toLowerCase();
@@ -337,7 +479,7 @@ export default function AssignedLeadsMonitor() {
                     </table>
                 </div>
 
-                {totalPages > 1 && (
+                {totalPages > 0 && (
                     <div className="px-6 py-4 border-t border-slate-50 flex items-center justify-between bg-slate-50/10">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                             Page {page + 1} of {totalPages}
@@ -348,14 +490,14 @@ export default function AssignedLeadsMonitor() {
                                 disabled={page === 0}
                                 className="px-4 py-2 text-[10px] font-black text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-all font-mono"
                             >
-                                ← NEWER
+                                PREV
                             </button>
                             <button
                                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                                 disabled={page >= totalPages - 1}
                                 className="px-4 py-2 text-[10px] font-black text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-all font-mono"
                             >
-                                OLDER →
+                                NEXT
                             </button>
                         </div>
                     </div>

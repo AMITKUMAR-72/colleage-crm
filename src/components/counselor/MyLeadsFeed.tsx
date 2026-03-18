@@ -35,20 +35,11 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const ALL_STATUSES: LeadStatus[] = [
-    'NEW',
-    'TELECALLER_ASSIGNED',
-    'INTERESTED',
-    'COUNSELOR_ASSIGNED',
-    'EXTERNAL_ASSIGNED',
-    'ADMISSION_IN_PROCESS',
-    'ADMISSION_DONE',
     'LOST',
-    'UNASSIGNED',
     'CONTACTED',
-    'TIMED_OUT',
-    'REASSIGNED',
-    'IN_A_SESSION',
-    'QUEUED'
+    'INTERESTED',
+    'ADMISSION_IN_PROCESS',
+    'ADMISSION_DONE'
 ];
 
 const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
@@ -110,7 +101,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
             const results = normalizeResults(raw);
             console.log('[loadLeads] Normalized results:', results);
             setLeads(results);
-            
+
             // Extract pagination info if available
             if (raw && typeof raw === 'object') {
                 const tp = raw.totalPages ?? (raw as any).data?.totalPages ?? (results.length === PAGE_SIZE ? page + 2 : page + 1);
@@ -134,7 +125,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
             else if (raw?.data && Array.isArray(raw.data)) data = raw.data;
             else if (raw?.content && Array.isArray(raw.content)) data = raw.content;
             else if (raw?.data?.content && Array.isArray(raw.data.content)) data = raw.data.content;
-            
+
             setCourses(data);
         } catch (err) {
             console.error('Failed to load courses', err);
@@ -197,7 +188,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
 
     useEffect(() => {
         if (!searching) loadLeads();
-    }, [loadLeads, searching]); 
+    }, [loadLeads, searching]);
 
     useEffect(() => {
         loadCourses();
@@ -425,10 +416,18 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                             <p className="text-sm font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-indigo-600 transition-colors">{lead.name}</p>
                                             <span className="text-[7px] md:text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-lg border border-slate-100 uppercase tracking-widest whitespace-nowrap">ID: {lead.id || lead.leadId}</span>
                                         </div>
-                                        <div className="flex items-center gap-3 mt-1">
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                                             <div className="flex items-center gap-1.5 truncate">
                                                 <Mail className="w-3 h-3 text-slate-300 shrink-0" />
                                                 <span className="text-[10px] md:text-[11px] text-slate-500 font-bold lowercase tracking-tight truncate">{lead.email}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 truncate">
+                                                <GraduationCap className="w-3 h-3 text-slate-300 shrink-0" />
+                                                <span className="text-[10px] md:text-[11px] text-slate-500 font-bold uppercase tracking-widest truncate">{getCourseName(lead.course) || 'Not available'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 truncate">
+                                                <Globe className="w-3 h-3 text-slate-300 shrink-0" />
+                                                <span className="text-[10px] md:text-[11px] text-slate-400 font-black uppercase tracking-widest truncate">{lead.campaign?.name || 'Not available'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -450,7 +449,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                         ))}
                     </div>
                 )}
-                
+
                 {/* Footer Pagination */}
                 {!searching && !loading && leads.length > 0 && (
                     <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -491,7 +490,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300" onClick={() => setSelectedLead(null)} />
                     <div className="bg-white w-full max-w-5xl max-h-[95vh] rounded-[2rem] md:rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.3)] relative z-10 overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-500 border border-white/50">
-                        
+
                         {/* Left Side: Information Canvas */}
                         <div className="flex-1 overflow-y-auto p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100/50 bg-white">
                             <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 md:mb-12">
@@ -512,8 +511,8 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                     </div>
                                 </div>
                                 <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start w-full sm:w-auto gap-4">
-                                    <button 
-                                        onClick={() => setSelectedLead(null)} 
+                                    <button
+                                        onClick={() => setSelectedLead(null)}
                                         className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 md:hover:rotate-90 group"
                                     >
                                         <RotateCcw className="w-5 h-5 group-hover:scale-110" />
@@ -545,7 +544,7 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                         </div>
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</p>
                                     </div>
-                                    <p className="text-xs md:text-sm font-extrabold text-slate-700 truncate pl-1">{selectedLead.campaign?.name || 'Manual CRM'}</p>
+                                    <p className="text-xs md:text-sm font-extrabold text-slate-700 truncate pl-1">{selectedLead.campaign?.name || 'Not available'}</p>
                                 </div>
                             </div>
 
@@ -558,10 +557,11 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                         <div className="group relative">
                                             <select
                                                 disabled={updateProcessing}
-                                                value={selectedLead.status}
+                                                value={selectedLead.status || ""}
                                                 onChange={(e) => selectedLead && handleStatusChange(selectedLead.id, e.target.value)}
                                                 className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
                                             >
+                                                <option value="" disabled>Select Status</option>
                                                 {ALL_STATUSES.map(status => (
                                                     <option key={status} value={status}>
                                                         {status.replace(/_/g, ' ')}
@@ -575,23 +575,25 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                     </div>
 
                                     {/* Program Column */}
-                                    <div className="space-y-3">
-                                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Academic Program</label>
-                                        <div className="group relative">
-                                            <select
-                                                disabled={updateProcessing}
-                                                value={getCourseName(selectedLead.course) || ""}
-                                                onChange={(e) => selectedLead && handleCourseChange(selectedLead.id, e.target.value)}
-                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
-                                            >
-                                                <option value="" disabled>{getCourseName(selectedLead.course) || 'Assign Program...'}</option>
-                                                {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
-                                            </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
-                                                <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />
+                                    {selectedLead.status === 'CONTACTED' && (
+                                        <div className="space-y-3">
+                                            <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Academic Program</label>
+                                            <div className="group relative">
+                                                <select
+                                                    disabled={updateProcessing}
+                                                    value={getCourseName(selectedLead.course) || ""}
+                                                    onChange={(e) => selectedLead && handleCourseChange(selectedLead.id, e.target.value)}
+                                                    className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
+                                                >
+                                                    <option value="" disabled>{getCourseName(selectedLead.course) || 'Not available'}</option>
+                                                    {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
+                                                </select>
+                                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                                    <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* Premium Score Selector */}
@@ -639,8 +641,8 @@ export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate,
                                                 <p className="text-[10px] md:text-xs font-extrabold opacity-60 truncate lowercase max-w-[250px] mx-auto md:mx-0">{selectedLead.email}</p>
                                             </div>
                                         </div>
-                                        <a 
-                                            href={`tel:${selectedLead.phone}`} 
+                                        <a
+                                            href={`tel:${selectedLead.phone}`}
                                             className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-3xl md:rounded-[2.5rem] flex items-center justify-center hover:scale-110 transition-all duration-500 shadow-xl group border-4 border-white/10"
                                         >
                                             <Phone className="w-8 h-8 md:w-10 md:h-10 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />

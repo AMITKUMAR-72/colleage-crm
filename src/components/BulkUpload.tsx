@@ -76,6 +76,20 @@ const BulkUpload = () => {
                         return;
                     }
 
+                    // Check if campaign column has numbers (IDs) instead of names
+                    const campaignIndex = headers.findIndex(h => h.toLowerCase() === 'campaign');
+                    if (campaignIndex !== -1 && jsonData.length > 1) {
+                        for (let i = 1; i < Math.min(jsonData.length, 5); i++) {
+                            const row = jsonData[i] as any[];
+                            const val = row[campaignIndex];
+                            if (val !== undefined && typeof val === 'number') {
+                                setValidationError(`Row ${i + 1}: Campaign should be a name (e.g. "Facebook"), not a numeric ID.`);
+                                resolve(false);
+                                return;
+                            }
+                        }
+                    }
+
                     resolve(true);
                 } catch (err) {
                     console.error("Validation failed", err);
@@ -145,8 +159,8 @@ const BulkUpload = () => {
 
         // Handle SQL Not-Null constraints (usually missing required data)
         if (rawReason.includes("violates not-null constraint")) {
-            if (rawReason.includes("course_id")) return "The 'Course' information is missing or incorrect for this lead.";
-            if (rawReason.includes("campaign_id")) return "The 'Campaign ID' is missing or incorrect. Please use a numeric ID.";
+            if (rawReason.includes("course")) return "The 'Course' information is missing or incorrect for this lead.";
+            if (rawReason.includes("campaign")) return "The 'Campaign' name is missing or incorrect.";
             if (rawReason.includes("email")) return "Email address is required.";
             return "Some required information is missing for this row.";
         }
@@ -279,14 +293,14 @@ const BulkUpload = () => {
                                 <td className="p-2 border border-gray-100">2024</td>
                                 <td className="p-2 border border-gray-100">NEW</td>
                                 <td className="p-2 border border-gray-100">COLD</td>
-                                <td className="p-2 border border-gray-100 italic">ID (1, 2...)</td>
+                                <td className="p-2 border border-gray-100 italic">Name (Facebook)</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-3 flex items-center gap-1.5">
                     <AlertCircle className="w-3 h-3" />
-                    Important: Campaign column must contain the Numeric ID of the source.
+                    Important: Campaign column must contain the Name of the source (e.g. Facebook, Instagram, Google Ads).
                 </p>
             </div>
         </div>

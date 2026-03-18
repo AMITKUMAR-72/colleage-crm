@@ -23,7 +23,6 @@ const STATUS_COLORS: Record<string, string> = {
     TIMED_OUT: 'bg-rose-100 text-rose-700 border-rose-200',
     REASSIGNED: 'bg-pink-100 text-pink-700 border-pink-200',
     IN_A_SESSION: 'bg-violet-100 text-violet-700 border-violet-200',
-    QUEUED: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
 };
 
 export default function TimeoutLeadInbox() {
@@ -31,8 +30,8 @@ export default function TimeoutLeadInbox() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
-    const [initialised, setInitialised] = useState(false); // tracks if we've jumped to last page
-    const [filters, setFilters] = useState<TimeoutLeadFilters>({ email: '', name: '', counselorEmail: '', startDate: '', endDate: '' });
+    const [totalLeads, setTotalLeads] = useState(0);
+    const [filters, setFilters] = useState<TimeoutLeadFilters>({ email: '', name: '', counselorId: '', startDate: '', endDate: '' });
 
     const [reassigning, setReassigning] = useState<LeadResponseDTO | null>(null);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
@@ -97,26 +96,23 @@ export default function TimeoutLeadInbox() {
                 const results = await TimeOutService.searchTimeoutLeads(filters);
                 setLeads(results);
                 setTotalPages(1);
+                setTotalLeads(results.length);
                 setPage(0);
-                setInitialised(true);
             } else {
                 const response: any = await TimeOutService.getAllTimedOutLeads(page, 50);
 
                 const newLeads = response.lead || response.content || (Array.isArray(response) ? response : []);
                 setLeads(newLeads);
 
-                const totalCount = response.count ?? response.totalElements ?? 0;
-                const calculatedPages = totalCount > 0 ? Math.ceil(totalCount / 50) : 1;
-                const tp = response.totalPages || calculatedPages;
-                setTotalPages(tp);
+                // Robust pagination info extraction
+                const totalCount = response.count ?? response.totalElements ?? response.totalCount ?? response.totalElementsCount ?? 0;
+                setTotalLeads(totalCount);
 
-                // First load: jump to last page (most recent data)
-                if (!initialised && tp > 1) {
-                    setInitialised(true);
-                    setPage(tp - 1); // triggers re-fetch with last page
-                    return;
-                }
-                setInitialised(true);
+                const PAGE_SIZE = 50;
+                const calculatedPages = totalCount > 0 ? Math.ceil(totalCount / PAGE_SIZE) :
+                    (newLeads.length === PAGE_SIZE ? page + 2 : page + 1);
+                const tp = response.totalPages || response.pages || calculatedPages;
+                setTotalPages(tp);
             }
         } catch (error) {
             console.error('Failed to fetch timeout leads', error);
@@ -125,17 +121,20 @@ export default function TimeoutLeadInbox() {
         } finally {
             setLoading(false);
         }
-    }, [filters, page, initialised]);
+    }, [filters, page]);
 
     useEffect(() => {
         fetchLeads();
         // Load counselors for picker
-        CounselorService.getAllCounselors().then(setCounselors).catch(() => { });
+        CounselorService.getAllCounselors().then((res: any) => {
+            const list = Array.isArray(res) ? res : (res?.counselors || res?.content || res?.data || []);
+            setCounselors(list);
+        }).catch(() => { });
     }, [fetchLeads]);
 
     return (
         <div className="space-y-6">
-            <TimeoutSearchFilters onFilterChange={(f) => setFilters(f)} />
+            <TimeoutSearchFilters counselors={counselors} onFilterChange={(f) => setFilters(f)} />
 
             <div className="glass-card rounded-2xl overflow-hidden mb-12 relative bg-white shadow-sm border border-gray-100">
                 <div className="p-4 sm:p-5 border-b border-slate-100/50 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -143,7 +142,7 @@ export default function TimeoutLeadInbox() {
                         <div>
                             <h2 className="font-black text-slate-800 tracking-tight">Timed-Out Leads Feed</h2>
                             <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-                                {leads.length} Leads Found • Page {page + 1} of {totalPages}
+                                {totalLeads} Total • Page {page + 1} of {totalPages}
                             </p>
                         </div>
                         {selectedLeads.length > 0 && (
@@ -157,15 +156,18 @@ export default function TimeoutLeadInbox() {
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
-                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                            disabled={page >= totalPages - 1}
+                            onClick={() => setPage(p => Math.max(0, p - 1))}
+                            disabled={page === 0}
                             className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
                             ← Newer
                         </button>
                         <button
-                            onClick={() => setPage(p => Math.max(0, p - 1))}
-                            disabled={page === 0}
+                            onClick={() => {
+                                setPage(p => p + 1);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            disabled={page >= totalPages - 1 && leads.length < 50}
                             className="flex-1 sm:flex-none px-4 py-2 sm:px-3 sm:py-1 text-xs border rounded-lg hover:bg-gray-50 disabled:opacity-50 transition font-bold"
                         >
                             Older →
@@ -194,9 +196,11 @@ export default function TimeoutLeadInbox() {
                                             onChange={toggleAllLeads}
                                         />
                                     </th>
-                                    <th className="px-4 sm:px-6 py-4">Lead</th>
+                                    <th className="px-4 sm:px-6 py-4">Name</th>
                                     <th className="hidden sm:table-cell px-6 py-4">Contact</th>
+                                    <th className="hidden sm:table-cell px-6 py-4">Email</th>
                                     <th className="hidden md:table-cell px-6 py-4">Course</th>
+                                    <th className="hidden lg:table-cell px-6 py-4">Counselor</th>
                                     <th className="px-4 sm:px-6 py-4">Status & Time</th>
                                     <th className="px-4 sm:px-6 py-4 text-center">Action</th>
                                 </tr>
@@ -215,19 +219,35 @@ export default function TimeoutLeadInbox() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="font-bold text-slate-800 text-sm">{lead.name || 'Unknown'}</div>
+                                            <div className="font-bold text-slate-800 text-sm">{lead.name || 'not availabe'}</div>
                                             <div className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">{lead.id}</div>
                                         </td>
                                         <td className="hidden sm:table-cell px-6 py-4">
                                             <div className="flex flex-col gap-1">
-                                                <span className="font-medium text-slate-700 text-sm">{lead.email || '—'}</span>
-                                                <span className="text-xs text-slate-500">{lead.phone || '—'}</span>
+                                                <span className="font-medium text-slate-700 text-sm">{lead.email || 'not availabe'}</span>
+                                                <span className="text-xs text-slate-500">{lead.phone || 'not availabe'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="hidden sm:table-cell px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+
+                                                <span className="text-xs text-slate-500">{lead.phone || 'not availabe'}</span>
                                             </div>
                                         </td>
                                         <td className="hidden md:table-cell px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-xs">
-                                                {typeof lead.course === 'object' ? lead.course.course : (lead.course || 'N/A')}
+                                                {typeof lead.course === 'object' ? lead.course.course : (lead.course || 'not availabe')}
                                             </span>
+                                        </td>
+                                        <td className="hidden lg:table-cell px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-bold text-slate-800 text-sm">
+                                                    {(lead as any).counselor?.name || (lead as any).counselorName || (lead as any).assignedTo?.name || (lead as any).counselorEmail || 'Unassigned'}
+                                                </span>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                                                    {(lead as any).counselor?.counselorType || (lead as any).counselorType || '-'}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">
                                             <div className="flex flex-col gap-1.5">

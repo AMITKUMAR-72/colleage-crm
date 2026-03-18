@@ -14,7 +14,7 @@ export const TimeOutService = {
     searchTimeoutLeads: async (params: {
         email?: string,
         name?: string,
-        counselorEmail?: string,
+        counselorId?: string,
         startDate?: string,
         endDate?: string
     }) => {
@@ -38,15 +38,9 @@ export const TimeOutService = {
             }
         }
 
-        if (params.counselorEmail) {
+        if (params.counselorId) {
             try {
-                // First get counselor ID by email
-                const counselorRes = await api.get(`/api/counselors/email/${params.counselorEmail}`);
-                const counselor = counselorRes.data;
-                if (!counselor || !counselor.id) return [];
-
-                // Then fetch timeouts by counselor ID
-                const response = await api.get(`/api/leads/timeout/counselor/${counselor.id}`);
+                const response = await api.get(`/api/leads/timeout/counselor/${params.counselorId}`);
                 return extractArray(response.data);
             } catch (error) {
                 return [];
@@ -75,7 +69,7 @@ export const TimeOutService = {
     },
     // Bulk reassign
     bulkReassignTimeoutLeads: async (counselorId: number, leadIds: number[]) => {
-        const response = await api.post(`/api/leads/timeout/bulk-assign/${counselorId}`, leadIds);
+        const response = await api.post(`/api/leads/timeout/bulk-assign/${counselorId}`, { leadIds });
         return response.data;
     }
 };

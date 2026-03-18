@@ -31,6 +31,11 @@ export const ManagerService = {
         return response.data;
     },
 
+    getAssignmentsByLeadName: async (name: string) => {
+        const response = await api.get<AssignedLeadDTO[]>(`/api/assignedLeads/lead/name/${encodeURIComponent(name)}`);
+        return response.data;
+    },
+
     // ─── Contacted Leads ───
     getAllContactedLeads: async (page: number, size: number) => {
         const response = await api.get<PageResponse<ContactedLeadDTO>>(`/api/contactedLeads/all/page/${page}/size/${size}`);
@@ -60,6 +65,26 @@ export const ManagerService = {
 
     getContactedByDateRange: async (start: string, end: string) => {
         const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/date-range/start/${start}/end/${end}`);
+        return response.data;
+    },
+
+    getContactedByLeadName: async (name: string) => {
+        const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/lead/name/${encodeURIComponent(name)}`);
+        return response.data;
+    },
+
+    manualAssignContacted: async (leadId: number, counselorId: number) => {
+        const response = await api.post(`/api/contactedLeads/manual-assign/lead/${leadId}/counselor/${counselorId}`);
+        return response.data;
+    },
+
+    bulkAssignContacted: async (counselorId: number, leadIds: number[]) => {
+        const response = await api.post(`/api/contactedLeads/bulk-assign/${counselorId}`, { leadIds });
+        return response.data;
+    },
+
+    getLeadNotes: async (leadId: number) => {
+        const response = await api.get<any[]>(`/api/note/${leadId}/notes`);
         return response.data;
     },
 

@@ -166,7 +166,6 @@ export default function CounselorDashboard() {
                             </div>
                         </div>
                     </>
-/>
                 ) : (
                     <div className="bg-white rounded-3xl p-32 text-center border border-slate-100 shadow-sm">
                         <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6" />

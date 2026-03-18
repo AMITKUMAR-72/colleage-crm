@@ -6,6 +6,7 @@ import { CounselorService } from '@/services/counselorService';
 import { LeadService } from '@/services/leadService';
 import api from '@/services/api';
 import LeadSearchFilters from './LeadSearchFilters';
+import LeadEditDrawer from './admin/LeadEditDrawer';
 import toast from 'react-hot-toast';
 
 interface LeadFilters {
@@ -14,6 +15,11 @@ interface LeadFilters {
     course: string;
     campaign: string;
     score: string;
+    id?: string;
+    phone?: string;
+    name?: string;
+    startDate?: string;
+    endDate?: string;
 }
 
 const PAGE_SIZE = 15;
@@ -33,7 +39,6 @@ const STATUS_COLORS: Record<string, string> = {
     TIMED_OUT: 'bg-rose-100 text-rose-700 border-rose-200',
     REASSIGNED: 'bg-pink-100 text-pink-700 border-pink-200',
     IN_A_SESSION: 'bg-violet-100 text-violet-700 border-violet-200',
-    QUEUED: 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
 };
 
 const SCORE_COLORS: Record<string, string> = {
@@ -159,13 +164,17 @@ export default function LeadInbox() {
     const [noteText, setNoteText] = useState('');
     const [notesPosting, setNotesPosting] = useState(false);
 
+    // Edit state
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [leadToEdit, setLeadToEdit] = useState<LeadResponseDTO | null>(null);
+
     // ── Derived pagination (client-side) ─────────────────────────────────────
     // ── Derived pagination ───────────────────────────────────────────────────
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
     // If filters are active, we slice locally (since search returns array).
     // If no filters, the server handled the pagination, so we take the whole array.
-    const hasFilters = Object.values(filters).some(v => v !== '');
+    const hasFilters = Object.entries(filters).some(([_, v]) => v && v !== '');
     const pagedLeads = hasFilters
         ? allLeads.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
         : allLeads;
@@ -176,7 +185,7 @@ export default function LeadInbox() {
     const fetchLeads = useCallback(async () => {
         try {
             setLoading(true);
-            const hasFilters = Object.values(filters).some(v => v !== '');
+            const hasFilters = Object.entries(filters).some(([_, v]) => v && v !== '');
             if (hasFilters) {
                 const results: any = await LeadService.searchLeads(filters);
                 const arr: LeadResponseDTO[] = Array.isArray(results)
@@ -267,7 +276,7 @@ export default function LeadInbox() {
                 {/* Header */}
                 <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
-                        <h2 className="font-black text-slate-800 tracking-tight">Live Lead Feed</h2>
+                        <h2 className="font-black text-slate-800 tracking-tight">All Leads</h2>
                         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">
                             {totalCount} Total Leads
                             {showPagination && ` • Page ${page + 1} of ${totalPages}`}
@@ -321,15 +330,7 @@ export default function LeadInbox() {
                     ) : (
                         <table className="w-full text-sm text-left">
                             <thead className="text-[10px] text-slate-400 uppercase bg-slate-50/60 border-b border-slate-200 tracking-widest font-black sticky top-0 z-10">
-                                <tr>
-                                    <th className="px-5 py-3">Name</th>
-                                    <th className="px-5 py-3">Contact</th>
-                                    <th className="px-5 py-3">Course</th>
-                                    <th className="px-5 py-3">Campaign</th>
-                                    <th className="px-5 py-3">Status</th>
-                                    <th className="px-5 py-3">Score</th>
-                                    <th className="px-5 py-3 text-right">Actions</th>
-                                </tr>
+
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {pagedLeads.map((lead) => (
@@ -356,8 +357,8 @@ export default function LeadInbox() {
                                             <span className="text-xs font-bold text-slate-600">{getCampaignDisplay(lead)}</span>
                                         </td>
                                         <td className="px-5 py-3">
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                                                {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[String(lead.status)] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                                {String(lead.status || '').replace(/_/g, ' ') || 'UNKNOWN'}
                                             </span>
                                         </td>
                                         <td className="px-5 py-3">
@@ -368,10 +369,16 @@ export default function LeadInbox() {
                                         <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
-                                                    onClick={e => { e.stopPropagation(); handleViewLead(lead.id); }}
-                                                    className="text-[10px] font-black text-indigo-600 hover:text-indigo-900 uppercase tracking-widest"
+                                                    onClick={() => {
+                                                        setLeadToEdit(lead);
+                                                        setIsEditOpen(true);
+                                                    }}
+                                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+                                                    title="Edit Lead"
                                                 >
-                                                    Details
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                    </svg>
                                                 </button>
                                                 <AssignButton leadId={lead.id} onAssigned={fetchLeads} />
                                             </div>
@@ -385,8 +392,8 @@ export default function LeadInbox() {
 
                 {/* Footer pagination strip */}
                 {showPagination && !loading && (
-                    <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-0">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center sm:text-left">
                             Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
                         </p>
                         <div className="flex gap-2">
@@ -448,8 +455,8 @@ export default function LeadInbox() {
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="p-3 border rounded-xl">
                                     <label className="text-xs text-gray-400 uppercase font-black tracking-widest">Status</label>
-                                    <div className={`mt-1.5 inline-block px-2 py-1 rounded text-xs font-black ${STATUS_COLORS[selectedLead.status] || 'bg-gray-100'}`}>
-                                        {selectedLead.status?.replace(/_/g, ' ')}
+                                    <div className={`mt-1.5 inline-block px-2 py-1 rounded text-xs font-black ${STATUS_COLORS[String(selectedLead.status)] || 'bg-gray-100'}`}>
+                                        {String(selectedLead.status || '').replace(/_/g, ' ')}
                                     </div>
                                 </div>
                                 <div className="p-3 border rounded-xl">
@@ -550,6 +557,18 @@ export default function LeadInbox() {
                     </div>
                 </div>
             )}
+
+            <LeadEditDrawer
+                isOpen={isEditOpen}
+                lead={leadToEdit}
+                onClose={() => {
+                    setIsEditOpen(false);
+                    setLeadToEdit(null);
+                }}
+                onSuccess={() => {
+                    fetchLeads();
+                }}
+            />
         </div>
     );
 }

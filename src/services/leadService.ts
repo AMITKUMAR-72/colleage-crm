@@ -132,7 +132,9 @@ export const LeadService = {
         campaign?: string,
         score?: string,
         startDate?: string,
-        endDate?: string
+        endDate?: string,
+        id?: string,
+        phone?: string
     }) => {
         try {
             // If searching by email, use the working email endpoint
@@ -155,6 +157,16 @@ export const LeadService = {
                 if (start.length === 16) start += ':00';
                 if (end.length === 16) end += ':00';
                 return extractArray(await api.get(`/api/leads/date-range/start/${start}/end/${end}`));
+            }
+
+            if (params.id) {
+                const lead = await LeadService.getLeadById(Number(params.id));
+                return lead ? [lead] : [];
+            }
+
+            if (params.phone) {
+                const response = await api.get(`/api/leads/phone/${params.phone}`);
+                return extractArray(response);
             }
 
             return [];
@@ -200,6 +212,8 @@ export const LeadService = {
         const response = await api.put<LeadResponseDTO>(`/api/leads/update/email/${email}`, data);
         return response.data;
     },
+
+
 
     // ─── Notes (uses /api/note endpoints) ───
     // Backend extracts counselor from JWT Principal. Only send { note }.

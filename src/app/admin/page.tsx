@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import LeadInbox from '@/components/LeadInbox';
 import CounselorManager from '@/components/admin/CounselorManager';
 import AuditMonitor from '@/components/admin/AuditMonitor';
+import ManualLeadEntryDrawer from '@/components/admin/ManualLeadEntryDrawer';
 import { LeadService } from '@/services/leadService';
 
 function AdminDashboardContent() {
@@ -14,6 +15,7 @@ function AdminDashboardContent() {
     const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'COUNSELORS' | 'MONITOR' | null : null;
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS' | 'MONITOR'>(tabParam || 'OVERVIEW');
     const [leadsCount, setLeadsCount] = useState(0);
+    const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const statsFetchedRef = useRef(false);
 
     // Sync tab from URL param on load/navigation
@@ -112,6 +114,12 @@ function AdminDashboardContent() {
                     >
                         Monitor
                     </button>
+                    <button
+                        onClick={() => setIsAddLeadOpen(true)}
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap text-slate-400 hover:text-slate-600 hover:bg-white/50`}
+                    >
+                        + Add Lead
+                    </button>
                 </div>
             </div>
 
@@ -137,6 +145,17 @@ function AdminDashboardContent() {
             ) : (
                 <AuditMonitor />
             )}
+
+            <ManualLeadEntryDrawer
+                isOpen={isAddLeadOpen}
+                onClose={() => setIsAddLeadOpen(false)}
+                onSuccess={() => {
+                    // Update stats directly if we're on overview page
+                    if (activeTab === 'OVERVIEW') {
+                        setLeadsCount(prev => prev + 1);
+                    }
+                }}
+            />
         </>
     );
 }

@@ -203,8 +203,8 @@ export default function CourseManager() {
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4 font-bold">Course Name</th>
-                                    <th className="px-6 py-4 font-bold">Department</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold">Course Name</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold">Department</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -215,7 +215,7 @@ export default function CourseManager() {
                                             onClick={() => handleViewDetails(courseObj.id)}
                                             className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
                                         >
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 sm:px-6 py-4">
                                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center font-bold shadow-sm border border-amber-100 shrink-0">
@@ -224,7 +224,7 @@ export default function CourseManager() {
                                                     <span className="font-bold text-slate-800 uppercase tracking-tight">{courseObj.course}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 sm:px-6 py-4">
                                                 <div className="flex items-center gap-1.5 text-slate-600 font-medium font-bold">
                                                     <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
                                                     {getDeptName(courseObj)}
