@@ -1,3 +1,0 @@
-src/components/admin/DepartmentManager.tsx(28,42): error TS2339: Property 'matchAll' does not exist on type 'never'.
-src/components/LeadInbox.tsx(145,38): error TS2304: Cannot find name 'result'.
-src/components/LeadInbox.tsx(146,63): error TS2304: Cannot find name 'result'.

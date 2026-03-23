@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     // Determine if the request is destined for the backend API
     if (request.nextUrl.pathname.startsWith('/api/') || request.nextUrl.pathname.startsWith('/auth/')) {
 
@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
             requestHeaders.set('host', 'apis.rafunirp.com');
         }
 
-        // Proceed to the rewrite proxy setup in next.config.ts with the sanitized headers
+        // Proceed to the proxy setup in next.config.ts with the sanitized headers
         return NextResponse.next({
             request: {
                 headers: requestHeaders,
@@ -34,6 +34,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    // Optimize middleware so it only runs on API and Auth proxy routes
+    // Optimize proxy so it only runs on API and Auth routes
     matcher: ['/api/:path*', '/auth/:path*'],
 };
