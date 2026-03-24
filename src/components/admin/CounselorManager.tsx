@@ -24,7 +24,7 @@ export default function CounselorManager() {
         password: '',
         phone: '',
         department: '',
-        counselorType: 'INTERNAL' as CounselorType,
+        counselorTypes: ['INTERNAL'] as CounselorType[],
         status: 'AVAILABLE' as CounselorStatus,
         priority: 'MEDIUM' as Priority,
         totalLeads: 0
@@ -111,7 +111,7 @@ export default function CounselorManager() {
             }
             setShowModal(false);
             setEditingCounselor(null);
-            setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL', status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
+            setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
             loadCounselors();
         } catch (error) {
             const err = error as AxiosError<{ message: string }>;
@@ -141,7 +141,7 @@ export default function CounselorManager() {
             password: '', // Password not editable here for simplicity/security
             phone: counselor.phone,
             department: counselor.department || '',
-            counselorType: counselor.counselorType,
+            counselorTypes: counselor.counselorTypes || [],
             status: counselor.status,
             priority: counselor.priority,
             totalLeads: counselor.totalLeads || 0
@@ -158,7 +158,7 @@ export default function CounselorManager() {
                         <button
                             onClick={() => {
                                 setEditingCounselor(null);
-                                setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorType: 'INTERNAL', status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
+                                setFormData({ name: '', email: '', password: '', phone: '', department: '', counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
                                 setShowModal(true);
                             }}
                             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg"
@@ -195,7 +195,7 @@ export default function CounselorManager() {
                                             <div className="font-bold text-slate-800 text-sm sm:text-base">{c.name}</div>
                                             <div className="text-slate-500 mt-0.5 text-xs truncate max-w-[120px] sm:max-w-[200px]" title={c.email}>{c.email}</div>
                                             <div className="sm:hidden mt-2 flex flex-col gap-1">
-                                                <div className="text-[10px] text-slate-400 font-bold">{c.department || 'General'} • {c.counselorType}</div>
+                                                <div className="text-[10px] text-slate-400 font-bold">{c.department || 'General'} • {c.counselorTypes?.join(', ')}</div>
                                                 <div className="flex gap-4">
                                                     <div className="text-[10px] text-slate-400 font-medium">L: {c.totalLeads}</div>
                                                     <div className="text-[10px] text-slate-400 font-medium">P: {c.priority}</div>
@@ -204,11 +204,11 @@ export default function CounselorManager() {
                                         </td>
                                         <td className="hidden sm:table-cell px-6 py-4">
                                             <div className="font-medium text-slate-700">{c.department || 'General'}</div>
-                                            <div className={`mt-1.5 w-fit px-2 py-0.5 text-[10px] font-bold rounded-full border ${c.counselorType === 'INTERNAL' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                c.counselorType === 'TELECALLER' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                            <div className={`mt-1.5 w-fit px-2 py-0.5 text-[10px] font-bold rounded-full border ${c.counselorTypes?.includes('INTERNAL') ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                c.counselorTypes?.includes('TELECALLER') ? 'bg-amber-50 text-amber-600 border-amber-100' :
                                                     'bg-purple-50 text-purple-600 border-purple-100'
                                                 }`}>
-                                                {c.counselorType}
+                                                {c.counselorTypes?.join(', ')}
                                             </div>
                                         </td>
                                         <td className="px-4 sm:px-6 py-4">
@@ -350,12 +350,16 @@ export default function CounselorManager() {
                                 </select>
                             </div>
                             <div className="col-span-1">
-                                <label htmlFor="counselorType" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Professional Tier</label>
+                                <label htmlFor="counselorTypes" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Professional Tier</label>
                                 <select
-                                    id="counselorType"
-                                    className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 appearance-none"
-                                    value={formData.counselorType}
-                                    onChange={e => setFormData({ ...formData, counselorType: e.target.value as CounselorType })}
+                                    id="counselorTypes"
+                                    multiple
+                                    className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 appearance-none min-h-[100px]"
+                                    value={formData.counselorTypes}
+                                    onChange={e => {
+                                        const values = Array.from(e.target.selectedOptions, option => option.value as CounselorType);
+                                        setFormData({ ...formData, counselorTypes: values });
+                                    }}
                                 >
                                     <option value="INTERNAL">Internal Staff</option>
                                     <option value="TELECALLER">Tele-Sales Expert</option>
@@ -430,7 +434,7 @@ export default function CounselorManager() {
                                 </div>
                                 <div className="p-4 bg-gray-50 rounded-2xl">
                                     <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-1">Type</label>
-                                    <div className="text-sm font-bold text-gray-900">{selectedCounselorDetails.counselorType}</div>
+                                    <div className="text-sm font-bold text-gray-900">{selectedCounselorDetails.counselorTypes?.join(', ')}</div>
                                 </div>
                                 <div className="p-4 bg-gray-50 rounded-2xl">
                                     <label className="block text-[10px] font-black tracking-widest text-gray-400 uppercase mb-1">Priority</label>

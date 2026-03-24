@@ -132,8 +132,8 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
                                 >
                                     <div className="flex flex-col">
                                         <span>{c.name || String(c)}</span>
-                                        {c.counselorType && (
-                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{c.counselorType}</span>
+                                        {c.counselorTypes && c.counselorTypes.length > 0 && (
+                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{c.counselorTypes?.join(', ')}</span>
                                         )}
                                     </div>
                                     {assigning === c.counselorId && (

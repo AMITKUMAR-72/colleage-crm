@@ -67,7 +67,7 @@ export default function TimeoutSearchFilters({ onFilterChange, counselors }: Fil
                             <option value="">Select a Counselor...</option>
                             {(counselors || []).map(c => (
                                 <option key={c.counselorId} value={c.counselorId}>
-                                    {c.name} ({c.counselorType})
+                                    {c.name} ({c.counselorTypes?.join(', ')})
                                 </option>
                             ))}
                         </select>

@@ -177,7 +177,7 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-slate-800 group-hover:text-[#4d0101]">{c.name}</span>
-                                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{c.counselorType}</span>
+                                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{c.counselorTypes?.join(', ')}</span>
                                     </div>
                                     {assigning === c.counselorId && (
                                         <span className="text-[10px] font-black text-[#4d0101] animate-pulse lowercase italic">saving…</span>
@@ -271,7 +271,7 @@ function SingleAssignButton({ leadId, onAssigned }: { leadId: number; onAssigned
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-slate-800">{c.name}</span>
-                                        <span className="text-[9px] text-slate-400 font-bold uppercase">{c.counselorType}</span>
+                                        <span className="text-[9px] text-slate-400 font-bold uppercase">{c.counselorTypes?.join(', ')}</span>
                                     </div>
                                     {assigning === c.counselorId && (
                                         <span className="text-[10px] font-black text-[#4d0101] animate-pulse italic">saving…</span>
@@ -453,7 +453,7 @@ export default function ContactedLeadsMonitor() {
                             <option value="">Select Counselor</option>
                             {allCounselors.map(c => (
                                 <option key={c.counselorId} value={c.counselorId}>
-                                    {c.name} ({c.counselorType})
+                                    {c.name} ({c.counselorTypes?.join(', ')})
                                 </option>
                             ))}
                         </select>

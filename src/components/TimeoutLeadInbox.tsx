@@ -245,7 +245,7 @@ export default function TimeoutLeadInbox() {
                                                     {(lead as any).counselor?.name || (lead as any).counselorName || (lead as any).assignedTo?.name || (lead as any).counselorEmail || 'Unassigned'}
                                                 </span>
                                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                                                    {(lead as any).counselor?.counselorType || (lead as any).counselorType || '-'}
+                                                    {(lead as any).counselor?.counselorTypes?.join(', ') || (lead as any).counselorTypes?.join(', ') || '-'}
                                                 </span>
                                             </div>
                                         </td>
@@ -309,7 +309,7 @@ export default function TimeoutLeadInbox() {
                                             </div>
                                             <div className="flex flex-col items-start leading-tight">
                                                 <span className="text-sm font-bold text-slate-700">{c.name}</span>
-                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.counselorType} • {c.department}</span>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.counselorTypes?.join(', ')} • {c.department}</span>
                                             </div>
                                         </div>
                                         <div className="p-1 px-2 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest">

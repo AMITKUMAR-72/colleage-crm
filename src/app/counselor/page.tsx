@@ -60,7 +60,7 @@ export default function CounselorDashboard() {
     }
 
     const effectiveEmail = isAdmin ? selectedEmail : currentUserEmail;
-    const isTelecaller = counselor?.counselorType === 'TELECALLER';
+    const isTelecaller = counselor?.counselorTypes?.includes('TELECALLER');
 
     return (
         <DashboardLayout>
@@ -101,9 +101,9 @@ export default function CounselorDashboard() {
 
                         {/* Summary Stats based on Counselor Type */}
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            {counselor?.counselorType === 'TELECALLER' && <TelecallerStats leads={currentLeads} />}
-                            {counselor?.counselorType === 'INTERNAL' && <InternalCounselorStats leads={currentLeads} />}
-                            {counselor?.counselorType === 'EXTERNAL' && <ExternalCounselorStats leads={currentLeads} />}
+                            {counselor?.counselorTypes?.includes('TELECALLER') && <TelecallerStats leads={currentLeads} />}
+                            {counselor?.counselorTypes?.includes('INTERNAL') && <InternalCounselorStats leads={currentLeads} />}
+                            {counselor?.counselorTypes?.includes('EXTERNAL') && <ExternalCounselorStats leads={currentLeads} />}
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
@@ -112,7 +112,7 @@ export default function CounselorDashboard() {
                                 {counselor ? (
                                     <MyLeadsFeed 
                                         counselorId={counselor.counselorId} 
-                                        counselorType={counselor.counselorType}
+                                        counselorTypes={counselor.counselorTypes}
                                         onLeadsUpdate={setCurrentLeads} 
                                         onActionComplete={() => setRefetchTrigger(prev => prev + 1)}
                                     />

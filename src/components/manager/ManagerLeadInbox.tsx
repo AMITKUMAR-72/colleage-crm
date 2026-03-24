@@ -60,7 +60,7 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
                     ? raw
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
                 // ONLY SHOW TELECALLERS
-                setCounselors(list.filter(c => c.counselorType === 'TELECALLER'));
+                setCounselors(list.filter(c => c.counselorTypes?.includes('TELECALLER')));
             } catch {
                 toast.error('Could not load counselors');
             } finally {
@@ -125,7 +125,7 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-slate-800 group-hover:text-[#4d0101]">{c.name}</span>
-                                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{c.counselorType}</span>
+                                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{c.counselorTypes?.join(', ')}</span>
                                     </div>
                                     {assigning === c.counselorId && (
                                         <span className="text-[10px] font-black text-[#4d0101] animate-pulse lowercase italic">saving…</span>
