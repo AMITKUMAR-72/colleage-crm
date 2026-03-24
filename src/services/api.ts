@@ -5,9 +5,14 @@ import toast from 'react-hot-toast';
 // Set this to true to force Mock Data even if backend is online
 const STANDALONE_DEMO = false;
 
-// Use direct backend URL to bypass proxy
-// If needed, override with NEXT_PUBLIC_API_BASE_URL (e.g. in production deployments).
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://apis.rafunirp.com';
+// Use direct backend URL to bypass proxy in production.
+// On localhost, we use the '/backend' relative path to leverage the Next.js proxy (configured in next.config.ts)
+// This avoids CORS 'Access-Control-Allow-Origin' mismatch issues during development.
+const isLocalhost = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+    (isLocalhost ? '/backend' : 'https://apis.rafunirp.com');
 
 // Global in-flight request counter — incremented before each request, decremented after
 let _pendingCount = 0;
@@ -35,8 +40,20 @@ export function useGlobalLoading() {
 // Methods that mutate data — we show success toasts for these
 const MUTATION_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 
-// Endpoints whose toast messages should be suppressed (silent auth flows)
-const SILENT_URLS = ['/auth/login', '/auth/refresh'];
+// Endpoints whose toast messages should be suppressed (silent auth flows or best-effort syncs)
+const SILENT_URLS = [
+    '/auth/login',
+    '/auth/refresh',
+    '/api/leads/email/',
+    '/api/department/name',
+    '/api/department',
+    '/api/users/email',     // Catch /api/users/email/ANY_EMAIL
+    '/api/counselors/email', // Catch /api/counselors/email/ANY_EMAIL
+    'users/email',           // Catch potential relative or full URL variations
+    'counselors/email',      // Catch potential variations
+    '/api/leads/email',      // Silence 404s on user search-by-email
+    '/api/leads/searchBy',   // Silence 404s on general search categories
+];
 
 const api = axios.create({
     baseURL: API_BASE_URL,

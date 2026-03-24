@@ -17,5 +17,11 @@ export const RoleService = {
     async getRoleByName(name: string) {
         const response = await api.get<RoleDTO>(`/api/role/byRole/${name}`);
         return response.data;
+    },
+
+    // 126. Update role name
+    async updateRole(id: number, role: string) {
+        const response = await api.put<RoleDTO>(`/api/role/update/${id}`, { role });
+        return response.data;
     }
 };

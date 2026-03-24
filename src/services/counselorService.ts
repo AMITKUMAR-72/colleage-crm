@@ -109,4 +109,36 @@ export const CounselorService = {
         const response = await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}`);
         return response.data;
     },
+
+    // 26. Get counselor by phone
+    getCounselorByPhone: async (phone: string) => {
+        const response = await api.get<CounselorDTO>(`/api/counselors/phone/${encodeURIComponent(phone)}`);
+        return response.data;
+    },
+
+    // 30. Update counselor types (Internal/Telecaller/External) and department
+    updateTypes: async (email: string, data: { counselorType: string; department: string }) => {
+        const response = await api.put<CounselorDTO>(`/api/counselors/updateTypes/email/${encodeURIComponent(email)}`, data);
+        return response.data;
+    },
+
+    // 34. Search counselors by type
+    searchByType: async (type: string) => {
+        const response = await api.get<CounselorDTO[]>(`/api/counselors/searchBy/type/${type}`);
+        return response.data;
+    },
+
+    // 38. Search lead by phone (Counselor)
+    searchLeadByPhone: async (phone: string) => {
+        const response = await api.get(`/api/counselor/leads/search/phone/${encodeURIComponent(phone)}`);
+        const data = response.data as any;
+        return data?.data || data?.content || data;
+    },
+
+    // 43. Search leads by name (Counselor — Restricted Access)
+    searchLeadsByName: async (name: string) => {
+        const response = await api.get(`/api/counselor/leads/search/name/${encodeURIComponent(name)}`);
+        const data = response.data as any;
+        return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
+    },
 };

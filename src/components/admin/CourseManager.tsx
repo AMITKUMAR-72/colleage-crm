@@ -56,8 +56,9 @@ export default function CourseManager() {
     const loadCourses = async () => {
         setLoading(true);
         try {
-            const data = await CourseService.getAllCourses();
-            setCourses(Array.isArray(data) ? data : []);
+            // Use getAllCoursesRaw to ensure full entity data (including department) is fetched
+            const data = await CourseService.getAllCoursesRaw();
+            setCourses(Array.isArray(data) ? data : (data as any)?.content || []);
         } catch (error) {
             console.error('Failed to load courses', error);
             toast.error('Failed to load courses');
@@ -105,7 +106,6 @@ export default function CourseManager() {
                 return;
             }
 
-            // Ensure course is trimmed and standardized typically
             const formattedCourseName = formData.course.trim();
 
             await CourseService.createCourse(formattedCourseName, formData.department);

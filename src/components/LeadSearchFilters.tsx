@@ -3,47 +3,19 @@
 import { useState, useEffect } from 'react';
 import { CourseService } from '@/services/courseService';
 import { CampaignService } from '@/services/campaignService';
-import { CourseDTO, CampaignDTO, LeadStatus, LeadScore } from '@/types/api';
-
-interface LeadFilters {
-    email: string;
-    status: string;
-    course: string;
-    campaign: string;
-    score: string;
-    id?: string;
-    phone?: string;
-    name?: string;
-    startDate?: string;
-    endDate?: string;
-}
+import { EnumService } from '@/services/enumService';
+import { CourseDTO, CampaignDTO, LeadFilters } from '@/types/api';
 
 interface FilterProps {
     onFilterChange: (filters: LeadFilters) => void;
 }
 
-const ALL_STATUSES: LeadStatus[] = [
-    'NEW',
-    'TELECALLER_ASSIGNED',
-    'INTERESTED',
-    'COUNSELOR_ASSIGNED',
-    'EXTERNAL_ASSIGNED',
-    'ADMISSION_IN_PROCESS',
-    'ADMISSION_DONE',
-    'LOST',
-    'UNASSIGNED',
-    'CONTACTED',
-    'TIMED_OUT',
-    'REASSIGNED',
-    'IN_A_SESSION',
-    'QUEUED'
-];
-
-const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
-
 export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [campaigns, setCampaigns] = useState<CampaignDTO[]>([]);
+    const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+    const [availableScores, setAvailableScores] = useState<string[]>([]);
+    
     const [filterType, setFilterType] = useState<string>('NAME');
     const [filterValue, setFilterValue] = useState<string>('');
     const [startDate, setStartDate] = useState<string>('');
@@ -52,12 +24,16 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [courseData, campaignData] = await Promise.all([
+                const [courseData, campaignData, statusData, scoreData] = await Promise.all([
                     CourseService.getAllCourses(),
-                    CampaignService.getAllSources()
+                    CampaignService.getAllSources(),
+                    EnumService.getLeadStatuses(),
+                    EnumService.getScores()
                 ]);
                 setCourses(courseData);
                 setCampaigns(campaignData);
+                setAvailableStatuses(statusData);
+                setAvailableScores(scoreData);
             } catch (error) {
                 console.error("Failed to load filter data", error);
             }
@@ -78,6 +54,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
             if (filterType === 'PRIORITY') payload.score = filterValue;
             if (filterType === 'COURSE') payload.course = filterValue;
             if (filterType === 'CAMPAIGN') payload.campaign = filterValue;
+            if (filterType === 'ORIGIN') payload.origin = filterValue;
             if (filterType === 'NAME') payload.name = filterValue;
             if (filterType === 'ID') payload.id = filterValue;
             if (filterType === 'PHONE') payload.phone = filterValue;
@@ -93,12 +70,12 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     };
 
     return (
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-6 font-primary">
             <div className="flex flex-col lg:flex-row items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 w-full lg:w-auto">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none shrink-0">Search Category</label>
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 w-full lg:w-auto">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider leading-none shrink-0">Filter By</label>
                     <select
-                        className="bg-transparent text-xs font-black uppercase tracking-widest text-[#600202] outline-none cursor-pointer w-full"
+                        className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer w-full"
                         value={filterType}
                         onChange={(e) => {
                             setFilterType(e.target.value);
@@ -115,6 +92,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         <option value="PRIORITY">Score</option>
                         <option value="COURSE">Course</option>
                         <option value="CAMPAIGN">Campaign</option>
+                        <option value="ORIGIN">Origin</option>
                         <option value="DATE_RANGE">Date Range</option>
                     </select>
                 </div>
@@ -124,76 +102,73 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         <div className="flex items-center gap-2">
                             <input
                                 type="date"
-                                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-rose-900/5 transition-all"
+                                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
                             />
-                            <span className="text-slate-400 text-[10px] font-black">TO</span>
+                            <span className="text-slate-400 text-[10px] font-bold">TO</span>
                             <input
                                 type="date"
-                                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-rose-900/5 transition-all"
+                                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
                             />
                         </div>
-                    ) : filterType === 'STATUS' ? (
-                        <select
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest outline-none cursor-pointer"
-                            value={filterValue}
-                            onChange={(e) => setFilterValue(e.target.value)}
-                        >
-                            <option value="">Choose Status...</option>
-                            {ALL_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                        </select>
-                    ) : filterType === 'PRIORITY' ? (
-                        <select
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest outline-none cursor-pointer"
-                            value={filterValue}
-                            onChange={(e) => setFilterValue(e.target.value)}
-                        >
-                            <option value="">Choose Score...</option>
-                            {ALL_SCORES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                    ) : filterType === 'COURSE' ? (
-                        <select
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none cursor-pointer"
-                            value={filterValue}
-                            onChange={(e) => setFilterValue(e.target.value)}
-                        >
-                            <option value="">Select Course...</option>
-                            {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
-                        </select>
-                    ) : filterType === 'CAMPAIGN' ? (
-                        <select
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none cursor-pointer"
-                            value={filterValue}
-                            onChange={(e) => setFilterValue(e.target.value)}
-                        >
-                            <option value="">Select Campaign...</option>
-                            {campaigns.map(cp => <option key={cp.id} value={cp.name}>{cp.name}</option>)}
-                        </select>
-                    ) : (
-                        <input
-                            type={filterType === 'ID' || filterType === 'PHONE' ? 'text' : 'text'}
-                            placeholder={`Enter ${filterType.toLowerCase()}...`}
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-4 focus:ring-rose-900/5 focus:border-[#600202] outline-none transition-all"
-                            value={filterValue}
-                            onChange={(e) => setFilterValue(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleApply()}
-                        />
+                    ) : ( 
+                        <div className="relative group">
+                            {['STATUS', 'PRIORITY', 'COURSE', 'ORIGIN', 'CAMPAIGN'].includes(filterType) ? (
+                                <select
+                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all"
+                                    value={filterValue}
+                                    onChange={(e) => setFilterValue(e.target.value)}
+                                >
+                                    <option value="">Select {filterType.toLowerCase()}...</option>
+                                    {filterType === 'STATUS' && availableStatuses.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                                    {filterType === 'PRIORITY' && availableScores.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {filterType === 'COURSE' && courses.map(c => (
+                                        <option key={c.id} value={c.course}>
+                                            {c.department ? `${c.department} - ${c.course}` : c.course}
+                                        </option>
+                                    ))}
+                                    {filterType === 'ORIGIN' && (
+                                        <>
+                                            <option value="Website">Website</option>
+                                            <option value="WhatsApp">WhatsApp</option>
+                                            <option value="LinkedIn">LinkedIn</option>
+                                            <option value="Facebook">Facebook</option>
+                                            <option value="Instagram">Instagram</option>
+                                            <option value="Google Ads">Google Ads</option>
+                                            <option value="Walk In">Walk In</option>
+                                            <option value="Snapchat">Snapchat</option>
+                                            <option value="Referral">Referral</option>
+                                        </>
+                                    )}
+                                    {filterType === 'CAMPAIGN' && campaigns.map(cp => <option key={cp.id} value={cp.name}>{cp.name}</option>)}
+                                </select>
+                            ) : (
+                                <input
+                                    type="text"
+                                    placeholder={`Search by ${filterType.toLowerCase()}...`}
+                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all"
+                                    value={filterValue}
+                                    onChange={(e) => setFilterValue(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+                                />
+                            )}
+                        </div>
                     )}
                 </div>
 
                 <div className="flex gap-2 w-full lg:w-auto">
                     <button
                         onClick={handleApply}
-                        className="flex-1 lg:w-32 bg-[#600202] text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-rose-900/20 hover:bg-rose-950 transition-all active:scale-95"
+                        className="flex-1 lg:w-32 bg-slate-800 text-white py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider hover:bg-slate-900 transition-all active:scale-95 shadow-lg shadow-slate-200"
                     >
-                        Apply
+                        Apply Search
                     </button>
                     <button
                         onClick={handleClear}
-                        className="px-4 py-3 bg-slate-50 text-slate-400 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-slate-600 transition-all"
+                        className="px-6 py-2.5 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl text-[11px] font-bold uppercase tracking-wider hover:bg-slate-200 transition-all active:scale-95"
                     >
                         Clear
                     </button>

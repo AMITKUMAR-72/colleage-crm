@@ -1,26 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LeadResponseDTO, CounselorDTO, NoteDTO } from '@/types/api';
+import { LeadResponseDTO, CounselorDTO, NoteDTO, CampaignDTO, LeadFilters } from '@/types/api';
 import { CounselorService } from '@/services/counselorService';
 import { LeadService } from '@/services/leadService';
+import { CampaignService } from '@/services/campaignService';
 import api from '@/services/api';
 import LeadSearchFilters from './LeadSearchFilters';
 import LeadEditDrawer from './admin/LeadEditDrawer';
 import toast from 'react-hot-toast';
-
-interface LeadFilters {
-    email: string;
-    status: string;
-    course: string;
-    campaign: string;
-    score: string;
-    id?: string;
-    phone?: string;
-    name?: string;
-    startDate?: string;
-    endDate?: string;
-}
+import { Search, UserPlus, Fingerprint, Settings2, Loader2, Database } from 'lucide-react';
 
 const PAGE_SIZE = 15;
 
@@ -42,9 +31,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const SCORE_COLORS: Record<string, string> = {
-    HOT: 'bg-red-100 text-red-700',
-    WARM: 'bg-orange-100 text-orange-700',
-    COLD: 'bg-sky-100 text-sky-700',
+    HOT: 'bg-rose-50 text-rose-700 border-rose-100',
+    WARM: 'bg-orange-50 text-orange-700 border-orange-100',
+    COLD: 'bg-sky-50 text-sky-700 border-sky-100',
 };
 
 // ─── Assign Dropdown ─────────────────────────────────────────────────────────
@@ -88,12 +77,12 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
         e.stopPropagation();
         setAssigning(counselorId);
         try {
-            await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}`);
-            toast.success('Lead assigned successfully');
+            await LeadService.bulkAssignLeads(counselorId, [leadId]);
+            toast.success('Strategy node deployed');
             setOpen(false);
             onAssigned();
         } catch {
-            /* global error toast shown by interceptor */
+            /* Handled by interceptor */
         } finally {
             setAssigning(null);
         }
@@ -103,41 +92,38 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
         <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
             <button
                 onClick={handleOpen}
-                className="flex items-center gap-1 px-3 py-1.5 bg-[#4d0101] text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-[#600202] transition-all duration-200 shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-slate-900 transition-all duration-200 shadow-sm active:scale-95"
             >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                    <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
-                </svg>
+                <UserPlus className="w-3.5 h-3.5" />
                 Assign
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-40 overflow-hidden">
-                    <div className="px-3 py-2 border-b border-slate-100 bg-slate-50">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Counselor</p>
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50">
+                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select Counselor</h4>
                     </div>
-                    <div className="max-h-48 overflow-y-auto">
+                    <div className="max-h-64 overflow-y-auto p-2 space-y-1">
                         {loading ? (
-                            <div className="py-4 text-center text-xs font-bold text-slate-400 animate-pulse">Loading…</div>
+                            <div className="p-8 text-center text-slate-300"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
                         ) : counselors.length === 0 ? (
-                            <div className="py-4 text-center text-xs font-bold text-slate-400">No counselors found</div>
+                            <p className="p-4 text-center text-xs text-slate-400">No counselors available</p>
                         ) : (
-                            counselors.map((c, idx) => (
+                            counselors.map(c => (
                                 <button
-                                    key={c.counselorId ?? idx}
-                                    onClick={e => handleAssign(e, c.counselorId)}
+                                    key={c.counselorId}
+                                    onClick={(e) => handleAssign(e, c.counselorId)}
                                     disabled={assigning === c.counselorId}
-                                    className="w-full text-left px-4 py-2.5 hover:bg-[#4d0101]/5 transition text-xs font-bold text-slate-800 border-b border-slate-50 last:border-0 flex items-center justify-between"
+                                    className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-between group"
                                 >
-                                    <div className="flex flex-col">
-                                        <span>{c.name || String(c)}</span>
-                                        {c.counselorType && (
-                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{c.counselorType}</span>
-                                        )}
+                                    <div>
+                                        <div className="text-xs font-bold text-slate-700">{c.name}</div>
+                                        <div className="text-[10px] text-slate-400 font-medium">{c.department}</div>
                                     </div>
-                                    {assigning === c.counselorId && (
-                                        <span className="text-[10px] font-black text-[#4d0101] animate-pulse">Saving…</span>
+                                    {assigning === c.counselorId ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+                                    ) : (
+                                        <div className="opacity-0 group-hover:opacity-100 transition text-[9px] font-bold text-slate-400 uppercase tracking-widest">Select</div>
                                     )}
                                 </button>
                             ))
@@ -148,7 +134,6 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
         </div>
     );
 }
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function LeadInbox() {
     const [allLeads, setAllLeads] = useState<LeadResponseDTO[]>([]);
@@ -156,7 +141,7 @@ export default function LeadInbox() {
     const [loading, setLoading] = useState(true);
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
     const [page, setPage] = useState(0);
-    const [filters, setFilters] = useState<LeadFilters>({ email: '', status: '', course: '', campaign: '', score: '' });
+    const [filters, setFilters] = useState<LeadFilters>({ email: '', status: '', course: '', campaign: '', score: '', origin: '' });
 
     // Notes state
     const [notes, setNotes] = useState<NoteDTO[]>([]);
@@ -164,7 +149,7 @@ export default function LeadInbox() {
     const [noteText, setNoteText] = useState('');
     const [notesPosting, setNotesPosting] = useState(false);
 
-    // Edit state
+    // Identity Modification State
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [leadToEdit, setLeadToEdit] = useState<LeadResponseDTO | null>(null);
 
@@ -174,40 +159,114 @@ export default function LeadInbox() {
 
     // If filters are active, we slice locally (since search returns array).
     // If no filters, the server handled the pagination, so we take the whole array.
-    const hasFilters = Object.entries(filters).some(([_, v]) => v && v !== '');
+    const hasFilters = Object.values(filters).some(v => v !== '');
     const pagedLeads = hasFilters
         ? allLeads.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
         : allLeads;
 
     const showPagination = totalCount > PAGE_SIZE;
 
+    // Added campaign fetching to resolve IDs to Names
+    const [allCampaigns, setAllCampaigns] = useState<CampaignDTO[]>([]);
+
+    useEffect(() => {
+        CampaignService.getAllSources().then(res => {
+            const list = Array.isArray(res) ? res : (res as any)?.data || [];
+            setAllCampaigns(list);
+        }).catch(() => {});
+    }, []);
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const getCampaignDisplay = (lead: LeadResponseDTO): string => {
+        const c = lead.campaign as any;
+        if (!c) return 'DIRECT INTEL';
+        if (typeof c === 'object') return c.name || String(c.id || c);
+        
+        // If it's just an ID/number/string, try to find it in our campaigns list
+        const resolved = allCampaigns.find(cp => String(cp.id) === String(c) || cp.name === String(c));
+        return resolved ? resolved.name : String(c).toUpperCase();
+    };
+
+    const getCourseDisplay = (lead: LeadResponseDTO): string => {
+        if (!lead.course) return 'GENERAL CURRICULUM';
+        if (typeof lead.course === 'object' && lead.course) {
+            const c = lead.course as any;
+            const dept = c.department ? `${c.department} - ` : '';
+            return `${dept}${c.course || c.name || 'GENERAL'}`.toUpperCase();
+        }
+        return String(lead.course).toUpperCase();
+    };
+
     // ── Fetch leads ───────────────────────────────────────────────────────────
+    // ── Fetch leads — Hybrid Server/Client Multi-Filtering ───────────────────
     const fetchLeads = useCallback(async () => {
         try {
             setLoading(true);
-            const hasFilters = Object.entries(filters).some(([_, v]) => v && v !== '');
-            if (hasFilters) {
-                const results: any = await LeadService.searchLeads(filters);
-                const arr: LeadResponseDTO[] = Array.isArray(results)
-                    ? results
-                    : results?.lead || results?.content || [];
-                setAllLeads(arr);
-                setTotalCount(arr.length);
+            const activeFilters = Object.entries(filters).filter(([_, v]) => v && v !== '');
+            
+            if (activeFilters.length > 0) {
+                let results: LeadResponseDTO[] = [];
+                
+                // 1. Pick the "Heavier" filter for the server-side request
+                if (filters.id) {
+                    const lead = await LeadService.getLeadById(Number(filters.id));
+                    results = lead ? [lead] : [];
+                } else if (filters.email) {
+                    const lead = await LeadService.getLeadByEmail(filters.email);
+                    results = lead ? [lead] : [];
+                } else if (filters.phone) {
+                    results = await LeadService.searchLeads({ phone: filters.phone });
+                } else if (filters.name) {
+                    results = await LeadService.getLeadsByName(filters.name);
+                } else if (filters.status) {
+                    results = await LeadService.getLeadsByStatus(filters.status as any);
+                } else if (filters.course) {
+                    results = await LeadService.getLeadsByCourse(filters.course);
+                } else if (filters.campaign) {
+                    results = await LeadService.getLeadsByCampaign(filters.campaign);
+                } else if (filters.score) {
+                    results = await LeadService.getLeadsByScore(filters.score as any);
+                } else if (filters.origin) {
+                    results = await LeadService.searchLeads({ origin: filters.origin });
+                } else if (filters.startDate && filters.endDate) {
+                    results = await LeadService.searchLeads({ startDate: filters.startDate, endDate: filters.endDate });
+                }
+
+                // 2. Multi-Refinement (Local filtering for all active fields)
+                let refined = Array.isArray(results) ? results : [];
+                
+                refined = refined.filter(l => {
+                    let match = true;
+                    if (filters.name && !l.name?.toLowerCase().includes(filters.name.toLowerCase())) match = false;
+                    if (filters.email && !l.email?.toLowerCase().includes(filters.email.toLowerCase())) match = false;
+                    if (filters.status && l.status !== filters.status) match = false;
+                    if (filters.score && l.score !== filters.score) match = false;
+                    if (filters.course) {
+                         const cDisp = getCourseDisplay(l).toLowerCase();
+                         if (!cDisp.includes(filters.course.toLowerCase())) match = false;
+                    }
+                    if (filters.phone && !l.phone?.includes(filters.phone)) match = false;
+                    return match;
+                });
+                
+                setAllLeads(refined);
+                setTotalCount(refined.length);
             } else {
-                // Server-side pagination for "Live Feed"
+                // Default Live Feed
                 const res = await LeadService.getRecentLeads(page, PAGE_SIZE);
                 setAllLeads(res.content);
                 setTotalCount(res.totalElements);
             }
         } catch (err) {
-            console.error('[LeadInbox] Failed to fetch leads', err);
-            toast.error('Could not load leads');
+            console.error('[LeadInbox] Advanced Multi-Filter Failure', err);
+            toast.error('Search synchronization error');
             setAllLeads([]);
             setTotalCount(0);
         } finally {
             setLoading(false);
         }
-    }, [filters, page]);
+    }, [filters, page, allCampaigns]);
+
 
     useEffect(() => {
         setPage(0);
@@ -251,45 +310,37 @@ export default function LeadInbox() {
         }
     };
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-    const getCampaignDisplay = (lead: LeadResponseDTO): string => {
-        const c = lead.campaign as any;
-        if (!c) return '—';
-        return c.name || String(c);
-    };
-
-    const getCourseDisplay = (lead: LeadResponseDTO): string => {
-        if (!lead.course) return 'General';
-        if (typeof lead.course === 'object') return (lead.course as any).course || 'General';
-        return String(lead.course);
-    };
 
     // ─────────────────────────────────────────────────────────────────────────
     return (
-        <div className="space-y-4">
+        <div className="space-y-6 animate-in fade-in duration-700">
             {/* ── Search / Filter Bar ──────────────────────────────────────── */}
-            <LeadSearchFilters onFilterChange={(f: LeadFilters) => setFilters(f)} />
+            <LeadSearchFilters onFilterChange={useCallback((f: LeadFilters) => setFilters(f), [])} />
 
             {/* ── Feed Card ────────────────────────────────────────────────── */}
-            <div className="rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100">
+            <div className="rounded-xl bg-white shadow-sm border border-slate-200 overflow-hidden">
 
                 {/* Header */}
-                <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="px-8 py-6 border-b border-slate-100 bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                     <div>
-                        <h2 className="font-black text-slate-800 tracking-tight">All Leads</h2>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">
-                            {totalCount} Total Leads
+                        <div className="flex items-center gap-3 mb-1">
+                            <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Database</span>
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800 tracking-tight">Global Lead Feed</h2>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1">
+                            {totalCount} leads synchronized
                             {showPagination && ` • Page ${page + 1} of ${totalPages}`}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={fetchLeads}
                             disabled={loading}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest transition"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95"
                         >
-                            <svg className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <svg className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                                 <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
                                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                             </svg>
@@ -297,88 +348,108 @@ export default function LeadInbox() {
                         </button>
 
                         {showPagination && (
-                            <>
+                            <div className="flex gap-1.5">
                                 <button
                                     onClick={() => setPage(p => Math.max(0, p - 1))}
                                     disabled={page === 0}
-                                    className="px-3 py-1.5 text-[10px] border rounded-lg hover:bg-gray-50 disabled:opacity-40 transition font-black uppercase tracking-widest"
+                                    className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 transition-all active:scale-90"
                                 >
-                                    ← Prev
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
                                 </button>
                                 <button
                                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                                     disabled={page >= totalPages - 1}
-                                    className="px-3 py-1.5 text-[10px] border rounded-lg hover:bg-gray-50 disabled:opacity-40 transition font-black uppercase tracking-widest"
+                                    className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 transition-all active:scale-90"
                                 >
-                                    Next →
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M9 5l6 6-6 6"/></svg>
                                 </button>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
 
-                {/* Body — max-height 40vh */}
-                <div style={{ maxHeight: '40vh' }} className="overflow-y-auto overflow-x-auto">
+                {/* Body — max-height calibrated for standard display units */}
+                <div style={{ maxHeight: '55vh' }} className="overflow-y-auto overflow-x-auto relative">
                     {loading ? (
-                        <div className="py-16 flex justify-center items-center">
-                            <div className="w-8 h-8 border-4 border-[#4d0101]/20 border-t-[#4d0101] rounded-full animate-spin" />
+                        <div className="py-24 flex flex-col items-center justify-center gap-6">
+                             <img src="/raffles-logo.png" alt="Loading" className="h-16 w-32 object-contain animate-spin-y-ease-in opacity-80" />
+                             <span className="text-[10px] font-black text-slate-400 capitalize tracking-[0.4em] italic animate-pulse">Synchronizing Data Nodes...</span>
                         </div>
                     ) : pagedLeads.length === 0 ? (
-                        <div className="py-14 text-center">
-                            <p className="text-slate-400 font-medium lowercase italic text-sm">no leads found</p>
+                        <div className="py-24 text-center">
+                            <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-slate-100">
+                                <Database className="w-8 h-8 text-slate-200" />
+                            </div>
+                            <p className="text-slate-400 font-black uppercase tracking-widest text-xs italic">Zero Response from Registry</p>
                         </div>
                     ) : (
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-[10px] text-slate-400 uppercase bg-slate-50/60 border-b border-slate-200 tracking-widest font-black sticky top-0 z-10">
-
+                        <table className="w-full text-sm text-left border-collapse">
+                            <thead className="text-[11px] text-slate-500 uppercase tracking-widest bg-slate-50 border-b border-slate-200 font-bold sticky top-0 z-20">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold">Lead Details</th>
+                                    <th className="px-6 py-4 font-bold">Contact Info</th>
+                                    <th className="px-6 py-4 font-bold">Program</th>
+                                    <th className="px-6 py-4 font-bold text-center">Source</th>
+                                    <th className="px-6 py-4 font-bold text-center">Status</th>
+                                    <th className="px-6 py-4 font-bold text-right">Actions</th>
+                                </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-50">
                                 {pagedLeads.map((lead) => (
                                     <tr
                                         key={lead.id}
                                         onClick={() => handleViewLead(lead.id)}
-                                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                        className="hover:bg-slate-50/80 border-b border-slate-100 transition-colors cursor-pointer group"
                                     >
-                                        <td className="px-5 py-3">
-                                            <div className="font-bold text-slate-800 text-sm">{lead.name || 'Unknown'}</div>
-                                            <div className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">#{lead.id}</div>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-slate-800 text-sm tracking-tight">{lead.name || 'No Name'}</div>
+                                            <div className="text-[10px] text-slate-400 font-medium uppercase mt-0.5 tracking-wider">ID #{lead.id}</div>
                                         </td>
-                                        <td className="px-5 py-3">
-                                            <div className="text-slate-700 text-xs font-medium">{lead.email || '—'}</div>
-                                            <div className="text-slate-400 text-[10px] mt-0.5">{lead.phone || '—'}</div>
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-600 text-[11px] font-medium">{lead.email || '—'}</div>
+                                            <div className="text-slate-500 text-[10px] font-medium mt-0.5">{lead.phone || '—'}</div>
+                                            {lead.city && <div className="text-indigo-400 text-[9px] font-bold uppercase tracking-wider mt-0.5">{lead.city}</div>}
                                         </td>
-                                        <td className="px-5 py-3">
-                                            <div className="text-slate-600 text-xs font-medium max-w-[120px] truncate">{getCourseDisplay(lead)}</div>
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-700 text-[10px] font-bold uppercase tracking-tight line-clamp-1">{getCourseDisplay(lead)}</div>
                                             {lead.intake && (
-                                                <div className="text-[10px] text-slate-400 font-bold">{lead.intake}</div>
+                                                <div className="text-[9px] text-slate-400 font-medium mt-0.5 uppercase tracking-wider">Intake {lead.intake}</div>
                                             )}
                                         </td>
-                                        <td className="px-5 py-3">
-                                            <span className="text-xs font-bold text-slate-600">{getCampaignDisplay(lead)}</span>
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[String(lead.status)] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                                                {String(lead.status || '').replace(/_/g, ' ') || 'UNKNOWN'}
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-[9px] font-bold uppercase tracking-wider rounded-lg border border-slate-200">
+                                                {getCampaignDisplay(lead)}
                                             </span>
                                         </td>
-                                        <td className="px-5 py-3">
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${SCORE_COLORS[lead.score] || 'bg-slate-100 text-slate-500'}`}>
-                                                {lead.score || '—'}
-                                            </span>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex flex-col items-center gap-1.5">
+                                                <span className={`px-2 py-1 rounded-lg text-[9px] font-bold tracking-wider uppercase border shadow-sm ${STATUS_COLORS[lead.status] || 'bg-gray-50 text-gray-400 border-gray-200'}`}>
+                                                    {lead.status?.replace(/_/g, ' ') || 'NEUTRAL'}
+                                                </span>
+                                                <span className={`text-[9px] font-semibold uppercase tracking-wider ${SCORE_COLORS[lead.score] || 'text-slate-400'}`}>
+                                                    {lead.score || 'N/A'}
+                                                </span>
+                                            </div>
                                         </td>
-                                        <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
-                                            <div className="flex items-center justify-end gap-2">
+                                        <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                                            <div className="flex items-center justify-end gap-2 text-right">
                                                 <button
-                                                    onClick={() => {
+                                                    onClick={e => { e.stopPropagation(); handleViewLead(lead.id); }}
+                                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-800 hover:border-slate-400 transition-all active:scale-95"
+                                                    title="View Details"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                </button>
+                                                <button
+                                                    onClick={e => {
+                                                        e.stopPropagation();
                                                         setLeadToEdit(lead);
                                                         setIsEditOpen(true);
                                                     }}
-                                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+                                                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
                                                     title="Edit Lead"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                    </svg>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                                 </button>
                                                 <AssignButton leadId={lead.id} onAssigned={fetchLeads} />
                                             </div>
@@ -390,36 +461,23 @@ export default function LeadInbox() {
                     )}
                 </div>
 
-                {/* Footer pagination strip */}
+                {/* Footer pagination strip — refined for elite control */}
                 {showPagination && !loading && (
-                    <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-0">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center sm:text-left">
-                            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
+                    <div className="p-6 border-t border-slate-100 bg-white flex items-center justify-between">
+                        <p className="text-[11px] font-medium text-slate-400">
+                            Showing {page * PAGE_SIZE + 1} – {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount} leads
                         </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setPage(p => Math.max(0, p - 1))}
-                                disabled={page === 0}
-                                className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest border rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
-                            >
-                                ← Prev
-                            </button>
-                            <span className="px-3 py-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                {page + 1} / {totalPages}
+                        <div className="flex items-center gap-4">
+                            <span className="text-[11px] font-bold text-slate-700">
+                                Page {page + 1} of {totalPages}
                             </span>
-                            <button
-                                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                                disabled={page >= totalPages - 1}
-                                className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest border rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
-                            >
-                                Next →
-                            </button>
                         </div>
                     </div>
                 )}
             </div>
 
             {/* ── Lead Details Slide-over ───────────────────────────────────── */}
+
             {selectedLead && (
                 <div
                     className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end"
@@ -431,9 +489,10 @@ export default function LeadInbox() {
                     >
                         {/* Header */}
                         <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-900">Lead Details</h2>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">#{selectedLead.id}</p>
+                            <div className="text-left sm:text-right flex flex-col items-start sm:items-end flex-1 sm:flex-none">
+                                <p className="text-[10px] font-black text-slate-800 italic">{selectedLead.phone}</p>
+                                {selectedLead.altPhone && <p className="text-[9px] font-bold text-slate-500 italic leading-none mb-1">{selectedLead.altPhone}</p>}
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{selectedLead.campaign?.name || 'MANUAL'}</p>
                             </div>
                             <button
                                 onClick={() => setSelectedLead(null)}
@@ -455,8 +514,8 @@ export default function LeadInbox() {
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="p-3 border rounded-xl">
                                     <label className="text-xs text-gray-400 uppercase font-black tracking-widest">Status</label>
-                                    <div className={`mt-1.5 inline-block px-2 py-1 rounded text-xs font-black ${STATUS_COLORS[String(selectedLead.status)] || 'bg-gray-100'}`}>
-                                        {String(selectedLead.status || '').replace(/_/g, ' ')}
+                                    <div className={`mt-1.5 inline-block px-2 py-1 rounded text-xs font-black ${STATUS_COLORS[selectedLead.status] || 'bg-gray-100'}`}>
+                                        {selectedLead.status?.replace(/_/g, ' ')}
                                     </div>
                                 </div>
                                 <div className="p-3 border rounded-xl">
@@ -543,12 +602,12 @@ export default function LeadInbox() {
                                         <button
                                             onClick={handleAddNote}
                                             disabled={!noteText.trim() || notesPosting}
-                                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition ${noteText.trim() && !notesPosting
-                                                ? 'bg-[#4d0101] text-white hover:bg-[#600202]'
-                                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                            className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 ${noteText.trim() && !notesPosting
+                                                ? 'bg-slate-800 text-white hover:bg-slate-900 shadow-md shadow-slate-200'
+                                                : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                                                 }`}
                                         >
-                                            {notesPosting ? 'Posting…' : 'Post Note'}
+                                            {notesPosting ? 'Posting...' : 'Post Note'}
                                         </button>
                                     </div>
                                 </div>
@@ -557,7 +616,6 @@ export default function LeadInbox() {
                     </div>
                 </div>
             )}
-
             <LeadEditDrawer
                 isOpen={isEditOpen}
                 lead={leadToEdit}
@@ -576,9 +634,9 @@ export default function LeadInbox() {
 // ── Tiny helper for the detail rows ──────────────────────────────────────────
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex justify-between items-start gap-2">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-widest shrink-0">{label}</span>
-            <span className="text-xs font-bold text-slate-700 text-right">{value}</span>
+        <div className="flex justify-between items-start gap-2 py-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">{label}</span>
+            <span className="text-xs font-semibold text-slate-700 text-right">{value}</span>
         </div>
     );
 }

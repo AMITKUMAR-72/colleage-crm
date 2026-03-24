@@ -67,11 +67,15 @@ export interface LeadResponseDTO {
     email: string;
     address: string;
     phone: string;
+    altPhone?: string;
+    whatsappNumber?: string; // Added whatsappNumber
+    city?: string;             // Added for item #187 (Geo stats)
     course?: string | { id: number; course: string };   // backend can return string or entity
     intake?: string;
     status: LeadStatus;
     campaign?: { id: number; name: string };   // backend returns Campaigns entity
     score: LeadScore;
+    origin?: string;          // acquisition vector
     timedOutAt?: string;
     createdAt?: string;
 }
@@ -82,6 +86,11 @@ export interface LeadRequestDTO {
     email: string;
     address: string;
     phone: string;
+    altPhone?: string;         // Secondary Contact Node
+    whatsappNumber?: string;   // Dedicated WhatsApp Contact Node
+    city?: string;             // Added for city-stats analytics
+    phones?: string[];         // Synchronized List for Backend Compatibility
+    origin?: string;           // acquisition vector
     course?: string;
     intake?: string;
     status?: LeadStatus;
@@ -98,7 +107,20 @@ export interface CampaignDTO {
 // Alias for clarity
 export type SourceDTO = CampaignDTO;
 
-// Matches backend Affiliates_DTO.java exactly
+export interface LeadFilters {
+    email?: string;
+    status?: string;
+    course?: string;
+    campaign?: string;
+    score?: string;
+    origin?: string;
+    id?: string;
+    phone?: string;
+    name?: string;
+    startDate?: string;
+    endDate?: string;
+}
+
 export interface AffiliateDTO {
     id: number;
     companyName: string;

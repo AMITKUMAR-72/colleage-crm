@@ -92,5 +92,41 @@ export const SessionService = {
     getAvailableMentorsForSession: async (sessionId: number) => {
         const response = await api.put(`/api/offlineSession/${sessionId}/available-mentors`);
         return response.data;
-    }
+    },
+
+    // 113. Get session by ID
+    getSessionById: async (sessionId: number) => {
+        const response = await api.get<SessionDTO>(`/api/offlineSession/${sessionId}`);
+        return response.data;
+    },
+
+    // 114. List leads in session
+    getSessionLeads: async (sessionId: number) => {
+        const response = await api.get(`/api/offlineSession/${sessionId}/leads`);
+        return response.data;
+    },
+
+    // 115. List ALL assigned session leads (Global)
+    getAllAssignedSessionLeads: async () => {
+        const response = await api.get('/api/offlineSession/assigned-leads/all');
+        return response.data;
+    },
+
+    // 116. My assigned session leads (Mentor)
+    getMentorSessionLeads: async () => {
+        const response = await api.get('/api/offlineSession/mentor/my-leads');
+        return response.data;
+    },
+
+    // 117. Session leads with notes (Mentor)
+    getMentorSessionLeadsWithNotes: async (sessionId: number) => {
+        const response = await api.get(`/api/offlineSession/mentor/session-leads/${sessionId}`);
+        return response.data;
+    },
+
+    // 118. List session assignments for a lead
+    getSessionAssignmentsForLead: async (leadId: number) => {
+        const response = await api.get(`/api/offlineSession/assignment/lead/${leadId}`);
+        return response.data;
+    },
 };
