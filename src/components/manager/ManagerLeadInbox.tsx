@@ -32,7 +32,7 @@ const SCORE_COLORS: Record<string, string> = {
 };
 
 // ─── Bulk Assign Dropdown ──────────────────────────────────────────────────
-function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssigned: () => void }) {
+function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]; allLeads: LeadResponseDTO[]; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -56,11 +56,24 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
             setLoading(true);
             try {
                 const raw: any = await CounselorService.getAllCounselors();
-                const list: CounselorDTO[] = Array.isArray(raw)
+                let list: CounselorDTO[] = Array.isArray(raw)
                     ? raw
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
-                // ONLY SHOW TELECALLERS
-                setCounselors(list.filter(c => c.counselorTypes?.includes('TELECALLER')));
+                
+                // Check if any selected lead has null course
+                const hasNullCourse = allLeads.some(l => 
+                    leadIds.includes(l.id) && 
+                    (!l.course || (typeof l.course === 'object' && !(l.course as any).course))
+                );
+
+                // ONLY SHOW TELECALLERS, and filter out INTERNAL if course is null
+                list = list.filter(c => {
+                    if (!c.counselorTypes?.includes('TELECALLER')) return false;
+                    if (hasNullCourse && c.counselorTypes?.includes('INTERNAL')) return false;
+                    return true;
+                });
+                
+                setCounselors(list);
             } catch {
                 toast.error('Could not load counselors');
             } finally {
@@ -246,6 +259,7 @@ export default function ManagerLeadInbox() {
                 <div className="flex items-center gap-3">
                     <BulkAssignButton
                         leadIds={selectedLeadIds}
+                        allLeads={leads}
                         onAssigned={() => {
                             setSelectedLeadIds([]);
                             fetchLeads();

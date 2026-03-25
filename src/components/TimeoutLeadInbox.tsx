@@ -296,7 +296,26 @@ export default function TimeoutLeadInbox() {
                         </div>
                         <div className="p-4 max-h-[400px] overflow-y-auto space-y-2">
                             {counselors.length > 0 ? (
-                                counselors.filter(c => c.status === 'AVAILABLE').map(c => (
+                                counselors.filter(c => {
+                                    if (c.status !== 'AVAILABLE') return false;
+
+                                    // Check if lead course is null for single reassign
+                                    if (reassigning) {
+                                        const isCourseNull = !reassigning.course || (typeof reassigning.course === 'object' && !(reassigning.course as any).course);
+                                        if (isCourseNull && c.counselorTypes?.includes('INTERNAL')) return false;
+                                    }
+
+                                    // Check if any selected lead has null course for bulk reassign
+                                    if (isBulkReassignModalOpen) {
+                                        const hasNullCourse = leads.some(l =>
+                                            selectedLeads.includes(l.id) &&
+                                            (!l.course || (typeof l.course === 'object' && !(l.course as any).course))
+                                        );
+                                        if (hasNullCourse && c.counselorTypes?.includes('INTERNAL')) return false;
+                                    }
+
+                                    return true;
+                                }).map(c => (
                                     <button
                                         key={c.counselorId}
                                         onClick={() => isBulkReassignModalOpen ? handleBulkReassign(c.counselorId) : handleReassign(c.counselorId)}

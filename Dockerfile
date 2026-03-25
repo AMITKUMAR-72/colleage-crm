@@ -3,8 +3,8 @@ FROM node:22-slim AS base
 WORKDIR /app
 
 # Install deps
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json ./
+RUN npm install
 
 # Copy code
 COPY . .

@@ -349,22 +349,42 @@ export default function CounselorManager() {
                                     ))}
                                 </select>
                             </div>
-                            <div className="col-span-1">
-                                <label htmlFor="counselorTypes" className="block text-xs font-black text-black uppercase tracking-widest mb-2 ml-1 cursor-pointer">Professional Tier</label>
-                                <select
-                                    id="counselorTypes"
-                                    multiple
-                                    className="w-full px-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 appearance-none min-h-[100px]"
-                                    value={formData.counselorTypes}
-                                    onChange={e => {
-                                        const values = Array.from(e.target.selectedOptions, option => option.value as CounselorType);
-                                        setFormData({ ...formData, counselorTypes: values });
-                                    }}
-                                >
-                                    <option value="INTERNAL">Internal Staff</option>
-                                    <option value="TELECALLER">Tele-Sales Expert</option>
-                                    <option value="EXTERNAL">External Partner</option>
-                                </select>
+
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-xs font-black text-black uppercase tracking-widest mb-3 ml-1">Professional Tier (Select Multiple)</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    {(['INTERNAL', 'TELECALLER', 'EXTERNAL'] as CounselorType[]).map((type) => (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            onClick={() => {
+                                                const current = formData.counselorTypes || [];
+                                                const next = current.includes(type)
+                                                    ? current.filter(t => t !== type)
+                                                    : [...current, type];
+                                                setFormData({ ...formData, counselorTypes: next });
+                                            }}
+                                            className={`flex items-center justify-center gap-2 p-3.5 rounded-2xl border-2 transition-all font-bold ${
+                                                formData.counselorTypes?.includes(type)
+                                                    ? 'bg-[#4d0101] border-[#4d0101] text-white shadow-lg'
+                                                    : 'bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                                                formData.counselorTypes?.includes(type) ? 'bg-white' : 'bg-gray-200'
+                                            }`}>
+                                                {formData.counselorTypes?.includes(type) && (
+                                                    <svg className="w-3.5 h-3.5 text-[#4d0101]" fill="none" stroke="currentColor" strokeWidth={4} viewBox="0 0 24 24">
+                                                        <path d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            {type === 'INTERNAL' ? 'Internal Staff' : 
+                                             type === 'TELECALLER' ? 'Tele-Sales Expert' : 
+                                             'External Partner'}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 

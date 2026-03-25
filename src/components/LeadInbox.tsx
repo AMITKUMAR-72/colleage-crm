@@ -48,12 +48,13 @@ const SCORE_COLORS: Record<string, string> = {
 };
 
 // ─── Assign Dropdown ─────────────────────────────────────────────────────────
-function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () => void }) {
+function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [assigning, setAssigning] = useState<number | null>(null);
     const ref = useRef<HTMLDivElement>(null);
+    const leadId = lead.id;
 
     useEffect(() => {
         if (!open) return;
@@ -72,9 +73,15 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
             setLoading(true);
             try {
                 const raw: any = await CounselorService.getAllCounselors();
-                const list: CounselorDTO[] = Array.isArray(raw)
+                let list: CounselorDTO[] = Array.isArray(raw)
                     ? raw
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
+                
+                const isCourseNull = !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
+                if (isCourseNull) {
+                    list = list.filter(c => !c.counselorTypes?.includes('INTERNAL'));
+                }
+                
                 setCounselors(list);
             } catch {
                 toast.error('Could not load counselors');
@@ -380,7 +387,7 @@ export default function LeadInbox() {
                                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                                     </svg>
                                                 </button>
-                                                <AssignButton leadId={lead.id} onAssigned={fetchLeads} />
+                                                <AssignButton lead={lead} onAssigned={fetchLeads} />
                                             </div>
                                         </td>
                                     </tr>
@@ -486,7 +493,7 @@ export default function LeadInbox() {
                             <div className="p-4 border border-[#4d0101]/20 bg-[#4d0101]/5 rounded-xl">
                                 <label className="text-xs text-[#4d0101] uppercase font-black tracking-widest block mb-3">Assign Counselor</label>
                                 <AssignButton
-                                    leadId={selectedLead.id}
+                                    lead={selectedLead}
                                     onAssigned={() => { setSelectedLead(null); fetchLeads(); }}
                                 />
                             </div>

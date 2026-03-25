@@ -281,4 +281,15 @@ export const LeadService = {
         const response = await api.post(`/api/assignedLeads/bulk-reassign/${counselorId}`, { leadIds });
         return response.data;
     },
+
+    getFakeLeads: async (page: number = 0, size: number = 10) => {
+        const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/${page}/${size}`);
+        return response.data;
+    },
+
+    getFakeLeadsByCounselor: async (counselorId: number, page: number = 0, size: number = 10) => {
+        const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
+        return response.data;
+    },
 };
+

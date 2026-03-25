@@ -10,7 +10,7 @@ import { toast } from 'react-hot-toast';
 import LoadingButton from '@/components/ui/LoadingButton';
 
 // ─── Bulk Reassign Dropdown ──────────────────────────────────────────────────
-function BulkReassignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssigned: () => void }) {
+function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: number[]; assignments: AssignedLeadDTO[]; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -34,9 +34,23 @@ function BulkReassignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssi
             setLoading(true);
             try {
                 const raw: any = await CounselorService.getAllCounselors();
-                const list: CounselorDTO[] = Array.isArray(raw)
+                let list: CounselorDTO[] = Array.isArray(raw)
                     ? raw
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
+                
+                // Check if any selected lead has null course
+                const hasNullCourse = assignments.some(a => {
+                    const leadId = a.lead?.id || (a as any).leadId;
+                    if (!leadIds.includes(leadId)) return false;
+                    const lead = a.lead;
+                    if (!lead) return true; // Assume null if lead object missing
+                    return !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
+                });
+
+                if (hasNullCourse) {
+                    list = list.filter(c => !c.counselorTypes?.includes('INTERNAL'));
+                }
+                
                 setCounselors(list);
             } catch {
                 toast.error('Could not load counselors');
@@ -352,6 +366,7 @@ export default function AssignedLeadsMonitor() {
             <div className="flex justify-end">
                 <BulkReassignButton
                     leadIds={selectedLeadIds}
+                    assignments={assignments}
                     onAssigned={() => {
                         setSelectedLeadIds([]);
                         loadAssignments();
