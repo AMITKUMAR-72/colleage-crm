@@ -48,12 +48,12 @@ type SearchType = 'ALL' | 'ID' | 'EMAIL' | 'COURSE' | 'SCORE' | 'DATE';
 
 interface MyLeadsFeedProps {
     counselorId: number;
-    counselorType?: string;
+    counselorTypes?: string[];
     onLeadsUpdate?: (leads: LeadResponseDTO[]) => void;
     onActionComplete?: () => void;
 }
 
-export default function MyLeadsFeed({ counselorId, counselorType, onLeadsUpdate, onActionComplete }: MyLeadsFeedProps) {
+export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate, onActionComplete }: MyLeadsFeedProps) {
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [loading, setLoading] = useState(true);

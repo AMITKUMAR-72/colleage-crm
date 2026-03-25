@@ -54,7 +54,7 @@ export interface CounselorDTO {
     password?: string;         // @JsonProperty WRITE_ONLY
     department: string;
     status: CounselorStatus;
-    counselorType: CounselorType;
+    counselorTypes: CounselorType[];
     priority: Priority;
     totalLeads: number;
 }

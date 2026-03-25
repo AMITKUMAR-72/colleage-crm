@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, User, Mail, Phone, BookOpen, Building2, Calendar, Globe, Send, CheckCircle, Clock, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { X, User, Mail, Phone, BookOpen, Building2, Globe, Send, Loader2, ChevronDown } from 'lucide-react';
 import { LeadRequestDTO, LeadResponseDTO, DepartmentDTO, CourseDTO, LeadStatus, LeadScore, CampaignDTO } from '@/types/api';
 import { LeadService } from '@/services/leadService';
 import { DepartmentService } from '@/services/departmentService';
@@ -39,7 +39,6 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [sources, setSources] = useState<CampaignDTO[]>([]);
     const [submitting, setSubmitting] = useState(false);
-    const [recentLeads, setRecentLeads] = useState<LeadResponseDTO[]>([]);
     const [loadingMeta, setLoadingMeta] = useState(false);
 
     useEffect(() => {
@@ -48,7 +47,7 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
             try {
                 const [deptData, courseData, sourceData] = await Promise.allSettled([
                     DepartmentService.getAllDepartments(),
-                    CourseService.getAllCoursesRaw(), // Use Raw for full entity data (including department string)
+                    CourseService.getAllCoursesRaw(),
                     CampaignService.getAllSources()
                 ]);
 
@@ -109,20 +108,18 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Strict Validation Node
         if (!formData.name || !formData.email || !formData.phone || !formData.course || !formData.city) {
-            toast.error('Identity, Point, Tether, Curriculum, and City nodes are required.');
+            toast.error('All required fields must be completed.');
             return;
         }
 
-        // Payload Synchronization Node — Constructing backend-aligned DTO
         const payload: LeadRequestDTO = {
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
             altPhone: formData.altPhone || undefined,
             whatsappNumber: formData.whatsappNumber || undefined,
-            address: formData.address || 'Local Terminal', // Avoid non-nullable constraints
+            address: formData.address || 'Manual Entry',
             city: formData.city || undefined,
             course: formData.course,
             intake: formData.intake,
@@ -132,13 +129,12 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
             phones: [formData.phone, formData.altPhone, formData.whatsappNumber].filter(Boolean) as string[]
         };
 
-        // Attached Campaign Context if available from registry
         if (formData.campaign && formData.campaign.id > 0) {
             payload.campaign = { id: formData.campaign.id, name: formData.campaign.name };
         }
 
         setSubmitting(true);
-        const toastId = toast.loading('Committing lead node...');
+        const toastId = toast.loading('Creating lead record...');
         try {
             const normalizedSource = (payload.origin || '').toLowerCase();
             let newLead;
@@ -150,8 +146,7 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
             else if (normalizedSource === 'affiliate partner') newLead = await LeadService.integrateAffiliatePartner(payload);
             else newLead = await LeadService.createLead(payload);
 
-            toast.success('Lead Induction Successful!', { id: toastId });
-            setRecentLeads(prev => [newLead, ...prev].slice(0, 5));
+            toast.success('Lead created successfully', { id: toastId });
 
             setFormData({
                 name: '', email: '', phone: '', altPhone: '', whatsappNumber: '',
@@ -162,7 +157,7 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
             if (onSuccess) onSuccess(newLead);
             setTimeout(() => onClose(), 800);
         } catch (error: any) {
-            toast.error(error?.response?.data?.message || 'Induction Failure', { id: toastId });
+            toast.error(error?.response?.data?.message || 'Failed to create lead', { id: toastId });
         } finally {
             setSubmitting(false);
         }
@@ -171,82 +166,106 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+        <div className="fixed inset-0 z-50 overflow-hidden font-primary">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
             <div className="absolute inset-y-0 right-0 max-w-xl w-full flex">
                 <div className="relative w-screen max-w-xl flex flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-300">
-                    <div className="px-8 py-8 bg-gradient-to-r from-[#4d0101] to-[#600202] flex items-center justify-between">
+                    <div className="px-8 py-10 bg-slate-900 flex items-center justify-between">
                         <div>
-                            <h2 className="text-2xl font-black text-white uppercase italic leading-none">Induction Node</h2>
-                            <p className="text-[10px] font-bold text-[#dbb212] uppercase tracking-[0.3em] mt-2 italic">Manual Registration</p>
+                            <h2 className="text-xl font-bold text-white uppercase tracking-tight">Create Manual Lead</h2>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Registry Induction</p>
                         </div>
-                        <button onClick={onClose} className="w-11 h-11 rounded-xl bg-white/10 hover:bg-[#dbb212] flex items-center justify-center transition-all group border border-white/10 shadow-inner">
-                            <X className="w-5 h-5 text-white group-hover:text-[#4d0101]" />
+                        <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all group">
+                            <X className="w-5 h-5 text-white" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar bg-slate-50/30">
+                    <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/30">
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 italic">Full Identity</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
                                     <div className="relative group">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
-                                        <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Lead Name" className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300" required />
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition" />
+                                        <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter full name" className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition font-semibold text-slate-800 placeholder:text-slate-300" required />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 italic">Electronic Point</label>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
                                         <div className="relative group">
-                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
-                                            <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email" className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300" required />
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition" />
+                                            <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="email@example.com" className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition font-semibold text-slate-800 placeholder:text-slate-300" required />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 italic">Calling Tether</label>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Phone Number</label>
                                         <div className="relative group">
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
-                                            <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Primary Phone" className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300" required />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 italic">WhatsApp Unit</label>
-                                        <div className="relative group">
-                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
-                                            <input type="tel" name="whatsappNumber" value={formData.whatsappNumber || ''} onChange={handleInputChange} placeholder="Optional WhatsApp" className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 italic">Metropolitan Node (City)</label>
-                                        <div className="relative group">
-                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
-                                            <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City Name" className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300" required />
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition" />
+                                            <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="Primary phone" className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition font-semibold text-slate-800 placeholder:text-slate-300" required />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 italic">Branch Selection</label>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">WhatsApp Number</label>
+                                        <div className="relative group">
+                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition" />
+                                            <input type="tel" name="whatsappNumber" value={formData.whatsappNumber || ''} onChange={handleInputChange} placeholder="Optional WhatsApp" className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition font-semibold text-slate-800 placeholder:text-slate-300" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">City</label>
+                                        <div className="relative group">
+                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition" />
+                                            <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="Enter city name" className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition font-semibold text-slate-800 placeholder:text-slate-300" required />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Selection Source</label>
+                                        <div className="relative group">
+                                            < बिल्डिंग2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <select value={selectedSourceId} onChange={handleSourceChange} className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-[11px] uppercase text-slate-700 appearance-none cursor-pointer">
+                                                <option value="">SELECT SOURCE</option>
+                                                {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Intake Year</label>
+                                        <div className="relative group">
+                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <select name="intake" value={formData.intake} onChange={handleInputChange} className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-[11px] uppercase text-slate-700 appearance-none cursor-pointer">
+                                                {INTAKE_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Department</label>
                                         <div className="relative group">
                                             <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                            <select value={selectedDepartment} onChange={(e) => { setSelectedDepartment(e.target.value); setFormData(p => ({ ...p, course: '' })); }} className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none font-black text-[10px] uppercase text-slate-700 appearance-none cursor-pointer">
-                                                <option value="">SELECT BRANCH</option>
+                                            <select value={selectedDepartment} onChange={(e) => { setSelectedDepartment(e.target.value); setFormData(p => ({ ...p, course: '' })); }} className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-[11px] uppercase text-slate-700 appearance-none cursor-pointer">
+                                                <option value="">SELECT DEPARTMENT</option>
                                                 {departments.map(d => <option key={d.id} value={d.department}>{d.department}</option>)}
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 italic">Curriculum Unit</label>
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Course Target</label>
                                         <div className="relative group">
                                             <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                            <select name="course" value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''} onChange={handleInputChange} className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none font-black text-[10px] uppercase text-slate-700 appearance-none cursor-pointer">
+                                            <select name="course" value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''} onChange={handleInputChange} className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-[11px] uppercase text-slate-700 appearance-none cursor-pointer">
                                                 <option value="">SELECT COURSE</option>
                                                 {filteredCourses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
                                             </select>
@@ -256,9 +275,9 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={submitting} className="w-full bg-[#4d0101] text-white py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-[#600202] transition-all active:scale-95 flex items-center justify-center gap-4 italic">
-                                {submitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-5 h-5 text-[#dbb212]" />}
-                                {submitting ? 'Inducting...' : 'Commit Identity'}
+                            <button type="submit" disabled={submitting} className="w-full bg-slate-800 text-white py-4 rounded-xl font-bold uppercase tracking-wider shadow-lg hover:bg-slate-900 transition-all active:scale-95 flex items-center justify-center gap-3">
+                                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                {submitting ? 'Creating...' : 'Create Lead'}
                             </button>
                         </form>
                     </div>

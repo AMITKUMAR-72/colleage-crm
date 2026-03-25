@@ -118,7 +118,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                                 {currentStatusConfig?.label || counselor.status}
                             </span>
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
-                                {counselor.counselorType}
+                                {counselor.counselorTypes?.join(', ')}
                             </span>
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
                                 {counselor.priority}

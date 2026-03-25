@@ -36,8 +36,14 @@ const SCORE_COLORS: Record<string, string> = {
     COLD: 'bg-sky-50 text-sky-700 border-sky-100',
 };
 
-// ─── Assign Dropdown ─────────────────────────────────────────────────────────
-function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () => void }) {
+// ─── Assign Dropdown (Supports Single or Multi) ─────────────────────────────────
+function MultiAssignButton({ leadIds, title, onAssigned, className, isBulk = false }: { 
+    leadIds: number[]; 
+    title?: string;
+    onAssigned: () => void;
+    className?: string;
+    isBulk?: boolean;
+}) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -77,8 +83,8 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
         e.stopPropagation();
         setAssigning(counselorId);
         try {
-            await LeadService.bulkAssignLeads(counselorId, [leadId]);
-            toast.success('Strategy node deployed');
+            await LeadService.bulkAssignLeads(counselorId, leadIds);
+            toast.success(`${leadIds.length} lead${leadIds.length > 1 ? 's' : ''} assigned successfully`);
             setOpen(false);
             onAssigned();
         } catch {
@@ -92,18 +98,18 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
         <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
             <button
                 onClick={handleOpen}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-slate-900 transition-all duration-200 shadow-sm active:scale-95"
+                className={className || "flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-slate-900 transition-all duration-200 shadow-sm active:scale-95"}
             >
                 <UserPlus className="w-3.5 h-3.5" />
-                Assign
+                {title || (isBulk ? `Assign ${leadIds.length} Leads` : 'Assign')}
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className={`absolute ${isBulk ? 'bottom-full mb-2 left-0' : 'right-0 top-full mt-2'} w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
                     <div className="p-4 border-b border-slate-100 bg-slate-50">
                         <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select Counselor</h4>
                     </div>
-                    <div className="max-h-64 overflow-y-auto p-2 space-y-1">
+                    <div className="max-h-64 overflow-y-auto p-2 space-y-1 text-left">
                         {loading ? (
                             <div className="p-8 text-center text-slate-300"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>
                         ) : counselors.length === 0 ? (
@@ -116,9 +122,14 @@ function AssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () =
                                     disabled={assigning === c.counselorId}
                                     className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-between group"
                                 >
-                                    <div>
-                                        <div className="text-xs font-bold text-slate-700">{c.name}</div>
-                                        <div className="text-[10px] text-slate-400 font-medium">{c.department}</div>
+                                    <div className="flex flex-col">
+                                        <div className="text-xs font-bold text-slate-700">{c.name || 'Anonymous Counselor'}</div>
+                                        <div className="text-[10px] text-slate-400 font-medium">{c.department || 'General'}</div>
+                                        {c.counselorTypes && c.counselorTypes.length > 0 && (
+                                            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                                                {c.counselorTypes.join(', ')}
+                                            </div>
+                                        )}
                                     </div>
                                     {assigning === c.counselorId ? (
                                         <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
@@ -143,11 +154,28 @@ export default function LeadInbox() {
     const [page, setPage] = useState(0);
     const [filters, setFilters] = useState<LeadFilters>({ email: '', status: '', course: '', campaign: '', score: '', origin: '' });
 
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
     // Notes state
     const [notes, setNotes] = useState<NoteDTO[]>([]);
     const [notesLoading, setNotesLoading] = useState(false);
     const [noteText, setNoteText] = useState('');
     const [notesPosting, setNotesPosting] = useState(false);
+
+    const handleToggleSelectAll = () => {
+        if (selectedIds.size === pagedLeads.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(pagedLeads.map(l => l.id)));
+        }
+    };
+
+    const handleToggleLead = (id: number) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
 
     // Identity Modification State
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -386,6 +414,14 @@ export default function LeadInbox() {
                         <table className="w-full text-sm text-left border-collapse">
                             <thead className="text-[11px] text-slate-500 uppercase tracking-widest bg-slate-50 border-b border-slate-200 font-bold sticky top-0 z-20">
                                 <tr>
+                                    <th className="px-6 py-4 w-10">
+                                        <input 
+                                            type="checkbox" 
+                                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            checked={pagedLeads.length > 0 && selectedIds.size === pagedLeads.length}
+                                            onChange={handleToggleSelectAll}
+                                        />
+                                    </th>
                                     <th className="px-6 py-4 font-bold">Lead Details</th>
                                     <th className="px-6 py-4 font-bold">Contact Info</th>
                                     <th className="px-6 py-4 font-bold">Program</th>
@@ -399,8 +435,16 @@ export default function LeadInbox() {
                                     <tr
                                         key={lead.id}
                                         onClick={() => handleViewLead(lead.id)}
-                                        className="hover:bg-slate-50/80 border-b border-slate-100 transition-colors cursor-pointer group"
+                                        className={`hover:bg-slate-50/80 border-b border-slate-100 transition-colors cursor-pointer group ${selectedIds.has(lead.id) ? 'bg-indigo-50/30' : ''}`}
                                     >
+                                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                                            <input 
+                                                type="checkbox"
+                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                checked={selectedIds.has(lead.id)}
+                                                onChange={() => handleToggleLead(lead.id)}
+                                            />
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-slate-800 text-sm tracking-tight">{lead.name || 'No Name'}</div>
                                             <div className="text-[10px] text-slate-400 font-medium uppercase mt-0.5 tracking-wider">ID #{lead.id}</div>
@@ -451,7 +495,7 @@ export default function LeadInbox() {
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                                 </button>
-                                                <AssignButton leadId={lead.id} onAssigned={fetchLeads} />
+                                                <MultiAssignButton leadIds={[lead.id]} onAssigned={() => { fetchLeads(); setSelectedIds(new Set()); }} />
                                             </div>
                                         </td>
                                     </tr>
@@ -461,12 +505,34 @@ export default function LeadInbox() {
                     )}
                 </div>
 
-                {/* Footer pagination strip — refined for elite control */}
+                {/* Footer pagination strip */}
                 {showPagination && !loading && (
                     <div className="p-6 border-t border-slate-100 bg-white flex items-center justify-between">
-                        <p className="text-[11px] font-medium text-slate-400">
-                            Showing {page * PAGE_SIZE + 1} – {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount} leads
-                        </p>
+                        <div className="flex items-center gap-6">
+                            <p className="text-[11px] font-medium text-slate-400">
+                                Showing {page * PAGE_SIZE + 1} – {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount} leads
+                            </p>
+                            {selectedIds.size > 0 && (
+                                <div className="flex items-center gap-3 pl-6 border-l border-slate-100 animate-in slide-in-from-left duration-300">
+                                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">{selectedIds.size} Leads Selected</span>
+                                    <MultiAssignButton 
+                                        leadIds={Array.from(selectedIds)} 
+                                        isBulk={true} 
+                                        onAssigned={() => {
+                                            fetchLeads();
+                                            setSelectedIds(new Set());
+                                        }} 
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+                                    />
+                                    <button 
+                                        onClick={() => setSelectedIds(new Set())}
+                                        className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider px-2"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         <div className="flex items-center gap-4">
                             <span className="text-[11px] font-bold text-slate-700">
                                 Page {page + 1} of {totalPages}
@@ -542,11 +608,11 @@ export default function LeadInbox() {
                             </div>
 
                             {/* Assign Counselor */}
-                            <div className="p-4 border border-[#4d0101]/20 bg-[#4d0101]/5 rounded-xl">
-                                <label className="text-xs text-[#4d0101] uppercase font-black tracking-widest block mb-3">Assign Counselor</label>
-                                <AssignButton
-                                    leadId={selectedLead.id}
-                                    onAssigned={() => { setSelectedLead(null); fetchLeads(); }}
+                            <div className="p-4 border border-slate-200 bg-slate-50 rounded-xl">
+                                <label className="text-xs text-slate-500 uppercase font-bold tracking-wider block mb-3">Assignment</label>
+                                <MultiAssignButton
+                                    leadIds={[selectedLead.id]}
+                                    onAssigned={() => { setSelectedLead(null); fetchLeads(); setSelectedIds(new Set()); }}
                                 />
                             </div>
 

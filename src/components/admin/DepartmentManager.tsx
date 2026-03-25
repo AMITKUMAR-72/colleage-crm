@@ -82,6 +82,13 @@ export default function DepartmentManager() {
                             const m = chunk.match(new RegExp(`"${key}":\\s*(\\d+)`));
                             return m ? parseInt(m[1]) : undefined;
                         };
+                        const extractArray = (key: string) => {
+                            const m = chunk.match(new RegExp(`"${key}":\\s*\\[(.*?)\\]`));
+                            if (m && m[1]) {
+                                return m[1].split(',').map(s => s.replace(/"/g, '').trim()).filter(Boolean);
+                            }
+                            return [];
+                        };
 
                         counselors.push({
                             counselorId,
@@ -89,7 +96,7 @@ export default function DepartmentManager() {
                             email: extractString("email"),
                             phone: extractString("phone"),
                             status: extractString("status"),
-                            counselorType: extractString("counselorType"),
+                            counselorTypes: extractArray("counselorTypes"),
                             priority: extractString("priority"),
                             totalLeads: extractNum("totalLeads") || 0,
                             interestedLeads: extractNum("interestedLeads") || 0,
@@ -333,7 +340,7 @@ export default function DepartmentManager() {
                                                             {counselor.status || 'N/A'}
                                                         </span>
                                                         <span className="text-xs text-slate-500">{counselor.email || 'N/A'}</span>
-                                                        <span className="text-xs text-slate-500">{counselor.counselorType || 'N/A'} • P{counselor.priority || 'N/A'}</span>
+                                                        <span className="text-xs text-slate-500">{(counselor.counselorTypes || []).join(', ') || 'N/A'} • P{counselor.priority || 'N/A'}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 sm:px-6 py-4 text-right">

@@ -124,7 +124,7 @@ export default function CounselorPerformance() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-xs font-bold text-slate-500">{c.counselorType}</span>
+                                            <span className="text-xs font-bold text-slate-500">{c.counselorTypes?.join(', ')}</span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{c.department || 'N/A'}</span>
