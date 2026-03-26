@@ -156,11 +156,15 @@ export default function AffiliateManager() {
             <div style={{ display: showModal ? 'none' : 'block' }} className="space-y-8">
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 w-full sm:w-[65%] lg:w-[45%] xl:w-1/3">
+                    <div className="flex flex-1 flex-col xl:flex-row items-start xl:items-center gap-3">
                         <select
-                            className="p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer whitespace-nowrap"
+                            className="p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto shadow-sm"
                             value={searchType}
-                            onChange={(e) => setSearchType(e.target.value as any)}
+                            onChange={(e) => {
+                                setSearchType(e.target.value as any);
+                                setSearchValue('');
+                                if (e.target.value === 'ALL') loadAffiliates();
+                            }}
                         >
                             <option value="ALL">All Partners</option>
                             <option value="EMAIL">By Email</option>
@@ -168,31 +172,38 @@ export default function AffiliateManager() {
                             <option value="STATUS">By Status</option>
                         </select>
 
-                        {searchType === 'EMAIL' || searchType === 'COMPANY_NAME' ? (
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    className="w-full pl-9 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
-                                    value={searchValue}
-                                    onChange={(e) => setSearchValue(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                />
+                        {searchType !== 'ALL' && (
+                            <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+                                {searchType === 'STATUS' ? (
+                                    <select
+                                        className="w-full sm:max-w-xs p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer shadow-sm"
+                                        value={searchStatus}
+                                        onChange={(e) => setSearchStatus(e.target.value as AffiliateActive)}
+                                    >
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="DEACTIVE">Deactive</option>
+                                    </select>
+                                ) : (
+                                    <div className="relative w-full sm:max-w-xs shadow-sm">
+                                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder={`Search ${searchType.replace('_', ' ').toLowerCase()}...`}
+                                            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
+                                            value={searchValue}
+                                            onChange={(e) => setSearchValue(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                        />
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleSearch}
+                                    className="px-6 py-3 bg-[#4d0101] text-white rounded-xl font-bold text-sm hover:bg-[#600202] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm"
+                                >
+                                    Search
+                                </button>
                             </div>
-                        ) : searchType === 'STATUS' ? (
-                            <select
-                                className="flex-1 p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer"
-                                value={searchStatus}
-                                onChange={(e) => {
-                                    setSearchStatus(e.target.value as AffiliateActive);
-                                    handleSearch();
-                                }}
-                            >
-                                <option value="ACTIVE">Active</option>
-                                <option value="DEACTIVE">Deactive</option>
-                            </select>
-                        ) : null}
+                        )}
                     </div>
 
                     {(role === 'ADMIN' || role === 'MANAGER') && (

@@ -127,7 +127,7 @@ export default function CounselorPerformance() {
                                             <span className="text-xs font-bold text-slate-500">{c.counselorTypes?.join(', ')}</span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{c.department || 'N/A'}</span>
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{c.departments?.join(', ') || 'N/A'}</span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-0.5 rounded-md text-[9px] font-black tracking-widest uppercase border ${c.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'

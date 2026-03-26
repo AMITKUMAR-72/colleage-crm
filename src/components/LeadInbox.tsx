@@ -8,6 +8,7 @@ import { CampaignService } from '@/services/campaignService';
 import api from '@/services/api';
 import LeadSearchFilters from './LeadSearchFilters';
 import LeadEditDrawer from './admin/LeadEditDrawer';
+import CounselorQueueSidebar from './CounselorQueueSidebar';
 import toast from 'react-hot-toast';
 import { Search, UserPlus, Fingerprint, Settings2, Loader2, Database } from 'lucide-react';
 
@@ -76,7 +77,7 @@ function MultiAssignButton({ leadIds, lead, title, onAssigned, className, isBulk
                 if (isCourseNull) {
                     list = list.filter(c => !c.counselorTypes?.includes('INTERNAL'));
                 }
-                
+
                 setCounselors(list);
             } catch {
                 toast.error('Could not load counselors');
@@ -131,7 +132,7 @@ function MultiAssignButton({ leadIds, lead, title, onAssigned, className, isBulk
                                 >
                                     <div className="flex flex-col">
                                         <div className="text-xs font-bold text-slate-700">{c.name || 'Anonymous Counselor'}</div>
-                                        <div className="text-[10px] text-slate-400 font-medium">{c.department || 'General'}</div>
+                                        <div className="text-[10px] text-slate-400 font-medium">{c.departments?.[0] || 'General'}</div>
                                         {c.counselorTypes && c.counselorTypes.length > 0 && (
                                             <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                                                 {c.counselorTypes.join(', ')}
@@ -548,6 +549,9 @@ export default function LeadInbox() {
                     </div>
                 )}
             </div>
+
+            {/* ── Counselor Queue ───────────────────────────────────────────── */}
+            <CounselorQueueSidebar />
 
             {/* ── Lead Details Slide-over ───────────────────────────────────── */}
 

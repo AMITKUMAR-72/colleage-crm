@@ -52,7 +52,7 @@ export interface CounselorDTO {
     email: string;
     phone: string;
     password?: string;         // @JsonProperty WRITE_ONLY
-    department: string;
+    departments: string[];
     status: CounselorStatus;
     counselorTypes: CounselorType[];
     priority: Priority;

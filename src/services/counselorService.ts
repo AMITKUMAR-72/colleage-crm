@@ -1,5 +1,5 @@
 import api from './api';
-import { CounselorDTO, CounselorStatus, Priority, LeadResponseDTO, LeadScore, PageResponse } from '@/types/api';
+import { CounselorDTO, CounselorStatus, CounselorType, Priority, LeadResponseDTO, LeadScore, PageResponse } from '@/types/api';
 
 export const CounselorService = {
     createCounselor: async (data: Partial<CounselorDTO>) => {
@@ -33,7 +33,14 @@ export const CounselorService = {
     },
 
     updateProfile: async (email: string, data: Partial<CounselorDTO>) => {
-        const response = await api.put<CounselorDTO>(`/api/counselors/update/email/${email}`, data);
+        const response = await api.patch<CounselorDTO>(`/api/counselors/update/email/${email}`, data);
+        return response.data;
+    },
+
+    updateTypes: async (email: string, types: CounselorType[]) => {
+        const response = await api.patch<CounselorDTO>(`/api/counselors/updateTypes/email/${email}`, {
+            counselorTypes: types
+        });
         return response.data;
     },
 
@@ -45,6 +52,28 @@ export const CounselorService = {
     searchByName: async (name: string) => {
         const response = await api.get<CounselorDTO[]>(`/api/counselors/searchBy/name/${name}`);
         return response.data;
+    },
+
+    searchByType: async (type: string) => {
+        const response = await api.get<CounselorDTO[]>(`/api/counselors/searchBy/type/${type}`);
+        return response.data;
+    },
+
+    getCounselorByPhone: async (phone: string) => {
+        const response = await api.get<CounselorDTO>(`/api/counselors/phone/${phone}`);
+        return response.data;
+    },
+
+    getCounselorTypes: async () => {
+        const response = await api.get<string[]>('/api/enum/counselor-type');
+        const data = response.data as any;
+        return data?.data || data || [];
+    },
+
+    getCounselorStatuses: async () => {
+        const response = await api.get<string[]>('/api/enum/counselor-status');
+        const data = response.data as any;
+        return data?.data || data || [];
     },
 
     // ─── Counselor Lead Management ───

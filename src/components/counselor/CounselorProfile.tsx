@@ -24,7 +24,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
     const [counselor, setCounselor] = useState<CounselorDTO | null>(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: '', phone: '', department: '' });
+    const [editForm, setEditForm] = useState({ name: '', phone: '', departments: '' });
 
     const loadProfile = useCallback(async () => {
         if (!email) return;
@@ -32,7 +32,11 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
         try {
             const data = await CounselorService.getCounselorByEmail(email);
             setCounselor(data);
-            setEditForm({ name: data.name, phone: data.phone, department: data.department || '' });
+            setEditForm({ 
+                name: data.name, 
+                phone: data.phone, 
+                departments: Array.isArray(data.departments) ? data.departments.join(', ') : '' 
+            });
             onProfileLoaded?.(data);
         } catch (error) {
             console.error('Profile Load Error:', error);
@@ -60,7 +64,11 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
 
     const handleSaveProfile = async () => {
         try {
-            const updated = await CounselorService.updateProfile(email, editForm);
+            const payload = {
+                ...editForm,
+                departments: editForm.departments.split(',').map(d => d.trim()).filter(d => d !== '')
+            };
+            const updated = await CounselorService.updateProfile(email, payload);
             setCounselor(updated);
             setEditing(false);
             toast.success('Profile updated');
@@ -144,8 +152,8 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                         <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Phone</p>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">
-                        <p className="text-sm font-black text-gray-700 truncate leading-none">{counselor.department || '—'}</p>
-                        <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Dept</p>
+                        <p className="text-sm font-black text-gray-700 truncate leading-none">{counselor.departments?.join(', ') || '—'}</p>
+                        <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Depts</p>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">
                         <p className="text-sm font-black text-gray-700 leading-none">#{counselor.counselorId}</p>
@@ -166,12 +174,12 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-gray-600 mb-1 block">Department</label>
+                            <label className="text-xs font-medium text-gray-600 mb-1 block">Departments</label>
                             <input
-                                value={editForm.department}
-                                onChange={(e) => setEditForm(prev => ({ ...prev, department: e.target.value }))}
+                                value={editForm.departments}
+                                onChange={(e) => setEditForm(prev => ({ ...prev, departments: e.target.value }))}
                                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-[#dbb212] focus:ring-1 focus:ring-[#dbb212] outline-none"
-                                placeholder="Department name"
+                                placeholder="Dept names (comma separated)"
                             />
                         </div>
                     </div>
