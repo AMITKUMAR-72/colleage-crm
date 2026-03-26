@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 if (role !== 'ADMIN' && role !== 'MANAGER') {
                     router.push('/login');
                 }
-            } else if (path.startsWith('/admin') && role !== 'ADMIN' && role !== 'COUNSELOR') {
+            } else if (path.startsWith('/admin') && role !== 'ADMIN' && role !== 'COUNSELOR' && role !== 'MANAGER') {
                 router.push('/login');
             } else if (path.startsWith('/manager') && role !== 'MANAGER' && role !== 'ADMIN') {
                 router.push('/login');

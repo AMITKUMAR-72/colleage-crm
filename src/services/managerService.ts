@@ -73,13 +73,13 @@ export const ManagerService = {
         return response.data;
     },
 
-    manualAssignContacted: async (leadId: number, counselorId: number) => {
-        const response = await api.post(`/api/contactedLeads/manual-assign/lead/${leadId}/counselor/${counselorId}`);
+    manualAssignContacted: async (leadId: number, counselorId: number, type: string) => {
+        const response = await api.post(`/api/contactedLeads/manual-assign/lead/${leadId}/counselor/${counselorId}/type/${type}`);
         return response.data;
     },
 
-    bulkAssignContacted: async (counselorId: number, leadIds: number[]) => {
-        const response = await api.post(`/api/contactedLeads/bulk-assign/${counselorId}`, { leadIds });
+    bulkAssignContacted: async (counselorId: number, type: string, leadIds: number[]) => {
+        const response = await api.post(`/api/contactedLeads/bulk-assign/${counselorId}/type/${type}`, { leadIds });
         return response.data;
     },
 

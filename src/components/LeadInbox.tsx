@@ -53,7 +53,7 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
-    const [assigning, setAssigning] = useState<number | null>(null);
+    const [assigning, setAssigning] = useState<string | null>(null);
     const ref = useRef<HTMLDivElement>(null);
     const leadId = lead.id;
 
@@ -79,8 +79,32 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
 
                 const isCourseNull = !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
-                if (isCourseNull) {
-                    list = list.filter(c => !c.counselorTypes?.includes('INTERNAL'));
+                
+                if (!isCourseNull) {
+                    const leadCourseName = typeof lead.course === 'object' ? (lead.course as any).course : String(lead.course);
+                    
+                    try {
+                        const courseRes = await api.get(`/api/course/byCourse/${encodeURIComponent(leadCourseName)}`);
+                        const mappedDept = courseRes.data?.departmentName 
+                            || courseRes.data?.department?.name 
+                            || courseRes.data?.department 
+                            || String(courseRes.data);
+
+                        if (mappedDept && mappedDept !== 'undefined' && mappedDept !== '[object Object]') {
+                            list = list.filter(c => {
+                                if (!c.departments || c.departments.length === 0) return false;
+                                return c.departments.some(d => 
+                                    d.toLowerCase() === mappedDept.toLowerCase() ||
+                                    mappedDept.toLowerCase().includes(d.toLowerCase())
+                                );
+                            });
+                        } else {
+                            list = []; // Invalid mapping
+                        }
+                    } catch (err) {
+                        console.error("Course mapping failed", err);
+                        list = [];
+                    }
                 }
 
                 setCounselors(list);
@@ -92,11 +116,11 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
         }
     };
 
-    const handleAssign = async (e: React.MouseEvent, counselorId: number) => {
+    const handleAssign = async (e: React.MouseEvent, counselorId: number, type: string) => {
         e.stopPropagation();
-        setAssigning(counselorId);
+        setAssigning(`${counselorId}-${type}`);
         try {
-            await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}`);
+            await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}/type/${type}`);
             console.log('Lead assigned successfully');
             toast.success('Lead assigned successfully');
             setOpen(false);
@@ -107,6 +131,8 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
             setAssigning(null);
         }
     };
+
+    const isCourseNull = !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
 
     return (
         <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
@@ -122,33 +148,47 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-40 overflow-hidden">
+                <div className="absolute right-0 top-full mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-40 overflow-hidden">
                     <div className="px-3 py-2 border-b border-slate-100 bg-slate-50">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Counselor</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assign by Type</p>
                     </div>
-                    <div className="max-h-48 overflow-y-auto">
+                    <div className="max-h-56 overflow-y-auto">
                         {loading ? (
-                            <div className="py-4 text-center text-xs font-bold text-slate-400 animate-pulse">Loading…</div>
+                            <div className="py-4 text-center text-xs font-bold text-slate-400 animate-pulse">Loading Counselors…</div>
                         ) : counselors.length === 0 ? (
-                            <div className="py-4 text-center text-xs font-bold text-slate-400">No counselors found</div>
+                            <div className="py-4 text-center text-xs font-bold text-slate-400">
+                                {isCourseNull ? "No counselors found" : "This department counselor not available"}
+                            </div>
                         ) : (
                             counselors.map((c, idx) => (
-                                <button
+                                <div
                                     key={c.counselorId ?? idx}
-                                    onClick={e => handleAssign(e, c.counselorId)}
-                                    disabled={assigning === c.counselorId}
-                                    className="w-full text-left px-4 py-2.5 hover:bg-[#4d0101]/5 transition text-xs font-bold text-slate-800 border-b border-slate-50 last:border-0 flex items-center justify-between"
+                                    className="w-full px-4 py-3 hover:bg-[#4d0101]/5 transition border-b border-slate-50 last:border-0 flex flex-col gap-2"
                                 >
                                     <div className="flex flex-col">
-                                        <span>{c.name || String(c)}</span>
-                                        {c.counselorTypes && c.counselorTypes.length > 0 && (
-                                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{c.counselorTypes?.join(', ')}</span>
+                                        <span className="text-xs font-bold text-slate-800">{c.name || String(c)}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {c.counselorTypes && c.counselorTypes.length > 0 ? (
+                                            c.counselorTypes.map(type => (
+                                                <button
+                                                    key={type}
+                                                    onClick={e => handleAssign(e, c.counselorId, type)}
+                                                    disabled={assigning === `${c.counselorId}-${type}`}
+                                                    className={`px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                        assigning === `${c.counselorId}-${type}` 
+                                                            ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                            : 'hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                                    } disabled:cursor-not-allowed`}
+                                                >
+                                                    {assigning === `${c.counselorId}-${type}` ? 'Assigning…' : type}
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
                                         )}
                                     </div>
-                                    {assigning === c.counselorId && (
-                                        <span className="text-[10px] font-black text-[#4d0101] animate-pulse">Saving…</span>
-                                    )}
-                                </button>
+                                </div>
                             ))
                         )}
                     </div>

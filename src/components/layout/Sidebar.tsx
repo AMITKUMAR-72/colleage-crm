@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import api from '@/services/api';
 import {
     Menu,
     X,
@@ -18,15 +19,27 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar() {
-    const { role, logout } = useAuth();
+    const { user, role, logout } = useAuth();
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [counselorTypes, setCounselorTypes] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (role === 'COUNSELOR' && user?.id) {
+            api.get(`/api/counselors/id/${user.id}`)
+                .then(res => {
+                    const data = res.data?.data || res.data;
+                    setCounselorTypes(data?.counselorTypes || []);
+                })
+                .catch(err => console.error('Sidebar counselor details error:', err));
+        }
+    }, [role, user]);
 
     const navItems = [
         { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'], icon: ShieldCheck },
         { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'], icon: LayoutDashboard },
         { label: 'Counselor Leaves', href: '/admin/leaves', roles: ['ADMIN', 'MANAGER'], icon: Calendar },
-        { label: 'Lead information', href: '/admin', roles: ['ADMIN'], icon: Users },
+        { label: 'Lead information', href: '/admin', roles: ['ADMIN', 'MANAGER'], icon: Users },
         { label: 'My Lead', href: '/counselor/leads', roles: ['COUNSELOR'], icon: Users },
         { label: 'My Leave', href: '/counselor/leave', roles: ['COUNSELOR'], icon: Calendar },
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },
@@ -37,7 +50,18 @@ export default function Sidebar() {
         { label: 'Mentor Hub', href: '/mentor', roles: ['MENTOR', 'ADMIN'], icon: User },
     ];
 
-    const filteredItems = navItems.filter(item => item.roles.includes(role || ''));
+    const filteredItems = navItems.filter(item => {
+        if (!item.roles.includes(role || '')) return false;
+        
+        // Hide Sessions for pure TELECALLERs
+        if (role === 'COUNSELOR' && item.label === 'Sessions') {
+            // Only allow if they have INTERNAL or EXTERNAL.
+            const hasAccess = counselorTypes.includes('INTERNAL') || counselorTypes.includes('EXTERNAL');
+            return hasAccess;
+        }
+
+        return true;
+    });
 
     const handleNavClick = () => {
         setMobileOpen(false);

@@ -128,22 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        // 3. Sync with full user details from the backend
-        try {
-            const response = await api.get(`/api/users/email/${userEmail}`);
-            const userData = response.data;
-
-            if (userData) {
-                if (userData.role) {
-                    detectedRole = normalizeRole(userData.role);
-                }
-                userId = userData.id || userId;
-                userName = userData.name || userName;
-            }
-        } catch (e) {
-            console.error("Failed to fetch user role from backend sync", e);
-            // We keep the role from AuthResponse or JWT if sync fails
-        }
+        // (Backend sync via /api/users/email has been disabled to prevent errors on non-admin logins)
 
         const newUser: UserDTO = {
             id: userId,

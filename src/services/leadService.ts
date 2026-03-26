@@ -276,9 +276,9 @@ export const LeadService = {
         return response.data;
     },
 
-    /** POST /api/assignedLeads/bulk-reassign/{counselorId} */
-    bulkReassignLeads: async (counselorId: number, leadIds: number[]) => {
-        const response = await api.post(`/api/assignedLeads/bulk-reassign/${counselorId}`, { leadIds });
+    /** POST /api/assignedLeads/bulk-reassign/{counselorId}/{counselorType} */
+    bulkReassignLeads: async (counselorId: number, counselorType: string, leadIds: number[]) => {
+        const response = await api.post(`/api/assignedLeads/bulk-reassign/${counselorId}/${counselorType}`, { leadIds });
         return response.data;
     },
 

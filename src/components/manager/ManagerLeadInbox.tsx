@@ -90,8 +90,12 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]
         }
         setAssigning(counselorId);
         try {
-            await LeadService.bulkAssignLeads(counselorId, leadIds);
-            toast.success(`Assigned ${leadIds.length} leads successfully`);
+            const res = await LeadService.bulkAssignLeads(counselorId, leadIds);
+            if (res && res.successCount !== undefined) {
+                toast.success(`Success: ${res.successCount}, Failed: ${res.failCount || 0}`);
+            } else {
+                toast.success(`Assigned ${leadIds.length} leads successfully`);
+            }
             setOpen(false);
             onAssigned();
         } catch {

@@ -10,6 +10,7 @@ import {
 import { toast } from 'react-hot-toast';
 import LeadNotes from '../LeadNotes';
 import LoadingButton from '@/components/ui/LoadingButton';
+import api from '@/services/api';
 
 const SCORE_COLORS: Record<string, string> = {
     'HOT': 'bg-rose-100 text-rose-700',
@@ -68,41 +69,77 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const [searchType, setSearchType] = useState<SearchType>('ALL');
     const [searchValue, setSearchValue] = useState('');
 
+    const [validTypes, setValidTypes] = useState<string[]>([]);
+    const [validDepartments, setValidDepartments] = useState<any[]>([]);
+    const [selectedType, setSelectedType] = useState<string>('');
+    const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+    const [counselorSetup, setCounselorSetup] = useState(false);
+
     // Normalize any backend response shape into a flat LeadResponseDTO[]
     const normalizeResults = useCallback((raw: any): LeadResponseDTO[] => {
         if (!raw) return [];
         // Already a plain array
         if (Array.isArray(raw)) return raw;
-        // Full wrapper not yet unwrapped: { success, data: { lead: [...] }, ... }
         if (raw.data && Array.isArray(raw.data.lead)) return raw.data.lead;
-        // Full wrapper not yet unwrapped: { success, data: { content: [...] }, ... }
         if (raw.data && Array.isArray(raw.data.content)) return raw.data.content;
-        // Full wrapper not yet unwrapped: { success, data: [...], ... }
         if (Array.isArray(raw.data)) return raw.data;
-        // Interceptor already unwrapped — inner object: { lead: [...], count: N }
         if (Array.isArray(raw.lead)) return raw.lead;
-        // Interceptor already unwrapped — inner object: { content: [...] }
         if (Array.isArray(raw.content)) return raw.content;
-        // Other common keys
         if (Array.isArray(raw.leads)) return raw.leads;
         if (Array.isArray(raw.results)) return raw.results;
-        // Single lead object (ID / EMAIL search)
         if (typeof raw === 'object' && (raw.id != null || raw.leadId != null)) return [raw];
         return [];
     }, []);
 
+    useEffect(() => {
+        const fetchCounselorInfo = async () => {
+            if (!counselorId) return;
+            try {
+                // Fetch valid types and departments instead of directly hitting basic route
+                const res = await api.get(`/api/counselors/id/${counselorId}`);
+                const data = res.data?.data || res.data;
+                const types = data.counselorTypes || [];
+                const depts = data.departments || [];
+                
+                setValidTypes(types);
+                setValidDepartments(depts);
+                
+                if (types.length > 0) setSelectedType(types[0]);
+                if (depts.length > 0) setSelectedDepartment(typeof depts[0] === 'object' ? depts[0].name : depts[0]);
+                
+            } catch (err) {
+                console.error("Failed to load counselor metadata", err);
+            } finally {
+                setCounselorSetup(true);
+            }
+        };
+        fetchCounselorInfo();
+    }, [counselorId]);
+
     const loadLeads = useCallback(async () => {
+        if (!counselorSetup) return;
         setLoading(true);
         try {
-            console.log('[loadLeads] Fetching page:', page, 'for counselorId:', counselorId);
             const PAGE_SIZE = 100;
-            const raw = await CounselorService.getAssignedLeads(page, PAGE_SIZE);
-            console.log('[loadLeads] Raw response:', raw);
+            let raw: any;
+
+            if (selectedDepartment && selectedType) {
+                // Selected Department API
+                const deptName = typeof selectedDepartment === 'object' ? (selectedDepartment as any).name : selectedDepartment;
+                const dsRes = await api.get(`/api/counselor/leads/me/department/name/${encodeURIComponent(deptName)}/type/${selectedType}/${page}/${PAGE_SIZE}`);
+                raw = dsRes.data;
+            } else if (selectedType) {
+                // Selected Type API ONLY
+                const typeRes = await api.get(`/api/counselor/leads/counselor/${counselorId}/type/${selectedType}/${page}/${PAGE_SIZE}`);
+                raw = typeRes.data;
+            } else {
+                // Fallback basic
+                raw = await CounselorService.getAssignedLeads(page, PAGE_SIZE);
+            }
+
             const results = normalizeResults(raw);
-            console.log('[loadLeads] Normalized results:', results);
             setLeads(results);
 
-            // Extract pagination info if available
             if (raw && typeof raw === 'object') {
                 const tp = raw.totalPages ?? (raw as any).data?.totalPages ?? (results.length === PAGE_SIZE ? page + 2 : page + 1);
                 setTotalPages(tp);
@@ -114,7 +151,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         } finally {
             setLoading(false);
         }
-    }, [page, counselorId, normalizeResults]);
+    }, [page, counselorId, normalizeResults, counselorSetup, selectedType, selectedDepartment]);
 
     const loadCourses = useCallback(async () => {
         try {
@@ -265,6 +302,47 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
 
     return (
         <div className="space-y-4">
+            {/* Top Level Filters (Type / Department) */}
+            {counselorSetup && (validTypes.length > 0 || validDepartments.length > 0) && (
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row items-center gap-4">
+                    {validTypes.length > 0 && (
+                        <div className="flex-1 w-full">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 block mb-1">Your Counselor Type</label>
+                            <select
+                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
+                                value={selectedType}
+                                onChange={e => {
+                                    setSelectedType(e.target.value);
+                                    setPage(0); // reset page
+                                }}
+                            >
+                                <option value="" disabled>Select Type...</option>
+                                {validTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </div>
+                    )}
+                    {validDepartments.length > 0 && (
+                        <div className="flex-1 w-full">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 block mb-1">Your Department</label>
+                            <select
+                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
+                                value={selectedDepartment}
+                                onChange={e => {
+                                    setSelectedDepartment(e.target.value);
+                                    setPage(0); // reset page
+                                }}
+                            >
+                                <option value="">No Department selected</option>
+                                {validDepartments.map((d: any) => {
+                                    const dname = typeof d === 'object' ? d.name || d.departmentName : d;
+                                    return <option key={dname} value={dname}>{dname}</option>;
+                                })}
+                            </select>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Search and Filters Header */}
             <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-4 md:p-6">
                 <div className="flex flex-col lg:flex-row gap-4">
