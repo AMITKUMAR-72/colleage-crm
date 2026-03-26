@@ -196,65 +196,64 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
             <div className="absolute inset-y-0 right-0 max-w-xl w-full flex">
                 <div className="relative w-screen max-w-xl flex flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-300 overflow-hidden">
                     {/* Header */}
-                    <div className="px-8 py-8 bg-gradient-to-r from-[#4d0101] to-[#600202] flex items-center justify-between relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                        <div className="relative z-10">
-                            <h2 className="text-2xl font-black text-white tracking-tight uppercase italic leading-none">Induction Node</h2>
-                            <p className="text-[10px] font-bold text-[#dbb212] uppercase tracking-[0.3em] mt-2 italic">Manual Identity Registration</p>
+                    <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white z-10">
+                        <div>
+                            <h2 className="text-lg font-black text-slate-800 tracking-tight">Add New Lead</h2>
+                            <p className="text-[10px] font-bold text-[#4d0101] uppercase tracking-widest mt-0.5">Manual Entry</p>
                         </div>
-                        <button onClick={onClose} className="w-11 h-11 rounded-xl bg-white/10 hover:bg-[#dbb212] flex items-center justify-center transition-all active:scale-95 group relative z-10 border border-white/10 shadow-inner">
-                            <X className="w-5 h-5 text-white group-hover:text-[#4d0101]" />
+                        <button onClick={onClose} className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar bg-slate-50/30">
-                        <form id="manual-lead-form" onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-1 gap-6">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
+                        <form id="manual-lead-form" onSubmit={handleSubmit} className="space-y-5">
+                            <div className="space-y-5">
                                 {/* Name */}
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Full Identity</label>
+                                    <label className="block text-xs font-bold text-slate-600 mb-1.5">Full Name</label>
                                     <div className="relative group">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                         <input
                                             type="text"
                                             name="name"
                                             value={formData.name}
                                             onChange={handleInputChange}
-                                            placeholder="e.g. Alexander Raffles"
-                                            className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                            placeholder="e.g. John Doe"
+                                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                             required
                                         />
                                     </div>
                                 </div>
 
                                 {/* Email & Phone Row */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Electronic Point</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Email Address</label>
                                         <div className="relative group">
-                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <input
                                                 type="email"
                                                 name="email"
                                                 value={formData.email}
                                                 onChange={handleInputChange}
-                                                placeholder="contact@identity.com"
-                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                                placeholder="john@example.com"
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                                 required
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Mobile Tether</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Primary Phone</label>
                                         <div className="relative group">
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <input
                                                 type="tel"
                                                 name="phone0"
                                                 value={formData.phones?.[0] || ''}
                                                 onChange={handleInputChange}
-                                                placeholder="+60 XXX XXX XXXX"
-                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                                placeholder="+91..."
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                                 required
                                             />
                                         </div>
@@ -262,32 +261,32 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                 </div>
 
                                 {/* Alternate Phone & Address Row */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Alternate Mobile Node (Optional)</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Alternate Phone</label>
                                         <div className="relative group">
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <input
                                                 type="tel"
                                                 name="phone1"
                                                 value={formData.phones?.[1] || ''}
                                                 onChange={handleInputChange}
-                                                placeholder="+60 XXX XXX XXXX"
-                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                                placeholder="Optional"
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Location Node</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Address</label>
                                         <div className="relative group">
-                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <input
                                                 type="text"
                                                 name="address"
                                                 value={formData.address}
                                                 onChange={handleInputChange}
-                                                placeholder="e.g. 123 Main St, Tech City"
-                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                                placeholder="City, Region"
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                                 required
                                             />
                                         </div>
@@ -295,11 +294,11 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                 </div>
 
                                 {/* Dept & Course Dropdown Row */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Academic Branch</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Department</label>
                                         <div className="relative group">
-                                            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <select
                                                 value={selectedDepartment}
                                                 onChange={(e) => {
@@ -307,20 +306,20 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                                     setFormData(prev => ({ ...prev, course: '' }));
                                                 }}
                                                 disabled={loadingMeta}
-                                                className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer disabled:opacity-50"
+                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none disabled:opacity-50"
                                             >
-                                                <option value="">{loadingMeta ? 'LOADING BRANCHES...' : departments.length === 0 ? 'NO BRANCHES AVAILABLE' : 'SELECT BRANCH'}</option>
+                                                <option value="">{loadingMeta ? 'Loading...' : 'Select Department'}</option>
                                                 {departments.map(dept => (
                                                     <option key={dept.id} value={dept.department}>{dept.department}</option>
                                                 ))}
                                             </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Curriculum Node</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Course</label>
                                         <div className="relative group">
-                                            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <BookOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             {loadingMeta || filteredCourses.length > 0 ? (
                                                 <>
                                                     <select
@@ -328,14 +327,14 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                                         value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
                                                         onChange={handleInputChange}
                                                         disabled={loadingMeta}
-                                                        className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer disabled:opacity-50"
+                                                        className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none disabled:opacity-50"
                                                     >
-                                                        <option value="">{loadingMeta ? 'LOADING COURSES...' : 'SELECT COURSE'}</option>
+                                                        <option value="">{loadingMeta ? 'Loading...' : 'Select Course'}</option>
                                                         {filteredCourses.map(course => (
                                                             <option key={course.id} value={course.course}>{course.course}{course.department ? ` (${course.department})` : ''}</option>
                                                         ))}
                                                     </select>
-                                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                                 </>
                                             ) : (
                                                 <input
@@ -344,8 +343,8 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                                     value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
                                                     onChange={handleInputChange}
                                                     disabled={loadingMeta}
-                                                    placeholder="e.g. BTECH COMPUTER SCIENCE"
-                                                    className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                                    placeholder="e.g. B.Tech"
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                                     required
                                                 />
                                             )}
@@ -354,39 +353,39 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                 </div>
 
                                 {/* Source & Intake dropdown row */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Origin Source</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Source</label>
                                         <div className="relative group">
-                                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <select
                                                 value={selectedSourceId}
                                                 onChange={handleSourceChange}
-                                                className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer"
+                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none"
                                             >
-                                                <option value="">SELECT ORIGIN</option>
+                                                <option value="">Select Source</option>
                                                 {sources.map(s => (
                                                     <option key={`${s.id}-${s.name}`} value={s.id}>{s.name}</option>
                                                 ))}
                                             </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Intake Chronology</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Intake Year</label>
                                         <div className="relative group">
-                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <select
                                                 name="intake"
                                                 value={formData.intake}
                                                 onChange={handleInputChange}
-                                                className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer"
+                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none"
                                             >
                                                 {INTAKE_YEARS.map(y => (
                                                     <option key={y} value={y}>{y}</option>
                                                 ))}
                                             </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                         </div>
                                     </div>
                                 </div>
@@ -395,57 +394,39 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full bg-[#4d0101] text-white py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#4d0101]/30 hover:bg-[#600202] hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-4 disabled:opacity-70 disabled:pointer-events-none italic"
+                                className="w-full bg-[#4d0101] text-white py-3 rounded-xl font-bold hover:bg-[#600202] transition-colors active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 mt-4 shadow-sm"
                             >
                                 {submitting ? (
                                     <>
-                                        <Loader2 className="w-6 h-6 animate-spin" />
-                                        <span className="tracking-widest">Processing Node...</span>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Saving...</span>
                                     </>
                                 ) : (
-                                    <>
-
-                                        submit
-                                    </>
+                                    <span>Create Lead</span>
                                 )}
                             </button>
                         </form>
 
                         {/* Recent Submissions */}
                         {recentLeads.length > 0 && (
-                            <div className="pt-8 border-t border-slate-200">
-                                <div className="flex items-center justify-between mb-6 px-1">
-                                    <h3 className="text-sm font-black text-[#4d0101] uppercase tracking-tight italic">Registry Feed</h3>
-                                    <span className="text-[10px] font-bold text-[#dbb212] uppercase tracking-[0.2em] italic">Last {recentLeads.length} Identifiers</span>
+                            <div className="pt-6 border-t border-slate-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-bold text-slate-800">Recent Entries</h3>
+                                    <span className="text-[10px] font-bold text-[#4d0101] uppercase tracking-widest bg-[#4d0101]/5 px-2 py-0.5 rounded-full">{recentLeads.length} Added</span>
                                 </div>
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     {recentLeads.map((lead, idx) => (
-                                        <div key={lead.id || idx} className="bg-white border border-slate-100 p-4 sm:p-5 rounded-[1.5rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-300 shadow-sm hover:shadow-xl transition-all">
-                                            <div className="flex items-center gap-4 sm:gap-5 w-full sm:w-auto">
-                                                <div className="flex flex-col items-center">
-                                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center shadow-inner mb-2 group-hover:bg-[#4d0101] group-hover:border-[#4d0101] transition-all">
-                                                        <User className="w-6 h-6 text-[#4d0101] group-hover:text-white transition-all" />
-                                                    </div>
-                                                    <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 italic">SECURE</span>
+                                        <div key={lead.id || idx} className="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-[#4d0101]/30 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-[#4d0101]/5 rounded-lg flex items-center justify-center text-[#4d0101] font-bold border border-[#4d0101]/10">
+                                                    {lead.name.charAt(0).toUpperCase()}
                                                 </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <h4 className="text-sm font-black text-slate-900 tracking-tight italic truncate">{lead.name}</h4>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 leading-none uppercase truncate">{lead.email}</p>
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="text-[8px] font-black text-slate-400 uppercase px-2 py-1 bg-slate-50 rounded-lg border border-slate-100 italic shrink-0">{lead.status}</span>
-                                                        <span className="text-[8px] font-black text-[#4d0101] uppercase px-2 py-1 bg-[#dbb212]/10 rounded-lg border border-[#dbb212]/20 italic shrink-0 truncate max-w-[100px] sm:max-w-none">{lead.course as string || 'GENERAL'}</span>
-                                                    </div>
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-800">{lead.name}</h4>
+                                                    <p className="text-xs text-slate-500">{lead.email}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-1 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100/50">
-                                                <div className="text-left sm:text-right flex flex-col items-start sm:items-end flex-1 sm:flex-none">
-                                                    <p className="text-[10px] font-black text-slate-800 italic">{lead.phone}</p>
-                                                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">{lead.campaign?.name || 'MANUAL'}</p>
-                                                </div>
-                                                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform shrink-0">
-                                                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                                                </div>
-                                            </div>
+                                            <CheckCircle className="w-5 h-5 text-emerald-500" />
                                         </div>
                                     ))}
                                 </div>

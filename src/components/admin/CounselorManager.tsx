@@ -105,36 +105,35 @@ export default function CounselorManager() {
             }
 
             let result: any;
+            let list: CounselorDTO[] = [];
+            
             switch (filterType) {
-                case 'id':
-                    result = await CounselorService.getCounselorById(Number(filterValue));
-                    setCounselors(result ? [result] : []);
-                    break;
                 case 'email':
                     result = await CounselorService.getCounselorByEmail(filterValue.trim());
-                    setCounselors(result ? [result] : []);
+                    list = result?.data ? [result.data] : (result ? [result] : []);
                     break;
                 case 'phone':
                     result = await CounselorService.getCounselorByPhone(filterValue.trim());
-                    setCounselors(result ? [result] : []);
+                    list = result?.data ? [result.data] : (result ? [result] : []);
                     break;
                 case 'name':
                     result = await CounselorService.searchByName(filterValue.trim());
-                    setCounselors(Array.isArray(result) ? result : []);
+                    list = Array.isArray(result) ? result : (result?.data || result?.content || result?.counselors || []);
                     break;
                 case 'type':
                     if (filterValue) {
                         result = await CounselorService.searchByType(filterValue);
-                        setCounselors(Array.isArray(result) ? result : []);
+                        list = Array.isArray(result) ? result : (result?.data || result?.content || result?.counselors || []);
                     }
                     break;
                 case 'status':
                     if (filterValue) {
                         result = await CounselorService.searchByStatus(filterValue as CounselorStatus);
-                        setCounselors(Array.isArray(result) ? result : []);
+                        list = Array.isArray(result) ? result : (result?.data || result?.content || result?.counselors || []);
                     }
                     break;
             }
+            setCounselors(list);
         } catch (error) {
             toast.error('Search failed');
             setCounselors([]);
@@ -215,7 +214,6 @@ export default function CounselorManager() {
                             className="p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm font-bold w-full sm:w-auto shadow-sm"
                         >
                             <option value="all">All Counselors</option>
-                            <option value="id">By ID</option>
                             <option value="name">By Name</option>
                             <option value="email">By Email</option>
                             <option value="phone">By Phone</option>

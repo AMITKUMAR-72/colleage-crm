@@ -49,7 +49,7 @@ export const AffiliateService = {
         return response.data;
     },
     updateAffiliate: async (id: number, data: Partial<AffiliateDTO>) => {
-        const response = await api.put<AffiliateDTO>(`/api/campaign/affiliate/update/${id}`, data);
+        const response = await api.patch<AffiliateDTO>(`/api/campaign/affiliate/update/${id}`, data);
         return response.data;
     },
     updateAffiliateActiveStatus: async (id: number, status: AffiliateActive) => {
