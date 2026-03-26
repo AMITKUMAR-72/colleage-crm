@@ -7,6 +7,7 @@ import { LeadService } from '@/services/leadService';
 import api from '@/services/api';
 import LeadSearchFilters from './LeadSearchFilters';
 import LeadEditDrawer from './admin/LeadEditDrawer';
+import CounselorQueueSidebar from './CounselorQueueSidebar';
 import toast from 'react-hot-toast';
 
 interface LeadFilters {
@@ -76,12 +77,12 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
                 let list: CounselorDTO[] = Array.isArray(raw)
                     ? raw
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
-                
+
                 const isCourseNull = !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
                 if (isCourseNull) {
                     list = list.filter(c => !c.counselorTypes?.includes('INTERNAL'));
                 }
-                
+
                 setCounselors(list);
             } catch {
                 toast.error('Could not load counselors');
@@ -96,6 +97,7 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
         setAssigning(counselorId);
         try {
             await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}`);
+            console.log('Lead assigned successfully');
             toast.success('Lead assigned successfully');
             setOpen(false);
             onAssigned();
@@ -277,8 +279,11 @@ export default function LeadInbox() {
             {/* ── Search / Filter Bar ──────────────────────────────────────── */}
             <LeadSearchFilters onFilterChange={(f: LeadFilters) => setFilters(f)} />
 
-            {/* ── Feed Card ────────────────────────────────────────────────── */}
-            <div className="rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100">
+            {/* ── Layout Wrapper ───────────────────────────────────────────── */}
+            <div className="flex flex-col gap-8">
+
+                {/* ── Feed Card ────────────────────────────────────────────────── */}
+                <div className="flex-1 min-w-0 w-full rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100">
 
                 {/* Header */}
                 <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -424,6 +429,11 @@ export default function LeadInbox() {
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* ── Counselor Queue ───────────────────────────────────────────── */}
+            <CounselorQueueSidebar />
+
             </div>
 
             {/* ── Lead Details Slide-over ───────────────────────────────────── */}

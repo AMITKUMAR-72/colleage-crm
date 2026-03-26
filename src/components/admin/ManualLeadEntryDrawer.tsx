@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, User, Mail, Phone, BookOpen, Building2, Calendar, Globe, Send, CheckCircle, Clock, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { X, User, Mail, Phone, BookOpen, Building2, Calendar, Globe, Send, CheckCircle, Clock, Trash2, Loader2, ChevronDown, MapPin } from 'lucide-react';
 import { LeadRequestDTO, LeadResponseDTO, DepartmentDTO, CourseDTO, LeadStatus, LeadScore, CampaignDTO } from '@/types/api';
 import { LeadService } from '@/services/leadService';
 import { DepartmentService } from '@/services/departmentService';
@@ -22,11 +22,11 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
     const [formData, setFormData] = useState<LeadRequestDTO>({
         name: '',
         email: '',
-        phone: '',
+        phones: [],
         address: '', // Mocked or optional
         course: '',
         intake: '2026',
-        status: 'NEW',
+        status: 'UNASSIGNED',
         score: 'WARM'
     });
 
@@ -43,9 +43,8 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
         const loadInitialData = async () => {
             setLoadingMeta(true);
             try {
-                const [deptData, courseData, sourceData] = await Promise.allSettled([
+                const [deptData, sourceData] = await Promise.allSettled([
                     DepartmentService.getAllDepartments(),
-                    CourseService.getAllCourses(),
                     CampaignService.getAllSources()
                 ]);
 
@@ -53,11 +52,6 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                 const depts = deptData.status === 'fulfilled' && Array.isArray(deptData.value) ? deptData.value : [];
                 setDepartments(depts);
                 if (depts.length === 0) console.warn('[ManualEntry] No departments loaded');
-
-                // Courses
-                const crs = courseData.status === 'fulfilled' && Array.isArray(courseData.value) ? courseData.value : [];
-                setCourses(crs);
-                if (crs.length === 0) console.warn('[ManualEntry] No courses loaded');
 
                 // Sources
                 const rawSources = sourceData.status === 'fulfilled' ? sourceData.value : [];
@@ -87,29 +81,36 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
     }, [isOpen]);
 
     const filteredCourses = useMemo(() => {
-        if (!selectedDepartment) return courses;
+        if (!selectedDepartment) return [];
 
-        // 1. First, check if the selected department object itself contains a nested 'courses' array
         const selectedDeptObj = departments.find(d =>
             (d.department || '').toLowerCase().trim() === selectedDepartment.toLowerCase().trim()
         );
 
-        if (selectedDeptObj && Array.isArray(selectedDeptObj.courses) && selectedDeptObj.courses.length > 0) {
+        if (selectedDeptObj && Array.isArray(selectedDeptObj.courses)) {
             return selectedDeptObj.courses;
         }
 
-        // 2. Otherwise, fallback to the global courses list
-        return courses.filter(c => {
-            const dept = (c.department || '').toLowerCase().trim();
-            // If the backend serialization tripped and we got courses via the /name fallback endpoint, 
-            // the department string might be empty. In that case, we show them rather than locking the user out.
-            return dept === '' || dept === selectedDepartment.toLowerCase().trim();
-        });
-    }, [courses, selectedDepartment, departments]);
+        return [];
+    }, [selectedDepartment, departments]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'phone0') {
+            setFormData(prev => {
+                const newPhones = [...(prev.phones || [])];
+                newPhones[0] = value;
+                return { ...prev, phones: newPhones };
+            });
+        } else if (name === 'phone1') {
+            setFormData(prev => {
+                const newPhones = [...(prev.phones || [])];
+                newPhones[1] = value;
+                return { ...prev, phones: newPhones };
+            });
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSourceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -128,8 +129,9 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || !formData.email || !formData.phone) {
-            toast.error('Name, Email, and Contact are required.');
+        const primaryPhone = formData.phones?.[0];
+        if (!formData.name || !formData.email || !primaryPhone || !formData.address) {
+            toast.error('Name, Email, Contact, and Address are required.');
             return;
         }
 
@@ -162,11 +164,11 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
             setFormData({
                 name: '',
                 email: '',
-                phone: '',
+                phones: [],
                 address: '',
                 course: '',
                 intake: '2026',
-                status: 'NEW',
+                status: 'UNASSIGNED',
                 score: 'WARM'
             });
             setSelectedDepartment('');
@@ -248,10 +250,43 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
                                             <input
                                                 type="tel"
-                                                name="phone"
-                                                value={formData.phone}
+                                                name="phone0"
+                                                value={formData.phones?.[0] || ''}
                                                 onChange={handleInputChange}
                                                 placeholder="+60 XXX XXX XXXX"
+                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Alternate Phone & Address Row */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Alternate Mobile Node (Optional)</label>
+                                        <div className="relative group">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <input
+                                                type="tel"
+                                                name="phone1"
+                                                value={formData.phones?.[1] || ''}
+                                                onChange={handleInputChange}
+                                                placeholder="+60 XXX XXX XXXX"
+                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Location Node</label>
+                                        <div className="relative group">
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#600202] transition" />
+                                            <input
+                                                type="text"
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleInputChange}
+                                                placeholder="e.g. 123 Main St, Tech City"
                                                 className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-[#4d0101]/5 focus:border-[#4d0101] transition font-bold text-slate-800 placeholder:text-slate-300"
                                                 required
                                             />
@@ -369,8 +404,8 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                     </>
                                 ) : (
                                     <>
-                                        <Send className="w-5 h-5 text-[#dbb212]" />
-                                        Commit Identity
+
+                                        submit
                                     </>
                                 )}
                             </button>

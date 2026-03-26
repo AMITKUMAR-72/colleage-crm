@@ -52,7 +52,7 @@ export interface CounselorDTO {
     email: string;
     phone: string;
     password?: string;         // @JsonProperty WRITE_ONLY
-    department: string;
+    departments: string[];
     status: CounselorStatus;
     counselorTypes: CounselorType[];
     priority: Priority;
@@ -81,7 +81,8 @@ export interface LeadRequestDTO {
     name: string;
     email: string;
     address: string;
-    phone: string;
+    phone?: string;
+    phones?: string[];
     course?: string;
     intake?: string;
     status?: LeadStatus;
