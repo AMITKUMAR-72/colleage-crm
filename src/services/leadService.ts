@@ -125,28 +125,28 @@ export const LeadService = {
 
     // Explicit Search Methods (Resolving LeadInbox.tsx errors & Matching API Audit)
     getLeadsByStatus: async (status: LeadStatus) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/status/${status}`);
-        return Array.isArray(response.data) ? response.data : (response.data as any)?.content || [];
+        const response = await api.get(`/api/leads/searchBy/status/${status}`);
+        return toPageResponse(response.data).content;
     },
 
     getLeadsByCourse: async (course: string) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/course/${encodeURIComponent(course)}`);
-        return Array.isArray(response.data) ? response.data : (response.data as any)?.content || [];
+        const response = await api.get(`/api/leads/searchBy/course/${encodeURIComponent(course)}`);
+        return toPageResponse(response.data).content;
     },
 
     getLeadsByCampaign: async (campaign: string) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/campaign/${encodeURIComponent(campaign)}`);
-        return Array.isArray(response.data) ? response.data : (response.data as any)?.content || [];
+        const response = await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(campaign)}`);
+        return toPageResponse(response.data).content;
     },
 
     getLeadsByScore: async (score: LeadScore) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/score/${score}`);
-        return Array.isArray(response.data) ? response.data : (response.data as any)?.content || [];
+        const response = await api.get(`/api/leads/searchBy/score/${score}`);
+        return toPageResponse(response.data).content;
     },
 
     getLeadsByName: async (name: string) => {
-        const response = await api.get<LeadResponseDTO[]>(`/api/leads/searchBy/name/${encodeURIComponent(name)}`);
-        return Array.isArray(response.data) ? response.data : (response.data as any)?.content || [];
+        const response = await api.get(`/api/leads/searchBy/name/${encodeURIComponent(name)}`);
+        return toPageResponse(response.data).content;
     },
 
     // Search & Filter — each filter uses its own endpoint
@@ -174,7 +174,7 @@ export const LeadService = {
             if (params.campaign) return await LeadService.getLeadsByCampaign(params.campaign);
             if (params.score) return await LeadService.getLeadsByScore(params.score as LeadScore);
 
-            const extractArray = (res: any) => res?.data?.lead || res?.data?.content || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
+            const extractArray = (res: any) => toPageResponse(res.data).content;
 
             if (params.startDate && params.endDate) {
                 let start = params.startDate;
@@ -332,14 +332,15 @@ export const LeadService = {
     },
 
     // 188. Generate and get fake leads (Paginated — Testing)
-    async getFakeLeads(page: number, size: number) {
-        const response = await api.get(`/api/leads/fake/${page}/${size}`);
+    getFakeLeads: async (page: number = 0, size: number = 10) => {
+        const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/${page}/${size}`);
         return response.data;
     },
 
     // 189. Get fake leads by counselor ID (Testing)
-    async getFakeLeadsByCounselor(counselorId: number, page: number, size: number) {
-        const response = await api.get(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
+    getFakeLeadsByCounselor: async (counselorId: number, page: number = 0, size: number = 10) => {
+        const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
         return response.data;
     },
 };
+

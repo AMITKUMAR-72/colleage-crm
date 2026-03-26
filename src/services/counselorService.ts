@@ -142,3 +142,6 @@ export const CounselorService = {
         return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 };
+
+
+

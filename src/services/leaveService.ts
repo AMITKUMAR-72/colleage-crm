@@ -25,6 +25,12 @@ export const LeaveService = {
         const response = await api.post<LeaveRequestDTO>('/api/leaves/apply', data);
         return response.data;
     },
+    
+    // Alias for compatibility
+    applyLeave: async (data: { startDate: string; endDate: string; reason: string }) => {
+        const response = await api.post<LeaveRequestDTO>('/api/leaves/apply', data);
+        return response.data;
+    },
 
     // 165. Authenticated Counselor views their own leaves
     getMyLeaves: async () => {

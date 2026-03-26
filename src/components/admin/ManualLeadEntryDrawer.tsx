@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, User, Mail, Phone, BookOpen, Building2, Globe, Send, Loader2, ChevronDown } from 'lucide-react';
+import { X, User, Mail, Phone, BookOpen, Building2, Globe, Send, Loader2, ChevronDown, Calendar } from 'lucide-react';
 import { LeadRequestDTO, LeadResponseDTO, DepartmentDTO, CourseDTO, LeadStatus, LeadScore, CampaignDTO } from '@/types/api';
 import { LeadService } from '@/services/leadService';
 import { DepartmentService } from '@/services/departmentService';
@@ -229,10 +229,10 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                     <div>
                                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Selection Source</label>
                                         <div className="relative group">
-                                            < बिल्डिंग2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select value={selectedSourceId} onChange={handleSourceChange} className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-[11px] uppercase text-slate-700 appearance-none cursor-pointer">
                                                 <option value="">SELECT SOURCE</option>
-                                                {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                {sources.map((s, idx) => <option key={`${s.id}-${idx}`} value={s.id}>{s.name}</option>)}
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                         </div>
@@ -256,7 +256,7 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                             <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select value={selectedDepartment} onChange={(e) => { setSelectedDepartment(e.target.value); setFormData(p => ({ ...p, course: '' })); }} className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-[11px] uppercase text-slate-700 appearance-none cursor-pointer">
                                                 <option value="">SELECT DEPARTMENT</option>
-                                                {departments.map(d => <option key={d.id} value={d.department}>{d.department}</option>)}
+                                                {departments.map((d, idx) => <option key={`${d.id}-${idx}`} value={d.department}>{d.department}</option>)}
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                         </div>
@@ -267,7 +267,7 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                             <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select name="course" value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''} onChange={handleInputChange} className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none font-bold text-[11px] uppercase text-slate-700 appearance-none cursor-pointer">
                                                 <option value="">SELECT COURSE</option>
-                                                {filteredCourses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
+                                                {filteredCourses.map((c, idx) => <option key={`${c.id}-${idx}`} value={c.course}>{c.course}</option>)}
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                         </div>

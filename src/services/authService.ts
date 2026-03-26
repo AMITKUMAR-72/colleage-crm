@@ -59,8 +59,8 @@ export const AuthService = {
     },
 
     // 4. Complete password reset using token
-    resetPassword: async (token: string, newPassword: string) => {
-        const response = await api.post('/auth/reset-password', { token, newPassword });
+    resetPassword: async (data: { token: string; newPassword: string; confirmPassword: string }) => {
+        const response = await api.post('/auth/reset-password', data);
         return response.data;
     },
 
@@ -70,3 +70,5 @@ export const AuthService = {
         return response.data;
     }
 };
+
+

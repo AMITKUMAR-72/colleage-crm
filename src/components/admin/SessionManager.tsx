@@ -20,7 +20,9 @@ export default function SessionManager() {
     const [singleFormData, setSingleFormData] = useState<Partial<SessionDTO>>({
         startTime: '', endTime: '', maxCapacity: 50, location: '', notes: '', department: 'ENGINEERING'
     });
-    const [bulkJson, setBulkJson] = useState('');
+    const [bulkFormData, setBulkFormData] = useState<Partial<SessionDTO>[]>([
+        { startTime: '', endTime: '', maxCapacity: 50, location: '', notes: '' }
+    ]);
 
     // Assign Mentor 
     const [assignSessionId, setAssignSessionId] = useState<number | ''>('');
@@ -145,14 +147,21 @@ export default function SessionManager() {
     const handleCreateBulk = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const parsedArray = JSON.parse(bulkJson);
-            if (!Array.isArray(parsedArray)) throw new Error("Must be an array");
-            await SessionService.createBulkSessions(parsedArray);
+            if (bulkFormData.length === 0) throw new Error("Add at least one session");
+            
+            const sanitizedArray = bulkFormData.map((session: any) => {
+                const s = { ...session };
+                if (s.startTime && s.startTime.length === 16) s.startTime += ':00';
+                if (s.endTime && s.endTime.length === 16) s.endTime += ':00';
+                return s;
+            });
+
+            await SessionService.createBulkSessions(sanitizedArray);
             toast.success('Bulk sessions created');
-            setBulkJson('');
+            setBulkFormData([{ startTime: '', endTime: '', maxCapacity: 50, location: '', notes: '' }]);
             loadSessions();
         } catch (error) {
-            toast.error('Invalid JSON array or API error');
+            toast.error('Failed to create bulk sessions');
         }
     };
 
@@ -249,16 +258,41 @@ export default function SessionManager() {
 
                         {isBulk && role === 'ADMIN' ? (
                             <form onSubmit={handleCreateBulk} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">JSON Data (Array)</label>
-                                    <textarea
-                                        value={bulkJson}
-                                        onChange={(e) => setBulkJson(e.target.value)}
-                                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm font-mono h-32"
-                                        placeholder='[{"startTime": "2025-01-01T10:00:00", "endTime": "2025-01-01T11:00:00", "maxCapacity": 50, "location": "Hall A", "notes": "Bulk", "department": "ENGINEERING"}]'
-                                    />
+                                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 border-l-2 border-[#4d0101]/10 pl-3">
+                                    {bulkFormData.map((item, index) => (
+                                        <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 relative group transition-all">
+                                            {bulkFormData.length > 1 && (
+                                                <button type="button" onClick={() => setBulkFormData(prev => prev.filter((_, i) => i !== index))} className="absolute -top-2 -right-2 bg-rose-100 text-rose-600 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition shadow-sm z-10 hover:bg-rose-200">
+                                                    <XCircle className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Start Time</label>
+                                                <input required type="datetime-local" value={item.startTime || ''} onChange={(e) => { const newArr = [...bulkFormData]; newArr[index].startTime = e.target.value; setBulkFormData(newArr); }} className="w-full p-2 border border-gray-200 bg-white shadow-sm rounded-lg text-xs outline-none focus:border-[#dbb212]" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider">End Time</label>
+                                                <input required type="datetime-local" value={item.endTime || ''} onChange={(e) => { const newArr = [...bulkFormData]; newArr[index].endTime = e.target.value; setBulkFormData(newArr); }} className="w-full p-2 border border-gray-200 bg-white shadow-sm rounded-lg text-xs outline-none focus:border-[#dbb212]" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Capacity</label>
+                                                <input required type="number" value={item.maxCapacity || 50} onChange={(e) => { const newArr = [...bulkFormData]; newArr[index].maxCapacity = Number(e.target.value); setBulkFormData(newArr); }} className="w-full p-2 border border-gray-200 bg-white shadow-sm rounded-lg text-xs outline-none focus:border-[#dbb212]" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Location</label>
+                                                <input required type="text" value={item.location || ''} onChange={(e) => { const newArr = [...bulkFormData]; newArr[index].location = e.target.value; setBulkFormData(newArr); }} className="w-full p-2 border border-gray-200 bg-white shadow-sm rounded-lg text-xs outline-none focus:border-[#dbb212]" placeholder="e.g. Hall A" />
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <button type="submit" className="w-full bg-[#4d0101] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#600202] transition">Create Bulk</button>
+                                <div className="flex gap-2 pt-2">
+                                    <button type="button" onClick={() => setBulkFormData(prev => [...prev, { startTime: '', endTime: '', maxCapacity: 50, location: '', notes: '' }])} className="w-1/3 bg-gray-100 border border-gray-200 text-gray-700 px-3 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-200 transition">
+                                        + Add Row
+                                    </button>
+                                    <button type="submit" className="w-2/3 bg-[#4d0101] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#600202] transition shadow-md">
+                                        Push {bulkFormData.length} Sessions
+                                    </button>
+                                </div>
                             </form>
                         ) : (
                             <form onSubmit={handleCreateSingle} className="space-y-4">

@@ -15,6 +15,7 @@ function AdminDashboardContent() {
     const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'COUNSELORS' | 'MONITOR' | null : null;
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS' | 'MONITOR'>(tabParam || 'OVERVIEW');
     const [leadsCount, setLeadsCount] = useState(0);
+    const [fakeLeadsCount, setFakeLeadsCount] = useState(0);
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const statsFetchedRef = useRef(false);
 
@@ -51,6 +52,12 @@ function AdminDashboardContent() {
 
                 console.log("[AdminDashboard] Calculated final count:", count);
                 setLeadsCount(count);
+
+                // Fetch Fake Leads Count
+                const fakeLeadsData = await LeadService.getFakeLeads(0, 1);
+                const f = fakeLeadsData as any;
+                setFakeLeadsCount(f?.count ?? 0);
+
             } catch (error) {
                 console.error("[AdminDashboard] Failed to fetch stats:", error);
             }
@@ -78,9 +85,9 @@ function AdminDashboardContent() {
                         </span>
                     </div>
                     <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                        System Management
+                        LEAD INFORMATION
                     </h1>
-                    <p className="text-slate-500 font-medium tracking-tight">Maintain the integrity of the Raffles Management Ecosystem.</p>
+                    <p className="text-slate-500 font-medium tracking-tight">Maintain the integrity of the Raffles Management leads</p>
                 </div>
             </header>
 
@@ -134,6 +141,14 @@ function AdminDashboardContent() {
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
                             <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">CONVERTED LEADS</h3>
                             <p className="text-sm text-yellow-600 font-bold uppercase tracking-widest mt-2">On Working</p>
+                        </div>
+                        <div
+                            onClick={() => router.push('/admin/fake-leads')}
+                            className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group"
+                        >
+                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">FAKE LEADS</h3>
+                            <p className="text-2xl font-black text-rose-600">{fakeLeadsCount}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Generated leads</p>
                         </div>
 
                     </div>

@@ -25,8 +25,10 @@ export default function Sidebar() {
     const navItems = [
         { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'], icon: ShieldCheck },
         { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'], icon: LayoutDashboard },
+        { label: 'Counselor Leaves', href: '/admin/leaves', roles: ['ADMIN', 'MANAGER'], icon: Calendar },
         { label: 'Lead information', href: '/admin', roles: ['ADMIN'], icon: Users },
         { label: 'My Lead', href: '/counselor/leads', roles: ['COUNSELOR'], icon: Users },
+        { label: 'My Leave', href: '/counselor/leave', roles: ['COUNSELOR'], icon: Calendar },
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },
         { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
         { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', 'AFFILIATE'], icon: Upload },
