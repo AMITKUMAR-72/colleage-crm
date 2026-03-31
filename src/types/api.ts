@@ -33,11 +33,13 @@ export type AffiliateActive = 'ACTIVE' | 'DEACTIVE';
 // ─── DTOs ───
 
 export interface UserDTO {
-    id: number;
+    id: string | number;
     name: string;
     email: string;
     role: Role;
-    isActive: string; // SLA_Status enum on backend
+    isActive?: string;
+    status?: string;
+    createdAt?: string;
 }
 
 export interface LoginResponse {
@@ -47,10 +49,10 @@ export interface LoginResponse {
 
 // Matches backend Counselor_DTO.java exactly
 export interface CounselorDTO {
-    counselorId: number;
+    counselorId: string | number;
     name: string;
     email: string;
-    phone: string;
+    phone: string[];
     password?: string;         // @JsonProperty WRITE_ONLY
     departments: string[];
     status: CounselorStatus;
@@ -67,6 +69,7 @@ export interface LeadResponseDTO {
     email: string;
     address: string;
     phone: string;
+    phones?: string[];
     course?: string | { id: number; course: string };   // backend can return string or entity
     intake?: string;
     status: LeadStatus;
@@ -164,7 +167,7 @@ export interface SessionAssignmentDTO {
     leadId: number;
     leadName: string;
     sessionId: number;
-    counselorId: number;
+    counselorId: string | number;
     counselorName: string;
     assignedAt: string;
     notes: string;

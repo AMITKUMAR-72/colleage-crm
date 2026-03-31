@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CounselorService } from '@/services/counselorService';
 import { CourseService } from '@/services/courseService';
-import { LeadResponseDTO, LeadStatus, LeadScore, CourseDTO } from '@/types/api';
+import { DepartmentService } from '@/services/departmentService';
+import { LeadResponseDTO, LeadStatus, LeadScore, CourseDTO, DepartmentDTO } from '@/types/api';
 import {
     Search, RotateCcw, Mail, Globe, BookOpen, ChevronDown, GraduationCap, Phone, MapPin
 } from 'lucide-react';
@@ -11,6 +12,8 @@ import { toast } from 'react-hot-toast';
 import LeadNotes from '../LeadNotes';
 import LoadingButton from '@/components/ui/LoadingButton';
 import api from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import CounselorProfileHeader from '../CounselorProfileHeader';
 
 const SCORE_COLORS: Record<string, string> = {
     'HOT': 'bg-rose-100 text-rose-700',
@@ -37,10 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const ALL_STATUSES: LeadStatus[] = [
     'LOST',
-    'CONTACTED',
-    'INTERESTED',
-    'ADMISSION_IN_PROCESS',
-    'ADMISSION_DONE'
+    'CONTACTED'
 ];
 
 const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
@@ -55,6 +55,7 @@ interface MyLeadsFeedProps {
 }
 
 export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate, onActionComplete }: MyLeadsFeedProps) {
+    const { user, role } = useAuth();
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [loading, setLoading] = useState(true);
@@ -74,47 +75,81 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const [selectedType, setSelectedType] = useState<string>('');
     const [selectedDepartment, setSelectedDepartment] = useState<string>('');
     const [counselorSetup, setCounselorSetup] = useState(false);
+    
+    // To store what was actually clicked/searched
+    const [searchTrigger, setSearchTrigger] = useState(0);
+
+    const [combinedCounts, setCombinedCounts] = useState<{
+        telecallerLeads: number;
+        internalLeads: number;
+        externalLeads: number;
+        totalCombined: number;
+    } | null>(null);
 
     // Normalize any backend response shape into a flat LeadResponseDTO[]
     const normalizeResults = useCallback((raw: any): LeadResponseDTO[] => {
         if (!raw) return [];
-        // Already a plain array
-        if (Array.isArray(raw)) return raw;
-        if (raw.data && Array.isArray(raw.data.lead)) return raw.data.lead;
-        if (raw.data && Array.isArray(raw.data.content)) return raw.data.content;
-        if (Array.isArray(raw.data)) return raw.data;
-        if (Array.isArray(raw.lead)) return raw.lead;
-        if (Array.isArray(raw.content)) return raw.content;
-        if (Array.isArray(raw.leads)) return raw.leads;
-        if (Array.isArray(raw.results)) return raw.results;
-        if (typeof raw === 'object' && (raw.id != null || raw.leadId != null)) return [raw];
-        return [];
+        let data: any[] = [];
+        // Extract array from various possible nests
+        if (Array.isArray(raw)) data = raw;
+        else if (raw.data && Array.isArray(raw.data.lead)) data = raw.data.lead;
+        else if (raw.data && Array.isArray(raw.data.content)) data = raw.data.content;
+        else if (Array.isArray(raw.data)) data = raw.data;
+        else if (Array.isArray(raw.lead)) data = raw.lead;
+        else if (Array.isArray(raw.content)) data = raw.content;
+        else if (Array.isArray(raw.leads)) data = raw.leads;
+        else if (Array.isArray(raw.results)) data = raw.results;
+        else if (typeof raw === 'object' && (raw.id != null || raw.leadId != null)) data = [raw];
+
+        // Enrich/Normalize items
+        return data.map((item: any) => ({
+            ...item,
+            id: item.id || item.leadId,
+            phone: item.phone || (item.phones && item.phones.length > 0 ? item.phones[0] : ''),
+            score: item.score || 'COLD'
+        }));
     }, []);
 
     useEffect(() => {
-        const fetchCounselorInfo = async () => {
-            if (!counselorId) return;
+        const fetchCounselorMe = async () => {
             try {
-                // Fetch valid types and departments instead of directly hitting basic route
-                const res = await api.get(`/api/counselors/id/${counselorId}`);
-                const data = res.data?.data || res.data;
-                const types = data.counselorTypes || [];
-                const depts = data.departments || [];
+                const meRes: any = await CounselorService.getCounselorMe();
+                // Check if the counselor object is wrapped in a "data" property
+                const me = meRes?.data || meRes;
                 
-                setValidTypes(types);
-                setValidDepartments(depts);
-                
-                if (types.length > 0) setSelectedType(types[0]);
-                if (depts.length > 0) setSelectedDepartment(typeof depts[0] === 'object' ? depts[0].name : depts[0]);
-                
+                if (me && (me.counselorId || me.id)) {
+                    const types = me.counselorTypes || [];
+                    const depts = me.departments || [];
+                    setValidTypes(types);
+                    setValidDepartments(depts);
+
+                    // Default selection logic — only if not already set by user
+                    if (types.length > 0 && !selectedType) setSelectedType(types[0]);
+                    if (depts.length > 0 && !selectedDepartment) {
+                        const firstDept = depts[0];
+                        const dname = typeof firstDept === 'object' ? (firstDept as any).department || (firstDept as any).name : firstDept;
+                        setSelectedDepartment(dname);
+                    }
+
+                    // Fetch combined counts
+                    const activeCid = me.counselorId || me.id || counselorId;
+                    console.log("[MyLeadsFeed] Requesting counts for:", activeCid);
+                    const countsRes: any = await CounselorService.getCombinedLeadCounts(activeCid);
+                    
+                    // The count response might also be wrapped in data
+                    const cData = countsRes?.data || (countsRes?.totalCombined !== undefined ? countsRes : null);
+                    if (cData) {
+                        setCombinedCounts(cData);
+                    }
+                }
             } catch (err) {
-                console.error("Failed to load counselor metadata", err);
+                console.error("Failed to load counselor-me metadata", err);
             } finally {
                 setCounselorSetup(true);
             }
         };
-        fetchCounselorInfo();
-    }, [counselorId]);
+        fetchCounselorMe();
+    }, []); // Run only once on mount
 
     const loadLeads = useCallback(async () => {
         if (!counselorSetup) return;
@@ -123,17 +158,23 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
             const PAGE_SIZE = 100;
             let raw: any;
 
+            // Use the alphanumeric counselorId from the "me" response if available, or fallback to props
+            // Note: In typical flows, the user.id from AuthContext might be numeric, but the specialized leads
+            // endpoint often needs the alphanumeric USR-... or COUN-... ID.
+            
+            // Re-fetch "me" if we don't have it, or just use user.id
+            const me = await CounselorService.getCounselorMe();
+            const activeCid = me.counselorId || counselorId;
+
             if (selectedDepartment && selectedType) {
-                // Selected Department API
-                const deptName = typeof selectedDepartment === 'object' ? (selectedDepartment as any).name : selectedDepartment;
-                const dsRes = await api.get(`/api/counselor/leads/me/department/name/${encodeURIComponent(deptName)}/type/${selectedType}/${page}/${PAGE_SIZE}`);
+                const deptName = typeof selectedDepartment === 'object' ? (selectedDepartment as any).name || (selectedDepartment as any).department : selectedDepartment;
+                console.log(`[loadLeads] Fetching via specialized endpoint for ${activeCid} | ${deptName} | ${selectedType}`);
+                const dsRes = await api.get(`/api/counselor/leads/counselor/${activeCid}/department/name/${encodeURIComponent(deptName)}/type/${selectedType}/${page}/${PAGE_SIZE}`);
                 raw = dsRes.data;
             } else if (selectedType) {
-                // Selected Type API ONLY
-                const typeRes = await api.get(`/api/counselor/leads/counselor/${counselorId}/type/${selectedType}/${page}/${PAGE_SIZE}`);
+                const typeRes = await api.get(`/api/counselor/leads/counselor/${activeCid}/type/${selectedType}/${page}/${PAGE_SIZE}`);
                 raw = typeRes.data;
             } else {
-                // Fallback basic
                 raw = await CounselorService.getAssignedLeads(page, PAGE_SIZE);
             }
 
@@ -151,7 +192,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         } finally {
             setLoading(false);
         }
-    }, [page, counselorId, normalizeResults, counselorSetup, selectedType, selectedDepartment]);
+    }, [page, counselorId, normalizeResults, counselorSetup, searchTrigger, selectedDepartment, selectedType]);
 
     const loadCourses = useCallback(async () => {
         try {
@@ -172,10 +213,17 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const handleSearch = async () => {
         console.log('[handleSearch] START — type:', searchType, '| value:', searchValue);
 
-        if (searchType === 'ALL' || !searchValue.trim()) {
+        if (searchType === 'ALL' && !searchValue.trim()) {
             setPage(0);
             setSearching(false);
-            loadLeads();
+            setSearchTrigger(prev => prev + 1); // This will trigger loadLeads which now handles dept/type
+            return;
+        }
+        
+        // If they just changed Dept/Type but text search is empty, also use loadLeads
+        if (!searchValue.trim()) {
+            setPage(0);
+            setSearchTrigger(prev => prev + 1);
             return;
         }
 
@@ -302,6 +350,34 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
 
     return (
         <div className="space-y-4">
+            {/* Lead Distribution Stats - Top Right Side UI */}
+            {combinedCounts && (
+                <div className="flex flex-wrap items-center justify-end gap-3 mb-2 animate-in fade-in slide-in-from-right-4 duration-1000">
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Internal</span>
+                        <span className="text-xs font-black text-slate-900">{combinedCounts.internalLeads || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tele</span>
+                        <span className="text-xs font-black text-slate-900">{combinedCounts.telecallerLeads || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">External</span>
+                        <span className="text-xs font-black text-slate-900">{combinedCounts.externalLeads || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-[#4d0101] px-4 py-1.5 rounded-xl shadow-lg shadow-[#4d0101]/10">
+                        <span className="text-[9px] font-black text-white/70 uppercase tracking-widest">Combined</span>
+                        <span className="text-xs font-black text-white">{combinedCounts.totalCombined || 0}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Counselor Info Header */}
+            <CounselorProfileHeader />
+
             {/* Top Level Filters (Type / Department) */}
             {counselorSetup && (validTypes.length > 0 || validDepartments.length > 0) && (
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row items-center gap-4">
@@ -313,10 +389,9 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                 value={selectedType}
                                 onChange={e => {
                                     setSelectedType(e.target.value);
-                                    setPage(0); // reset page
                                 }}
                             >
-                                <option value="" disabled>Select Type...</option>
+                                <option value="">No Type selected</option>
                                 {validTypes.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
@@ -329,17 +404,29 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                 value={selectedDepartment}
                                 onChange={e => {
                                     setSelectedDepartment(e.target.value);
-                                    setPage(0); // reset page
                                 }}
                             >
                                 <option value="">No Department selected</option>
-                                {validDepartments.map((d: any) => {
-                                    const dname = typeof d === 'object' ? d.name || d.departmentName : d;
-                                    return <option key={dname} value={dname}>{dname}</option>;
+                                {validDepartments.map((d: any, idx) => {
+                                    // Robust extraction of name from string or object
+                                    let dname = d;
+                                    if (d && typeof d === 'object') {
+                                        dname = d.department || d.name || d.departmentName || d.dept || d.department_name || `Unknown-${idx}`;
+                                    }
+                                    return <option key={idx} value={String(dname)}>{String(dname)}</option>;
                                 })}
                             </select>
                         </div>
                     )}
+                    <div className="flex-initial mt-4 sm:mt-0 pt-5">
+                        <button
+                            onClick={handleSearch}
+                            disabled={loading}
+                            className="w-full sm:w-auto px-10 py-2.5 bg-slate-900 border border-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#600202] transition-all shadow-md active:scale-95 disabled:opacity-50 min-w-[140px]"
+                        >
+                            {loading ? '...' : 'Filter Results'}
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -428,105 +515,155 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 </div>
             </div>
 
-            {/* Leads Table */}
-            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                <div className="px-5 py-4 md:px-8 md:py-6 border-b border-slate-100/50 flex items-center justify-between bg-gradient-to-r from-slate-50/50 to-white/30 backdrop-blur-sm">
-                    <div>
-                        <h3 className="text-base md:text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                            Lead Portfolio
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        </h3>
-                        <p className="text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
-                            {searching ? (
-                                <span className="text-indigo-500 flex items-center gap-1">
-                                    <Search className="w-3 h-3" /> search active
-                                </span>
-                            ) : (
-                                <>
-                                    <span className="text-slate-500">{leads.length}</span> results
-                                </>
-                            )}
-                        </p>
-                    </div>
-                    <LoadingButton
-                        loading={loading}
-                        onClick={loadLeads}
-                        className="p-2.5 rounded-xl hover:bg-white hover:shadow-xl hover:shadow-indigo-500/10 transition-all text-slate-400 hover:text-indigo-600 border border-slate-100/50 group"
-                        title="Sync leads"
-                    >
-                        <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
-                    </LoadingButton>
-                </div>
-
-                {loading ? (
-                    <div className="p-16 md:p-24 text-center">
-                        <div className="inline-block w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin" />
-                        <p className="text-[10px] font-black text-slate-400 mt-6 uppercase tracking-[0.3em] animate-pulse">Syncing Portfolio...</p>
-                    </div>
-                ) : leads.length === 0 ? (
-                    <div className="p-16 md:p-24 text-center">
-                        <div className="w-16 h-16 bg-slate-50 rounded-2xl md:w-20 md:h-20 md:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 border border-slate-100">
-                            <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-slate-200" />
+            {/* ── Workflow Based Rows ────────────────────────────────────────── */}
+            <div className="flex flex-col gap-10 mt-6 pb-20">
+                
+                {/* 1. Assigned Leads Row */}
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-10 bg-[#4d0101] rounded-full"></div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Assigned Leads</h3>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Directly Assigned • Action Required</p>
+                            </div>
                         </div>
-                        <p className="text-slate-400 font-black text-base md:text-lg uppercase tracking-tight">No Leads Found</p>
-                        <p className="text-[10px] md:text-xs text-slate-400 mt-2 font-medium">Your portfolio is currently empty.</p>
+                        <span className="px-3 py-1 bg-[#4d0101]/5 text-[#4d0101] text-[10px] font-black rounded-lg border border-[#4d0101]/10 uppercase">
+                            {leads.filter(l => ['COUNSELOR_ASSIGNED', 'TELECALLER_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED'].includes(l.status)).length}
+                        </span>
                     </div>
-                ) : (
                     <div className="divide-y divide-slate-50">
-                        {leads.map(lead => (
-                            <div key={lead.id || lead.leadId} className="group transition-all hover:bg-indigo-50/10">
-                                <div
-                                    className="px-5 py-4 md:px-8 md:py-6 flex items-center gap-4 md:gap-6 cursor-pointer relative"
-                                    onClick={() => openDetails(lead)}
-                                >
-                                    {/* Accent line on hover */}
-                                    <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-[#dbb212] group-hover:shadow-[0_0_15px_rgba(219,178,18,0.5)]" />
-
-                                    {/* Modernized Avatar */}
-                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-sm md:text-base shrink-0 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300">
-                                        <div className="w-full h-full rounded-xl md:rounded-2xl bg-gradient-to-br from-slate-50 to-white flex items-center justify-center border border-white">
+                        {leads.filter(l => ['COUNSELOR_ASSIGNED', 'TELECALLER_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED'].includes(l.status)).length === 0 ? (
+                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No assigned leads</div>
+                        ) : (
+                            leads.filter(l => ['COUNSELOR_ASSIGNED', 'TELECALLER_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED'].includes(l.status)).map(lead => (
+                                <div key={lead.id || lead.leadId} className="group transition-all hover:bg-slate-50/10">
+                                    <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-[#4d0101]" />
+                                        <div className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
                                             {lead.name.charAt(0).toUpperCase()}
                                         </div>
-                                    </div>
-
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                                            <p className="text-sm font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-indigo-600 transition-colors">{lead.name}</p>
-                                            <span className="text-[7px] md:text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-lg border border-slate-100 uppercase tracking-widest whitespace-nowrap">ID: {lead.id || lead.leadId}</span>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                                            <div className="flex items-center gap-1.5 truncate">
-                                                <Mail className="w-3 h-3 text-slate-300 shrink-0" />
-                                                <span className="text-[10px] md:text-[11px] text-slate-500 font-bold lowercase tracking-tight truncate">{lead.email}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 truncate">
-                                                <GraduationCap className="w-3 h-3 text-slate-300 shrink-0" />
-                                                <span className="text-[10px] md:text-[11px] text-slate-500 font-bold uppercase tracking-widest truncate">{getCourseName(lead.course) || 'Not available'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 truncate">
-                                                <Globe className="w-3 h-3 text-slate-300 shrink-0" />
-                                                <span className="text-[10px] md:text-[11px] text-slate-400 font-black uppercase tracking-widest truncate">{lead.campaign?.name || 'Not available'}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-slate-900 truncate uppercase mt-0.5">{lead.name}</p>
+                                            <div className="flex items-center gap-4 mt-1 opacity-70">
+                                                <span className="text-[10px] font-bold text-slate-500 shrink-0">{lead.email}</span>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{getCourseName(lead.course)}</span>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3 md:gap-8 shrink-0">
-                                        {/* Status Badge */}
-                                        <div className="flex flex-col items-end gap-1.5">
-                                            <span className={`px-2 md:px-2.5 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest uppercase border transition-all duration-300 group-hover:shadow-lg ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
-                                                <span className="hidden sm:inline">{lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}</span>
-                                                <span className="sm:hidden">{lead.status?.substring(0, 4)}..</span>
+                                        <div className="flex items-center gap-6 shrink-0">
+                                            <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
+                                                {lead.status?.replace(/_/g, ' ')}
                                             </span>
-                                        </div>
-                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl flex items-center justify-center text-slate-300 group-hover:text-slate-900 group-hover:bg-white group-hover:shadow-sm transition-all duration-300 transform group-hover:translate-x-1">
-                                            <ChevronDown className="w-4 h-4 md:w-5 md:h-5 -rotate-90" />
+                                            <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90" />
                                         </div>
                                     </div>
                                 </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* 2. Contacted Leads Row */}
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-10 bg-indigo-500 rounded-full"></div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Contacted Leads</h3>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">In Dialogue • Documentation Status</p>
                             </div>
-                        ))}
+                        </div>
+                        <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-lg border border-indigo-100 uppercase">
+                            {leads.filter(l => l.status === 'CONTACTED').length}
+                        </span>
+                    </div>
+                    <div className="divide-y divide-slate-50">
+                        {leads.filter(l => l.status === 'CONTACTED').length === 0 ? (
+                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No contacted leads</div>
+                        ) : (
+                            leads.filter(l => l.status === 'CONTACTED').map(lead => (
+                                <div key={lead.id || lead.leadId} className="group transition-all hover:bg-slate-50/10">
+                                    <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-indigo-500" />
+                                        <div className="w-11 h-11 rounded-2xl bg-indigo-50/30 border border-indigo-100/50 shadow-sm flex items-center justify-center text-indigo-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
+                                            {lead.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-slate-900 truncate uppercase mt-0.5">{lead.name}</p>
+                                            <div className="flex items-center gap-4 mt-1 opacity-70">
+                                                <span className="text-[10px] font-bold text-slate-500 shrink-0">{lead.email}</span>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{getCourseName(lead.course)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6 shrink-0">
+                                            <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
+                                                {lead.status?.replace(/_/g, ' ')}
+                                            </span>
+                                            <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* 3. Lost Leads Row */}
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-10 bg-rose-500 rounded-full"></div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Lost Leads</h3>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Closed File • Non-Convertible</p>
+                            </div>
+                        </div>
+                        <span className="px-3 py-1 bg-rose-50 text-rose-700 text-[10px] font-black rounded-lg border border-rose-100 uppercase">
+                            {leads.filter(l => l.status === 'LOST').length}
+                        </span>
+                    </div>
+                    <div className="divide-y divide-slate-50">
+                        {leads.filter(l => l.status === 'LOST').length === 0 ? (
+                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No lost leads</div>
+                        ) : (
+                            leads.filter(l => l.status === 'LOST').map(lead => (
+                                <div key={lead.id || lead.leadId} className="group transition-all hover:bg-slate-50/10">
+                                    <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-rose-500" />
+                                        <div className="w-11 h-11 rounded-2xl bg-rose-50/30 border border-rose-100/50 shadow-sm flex items-center justify-center text-rose-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
+                                            {lead.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-slate-900 truncate uppercase mt-0.5">{lead.name}</p>
+                                            <div className="flex items-center gap-4 mt-1 opacity-70">
+                                                <span className="text-[10px] font-bold text-slate-500 shrink-0">{lead.email}</span>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{getCourseName(lead.course)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6 shrink-0">
+                                            <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
+                                                {lead.status?.replace(/_/g, ' ')}
+                                            </span>
+                                            <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Empty State */}
+                {leads.length === 0 && !loading && (
+                    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/30">
+                        <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 mb-6 border border-slate-100">
+                            <BookOpen className="w-10 h-10" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Portfolio Empty</h3>
+                        <p className="text-[10px] font-black text-slate-400 mt-2 uppercase tracking-[0.2em]">No assigned leads found matching your filters</p>
                     </div>
                 )}
+            </div>
 
                 {/* Footer Pagination */}
                 {!searching && !loading && leads.length > 0 && (
@@ -561,8 +698,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                         </div>
                     </div>
                 )}
-            </div>
-
+            
             {/* Premium Lead Details Popup */}
             {selectedLead && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4">
@@ -575,16 +711,16 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                 <div className="space-y-3 flex-1 min-w-0">
                                     <div className="flex items-center gap-3">
                                         <div className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg shadow-slate-900/20">Lead Card</div>
-                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{selectedLead.id}</span>
+                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{selectedLead?.id}</span>
                                     </div>
-                                    <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter leading-tight break-words">{selectedLead.name}</h2>
+                                    <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter leading-tight break-words">{selectedLead?.name}</h2>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
                                             <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
-                                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Intake: {selectedLead.intake || 'N/A'}</span>
+                                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Intake: {selectedLead?.intake || 'N/A'}</span>
                                         </div>
-                                        <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border shadow-sm ${STATUS_COLORS[selectedLead.status] || 'bg-slate-100'}`}>
-                                            {selectedLead.status?.replace(/_/g, ' ')}
+                                        <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border shadow-sm ${selectedLead?.status ? STATUS_COLORS[selectedLead.status] : 'bg-slate-100'}`}>
+                                            {selectedLead?.status?.replace(/_/g, ' ')}
                                         </div>
                                     </div>
                                 </div>
@@ -598,7 +734,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                     <div className="text-right">
                                         <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Registered</p>
                                         <p className="text-[9px] md:text-[10px] font-extrabold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 inline-block font-mono">
-                                            {selectedLead.createdAt && !isNaN(new Date(selectedLead.createdAt).getTime()) ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
+                                            {selectedLead?.createdAt && !isNaN(new Date(selectedLead.createdAt).getTime()) ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
                                         </p>
                                     </div>
                                 </div>
@@ -640,6 +776,10 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                                 className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
                                             >
                                                 <option value="" disabled>Select Status</option>
+                                                {/* Always show current even if not in the restricted list */}
+                                                {selectedLead.status && !ALL_STATUSES.includes(selectedLead.status) && (
+                                                    <option value={selectedLead.status}>{selectedLead.status.replace(/_/g, ' ')}</option>
+                                                )}
                                                 {ALL_STATUSES.map(status => (
                                                     <option key={status} value={status}>
                                                         {status.replace(/_/g, ' ')}
@@ -685,8 +825,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                             {ALL_SCORES.map(s => {
                                                 const isCurrent = selectedLead.score === s;
                                                 const isDisabled = !isCurrent && (
-                                                    (selectedLead.score === 'HOT') ||
-                                                    (selectedLead.score === 'WARM' && s === 'COLD')
+                                                    (selectedLead.score === 'HOT')
                                                 );
 
                                                 return (
@@ -715,7 +854,9 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Direct Contact</p>
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="text-2xl md:text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase break-all">{selectedLead.phone}</p>
+                                                <p className="text-2xl md:text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase break-all">
+                                                    {String(selectedLead.phone)}
+                                                </p>
                                                 <p className="text-[10px] md:text-xs font-extrabold opacity-60 truncate lowercase max-w-[250px] mx-auto md:mx-0">{selectedLead.email}</p>
                                             </div>
                                         </div>

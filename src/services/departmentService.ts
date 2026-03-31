@@ -42,6 +42,12 @@ export const DepartmentService = {
         }
         return Array.isArray(data) ? data : [];
     },
+    async getAllDepartmentNames() {
+        // As requested: call /api/department/name
+        const response = await api.get<any>('/api/department/name');
+        const data = response.data?.data || response.data || [];
+        return Array.isArray(data) ? data : [];
+    },
     async getDepartmentByName(name: string) {
         const response = await api.get<DepartmentDTO>(`/api/department/name/${name}`);
         return response.data;

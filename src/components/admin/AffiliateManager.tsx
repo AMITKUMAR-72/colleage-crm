@@ -158,7 +158,7 @@ export default function AffiliateManager() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex flex-1 flex-col xl:flex-row items-start xl:items-center gap-3">
                         <select
-                            className="p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto shadow-sm"
+                            className="p-3 bg-white border border-black rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto shadow-sm"
                             value={searchType}
                             onChange={(e) => {
                                 setSearchType(e.target.value as any);
@@ -176,7 +176,7 @@ export default function AffiliateManager() {
                             <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
                                 {searchType === 'STATUS' ? (
                                     <select
-                                        className="w-full sm:max-w-xs p-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer shadow-sm"
+                                        className="w-full sm:max-w-xs p-3 bg-white border border-black rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer shadow-sm"
                                         value={searchStatus}
                                         onChange={(e) => setSearchStatus(e.target.value as AffiliateActive)}
                                     >
@@ -189,7 +189,7 @@ export default function AffiliateManager() {
                                         <input
                                             type="text"
                                             placeholder={`Search ${searchType.replace('_', ' ').toLowerCase()}...`}
-                                            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-3 bg-white border border-black rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all"
                                             value={searchValue}
                                             onChange={(e) => setSearchValue(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -318,7 +318,7 @@ export default function AffiliateManager() {
                                     <input
                                         id="companyName"
                                         required
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-black rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.companyName}
                                         onChange={e => setFormData({ ...formData, companyName: e.target.value })}
                                         placeholder="ENTER COMPANY NAME"
@@ -332,7 +332,7 @@ export default function AffiliateManager() {
                                         id="affiliateEmail"
                                         required
                                         type="email"
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-black rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         placeholder="PARTNER@EMAIL.COM"
@@ -360,7 +360,7 @@ export default function AffiliateManager() {
                                         id="commissionPercent"
                                         required
                                         type="text"
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-black rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.commissionPercent}
                                         onChange={e => setFormData({ ...formData, commissionPercent: e.target.value })}
                                         placeholder="10.0"
@@ -373,7 +373,7 @@ export default function AffiliateManager() {
                                     <input
                                         id="payoutMethod"
                                         required
-                                        className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-black rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none transition-all font-bold text-gray-900 text-sm"
                                         value={formData.payoutMethod}
                                         onChange={e => setFormData({ ...formData, payoutMethod: e.target.value })}
                                         placeholder="Bank Transfer / PayPal"
@@ -463,7 +463,7 @@ export default function AffiliateManager() {
                                         <div className="relative group/status flex gap-2">
                                             <select
                                                 onChange={(e) => handleUpdateStatus(selectedAffiliateDetails.id, e.target.value as AffiliateActive)}
-                                                className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer appearance-none"
+                                                className="w-full p-3.5 bg-white border border-black rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#dbb212] outline-none transition-all cursor-pointer appearance-none"
                                                 value={selectedAffiliateDetails.active}
                                             >
                                                 <option value="ACTIVE">Status: ACTIVE</option>

@@ -14,12 +14,12 @@ export function proxy(request: NextRequest) {
         requestHeaders.delete('referer');
 
         // Critical: Set the Host header to the target backend domain so NGINX routes it!
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8085';
         try {
             const host = new URL(backendUrl).host;
             requestHeaders.set('host', host);
         } catch {
-            requestHeaders.set('host', 'apis.rafunirp.com');
+            requestHeaders.set('host', 'localhost:8085');
         }
 
         // Proceed to the proxy setup in next.config.ts with the sanitized headers

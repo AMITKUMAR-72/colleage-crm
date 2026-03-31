@@ -27,6 +27,7 @@ export default function CounselorManager() {
         email: '',
         password: '',
         phone: '',
+        alternatePhone: '',
         departments: [] as string[],
         counselorTypes: ['INTERNAL'] as CounselorType[],
         status: 'AVAILABLE' as CounselorStatus,
@@ -34,8 +35,8 @@ export default function CounselorManager() {
         totalLeads: 0
     });
 
-    const handleViewDetails = async (id: number) => {
-        if (!id || isNaN(id)) {
+    const handleViewDetails = async (id: string | number) => {
+        if (!id || String(id).trim() === '') {
             toast.error('Invalid counselor ID');
             return;
         }
@@ -145,14 +146,18 @@ export default function CounselorManager() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const phone1 = formData.phone.replace(/\D/g, '').replace(/^91/, '');
+            const phone2 = formData.alternatePhone.replace(/\D/g, '').replace(/^91/, '');
+            
+            const phones = [phone1];
+            if (phone2) phones.push(phone2);
+
             const sanitizedData = {
                 ...formData,
-                phone: formData.phone.replace(/\D/g, '')
+                phone: phones
             };
 
-            if (sanitizedData.phone.length === 12 && sanitizedData.phone.startsWith('91')) {
-                sanitizedData.phone = sanitizedData.phone.substring(2);
-            }
+            console.log('Counselor Request Payload:', JSON.stringify(sanitizedData, null, 2));
 
             if (editingCounselor) {
                 const { password, ...updateData } = sanitizedData;
@@ -164,7 +169,7 @@ export default function CounselorManager() {
             }
             setShowModal(false);
             setEditingCounselor(null);
-            setFormData({ name: '', email: '', password: '', phone: '', departments: [], counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
+            setFormData({ name: '', email: '', password: '', phone: '', alternatePhone: '', departments: [], counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
             loadCounselors();
         } catch (error) {
             const err = error as AxiosError<{ message: string }>;
@@ -188,7 +193,8 @@ export default function CounselorManager() {
             name: counselor.name,
             email: counselor.email,
             password: '',
-            phone: counselor.phone,
+            phone: Array.isArray(counselor.phone) ? (counselor.phone[0] || '') : (counselor.phone || ''),
+            alternatePhone: Array.isArray(counselor.phone) ? (counselor.phone[1] || '') : '',
             departments: counselor.departments || [],
             counselorTypes: counselor.counselorTypes || [],
             status: counselor.status,
@@ -211,7 +217,7 @@ export default function CounselorManager() {
                                 setFilterValue('');
                                 if (e.target.value === 'all') loadCounselors();
                             }}
-                            className="p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm font-bold w-full sm:w-auto shadow-sm"
+                            className="p-3 bg-white border border-black rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm font-bold w-full sm:w-auto shadow-sm"
                         >
                             <option value="all">All Counselors</option>
                             <option value="name">By Name</option>
@@ -227,7 +233,7 @@ export default function CounselorManager() {
                                     <select
                                         value={filterValue}
                                         onChange={(e) => setFilterValue(e.target.value)}
-                                        className="p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm w-full sm:max-w-xs shadow-sm"
+                                        className="p-3 bg-white border border-black rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm w-full sm:max-w-xs shadow-sm"
                                     >
                                         <option value="">Select Type...</option>
                                         {counselorTypesEnum.map(t => <option key={t} value={t}>{t}</option>)}
@@ -236,7 +242,7 @@ export default function CounselorManager() {
                                     <select
                                         value={filterValue}
                                         onChange={(e) => setFilterValue(e.target.value)}
-                                        className="p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm w-full sm:max-w-xs shadow-sm"
+                                        className="p-3 bg-white border border-black rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm w-full sm:max-w-xs shadow-sm"
                                     >
                                         <option value="">Select Status...</option>
                                         {counselorStatusesEnum.map(s => <option key={s} value={s}>{s}</option>)}
@@ -248,7 +254,7 @@ export default function CounselorManager() {
                                         value={filterValue}
                                         onChange={(e) => setFilterValue(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                        className="p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm w-full sm:max-w-xs shadow-sm"
+                                        className="p-3 bg-white border border-black rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm w-full sm:max-w-xs shadow-sm"
                                     />
                                 )}
                                 <button
@@ -265,7 +271,7 @@ export default function CounselorManager() {
                         <button
                             onClick={() => {
                                 setEditingCounselor(null);
-                                setFormData({ name: '', email: '', password: '', phone: '', departments: [], counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
+                                setFormData({ name: '', email: '', password: '', phone: '', alternatePhone: '', departments: [], counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
                                 setShowModal(true);
                             }}
                             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg"
@@ -289,45 +295,68 @@ export default function CounselorManager() {
                                     <th className="hidden sm:table-cell px-6 py-4 font-bold">Departments</th>
                                     <th className="px-4 sm:px-6 py-4 font-bold">Status</th>
                                     <th className="hidden md:table-cell px-6 py-4 font-bold text-center">Metrics</th>
+                                    <th className="px-4 sm:px-6 py-4 font-bold text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {Array.isArray(counselors) && counselors.map((c) => (
-                                    <tr
-                                        key={c.counselorId}
-                                        className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
-                                        onClick={() => c.counselorId && !isNaN(c.counselorId) && handleViewDetails(c.counselorId)}
-                                    >
-                                        <td className="px-4 sm:px-6 py-4">
-                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
-                                            <div className="font-bold text-slate-800 text-sm sm:text-base">{c.name}</div>
-                                            <div className="text-slate-500 mt-0.5 text-xs truncate max-w-[120px] sm:max-w-[200px]" title={c.email}>{c.email}</div>
-                                        </td>
-                                        <td className="hidden sm:table-cell px-6 py-4">
-                                            <div className="font-medium text-slate-700">{c.departments?.length > 0 ? c.departments.join(', ') : 'General'}</div>
-                                            <div className="mt-1.5 w-fit px-2 py-0.5 text-[10px] font-bold rounded-full border bg-blue-50 text-blue-600 border-blue-100">
-                                                {c.counselorTypes?.join(', ')}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 sm:px-6 py-4">
-                                            <div className={`w-fit px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold tracking-widest uppercase border ${c.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                                                {c.status.replace('_', ' ')}
-                                            </div>
-                                        </td>
-                                        <td className="hidden md:table-cell px-6 py-4 text-center">
-                                            <div className="flex justify-center gap-6">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="font-bold text-slate-800">{c.totalLeads}</span>
-                                                    <span className="text-[10px] text-slate-400">LEADS</span>
+                                {Array.isArray(counselors) && counselors.map((c) => {
+                                    const cid = c.counselorId ?? (c as any).id ?? (c as any).userId;
+                                    return (
+                                        <tr
+                                            key={cid || c.email}
+                                            className="hover:bg-slate-50 cursor-pointer transition-colors group relative"
+                                            onClick={() => {
+                                                console.log('Counselor Row Clicked:', cid, c);
+                                                if (cid !== undefined && cid !== null) {
+                                                    handleViewDetails(cid as any);
+                                                }
+                                            }}
+                                        >
+                                            <td className="px-4 sm:px-6 py-4">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#dbb212] transition-colors"></div>
+                                                <div className="font-bold text-slate-800 text-sm sm:text-base">{c.name}</div>
+                                                <div className="text-slate-500 mt-0.5 text-xs truncate max-w-[120px] sm:max-w-[200px]" title={c.email}>{c.email}</div>
+                                            </td>
+                                            <td className="hidden sm:table-cell px-6 py-4">
+                                                <div className="font-medium text-slate-700">{c.departments?.length > 0 ? c.departments.join(', ') : 'General'}</div>
+                                                <div className="mt-1.5 w-fit px-2 py-0.5 text-[10px] font-bold rounded-full border bg-blue-50 text-blue-600 border-blue-100">
+                                                    {c.counselorTypes?.join(', ')}
                                                 </div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="font-bold text-slate-800">{c.priority}</span>
-                                                    <span className="text-[10px] text-slate-400">PRIORITY</span>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4">
+                                                <div className={`w-fit px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold tracking-widest uppercase border ${c.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                                                    {c.status.replace('_', ' ')}
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="hidden md:table-cell px-6 py-4 text-center">
+                                                <div className="flex justify-center gap-6">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="font-bold text-slate-800">{c.totalLeads}</span>
+                                                        <span className="text-[10px] text-slate-400">LEADS</span>
+                                                    </div>
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="font-bold text-slate-800">{c.priority}</span>
+                                                        <span className="text-[10px] text-slate-400">PRIORITY</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 text-right">
+                                                {(role === 'ADMIN' || role === 'MANAGER') && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEdit(c);
+                                                        }}
+                                                        className="p-2 hover:bg-amber-50 text-slate-400 hover:text-amber-600 rounded-lg transition-colors"
+                                                        title="Edit Counselor"
+                                                    >
+                                                        <Edit2 className="w-5 h-5" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -350,15 +379,19 @@ export default function CounselorManager() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <label className="block text-xs font-black uppercase mb-2">Full Name</label>
-                                <input required className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                                <input required className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                             </div>
                             <div>
                                 <label className="block text-xs font-black uppercase mb-2">Work Email</label>
-                                <input required type="email" className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                                <input required type="email" className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                             </div>
                              <div>
-                                <label className="block text-xs font-black uppercase mb-2">Mobile</label>
-                                <input required className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                                <label className="block text-xs font-black uppercase mb-2">Mobile (Primary)</label>
+                                <input required className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none" placeholder="Primary Contact" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black uppercase mb-2">Alternate Mobile</label>
+                                <input className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none" placeholder="Second Contact (Optional)" value={formData.alternatePhone} onChange={e => setFormData({ ...formData, alternatePhone: e.target.value })} />
                             </div>
 
                             {!editingCounselor && (
@@ -367,7 +400,7 @@ export default function CounselorManager() {
                                     <input 
                                         required 
                                         type="password" 
-                                        className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none font-medium" 
+                                        className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none font-medium" 
                                         placeholder="Enter secure password"
                                         value={formData.password} 
                                         onChange={e => setFormData({ ...formData, password: e.target.value })} 
@@ -380,7 +413,7 @@ export default function CounselorManager() {
                                 <div className="space-y-3">
                                     <div className="relative">
                                         <select
-                                            className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none font-bold text-gray-700 appearance-none cursor-pointer"
+                                            className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none font-bold text-gray-700 appearance-none cursor-pointer"
                                             onChange={(e) => {
                                                 const val = e.target.value;
                                                 if (val && !formData.departments.includes(val)) {
@@ -429,7 +462,7 @@ export default function CounselorManager() {
                                 <div className="space-y-3">
                                     <div className="relative">
                                         <select
-                                            className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl focus:ring-2 focus:ring-[#dbb212] outline-none font-bold text-gray-700 appearance-none cursor-pointer"
+                                            className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none font-bold text-gray-700 appearance-none cursor-pointer"
                                             onChange={(e) => {
                                                 const val = e.target.value as CounselorType;
                                                 if (val && !formData.counselorTypes.includes(val)) {
@@ -490,7 +523,7 @@ export default function CounselorManager() {
                 style={{ display: showDetailsPopup ? 'flex' : 'none', backgroundColor: 'rgba(0,0,0,0.5)' }}
             >
                 {selectedCounselorDetails && (
-                    <div className="bg-white rounded-[2rem] w-full max-w-md p-6 relative shadow-2xl space-y-4">
+                    <div className="bg-white rounded-[2rem] w-full max-w-md p-6 relative shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
                         <button onClick={() => setShowDetailsPopup(false)} className="absolute top-4 right-4 text-gray-500 font-bold">✕</button>
                         <div className="flex items-center gap-4">
                             <div className="w-16 h-16 bg-[#4d0101] rounded-2xl flex items-center justify-center text-white text-2xl font-bold">{selectedCounselorDetails.name.charAt(0)}</div>
@@ -502,7 +535,7 @@ export default function CounselorManager() {
 
                         <div className="space-y-2">
                             <p className="text-sm font-medium">Email: {selectedCounselorDetails.email}</p>
-                            <p className="text-sm font-medium">Phone: {selectedCounselorDetails.phone}</p>
+                            <p className="text-sm font-medium">Phone: {Array.isArray(selectedCounselorDetails.phone) ? selectedCounselorDetails.phone.join(', ') : selectedCounselorDetails.phone}</p>
                             <p className="text-sm font-medium text-indigo-600 font-black">Status: {selectedCounselorDetails.status}</p>
                             <p className="text-sm font-medium text-rose-600 font-black">Priority: {selectedCounselorDetails.priority}</p>
                         </div>
@@ -516,7 +549,7 @@ export default function CounselorManager() {
                                         <label className="block text-[9px] font-bold uppercase text-gray-400">Assignment Status</label>
                                         <select
                                             onChange={(e) => updateStatus(selectedCounselorDetails.email, e.target.value as CounselorStatus)}
-                                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-[#dbb212] outline-none"
+                                            className="w-full p-2.5 bg-white border border-black rounded-lg text-xs font-bold focus:ring-2 focus:ring-[#dbb212] outline-none"
                                             value={selectedCounselorDetails.status}
                                         >
                                             <option value="AVAILABLE">AVAILABLE</option>
@@ -587,15 +620,18 @@ export default function CounselorManager() {
                                 </div>
                             )}
 
-                            <button
-                                onClick={() => {
-                                    setShowDetailsPopup(false);
-                                    handleEdit(selectedCounselorDetails);
-                                }}
-                                className="w-full py-3 bg-gray-100 font-bold rounded-xl"
-                            >
-                                Edit Profile
-                            </button>
+                            {(role === 'ADMIN' || role === 'MANAGER') && (
+                                <button
+                                    onClick={() => {
+                                        setShowDetailsPopup(false);
+                                        handleEdit(selectedCounselorDetails);
+                                    }}
+                                    className="w-full py-4 bg-amber-50 text-amber-700 font-bold rounded-2xl border border-amber-100 flex items-center justify-center gap-2 hover:bg-amber-100 transition-colors"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                    Edit Full Profile
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}

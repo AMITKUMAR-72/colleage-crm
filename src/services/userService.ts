@@ -9,4 +9,10 @@ export const UserService = {
     );
     return response.data;
   },
+
+  // Get User by ID
+  getUserById: async (id: string | number) => {
+    const response = await api.get<UserDTO>(`/api/users/id/${id}`);
+    return response.data;
+  },
 };

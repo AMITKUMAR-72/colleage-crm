@@ -291,5 +291,10 @@ export const LeadService = {
         const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
         return response.data;
     },
+
+    getUnverifiedLeads: async () => {
+        const response = await api.get('/api/leads/unverified');
+        return response.data;
+    },
 };
 

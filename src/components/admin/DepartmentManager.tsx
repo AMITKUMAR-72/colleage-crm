@@ -198,7 +198,7 @@ export default function DepartmentManager() {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="New Department Name"
-                            className="flex-1 p-2.5 sm:p-2 border rounded-xl sm:rounded-lg focus:ring-2 focus:ring-[#dbb212] outline-none font-medium"
+                            className="flex-1 p-2.5 sm:p-2 border border-black rounded-xl sm:rounded-lg focus:ring-2 focus:ring-[#dbb212] outline-none font-medium"
                             required
                         />
                         <button
@@ -368,7 +368,7 @@ export default function DepartmentManager() {
                                     value={editDepartmentName}
                                     onChange={(e) => setEditDepartmentName(e.target.value)}
                                     placeholder="Enter new department name"
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-colors"
+                                    className="w-full p-2.5 border border-black rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-colors"
                                     required
                                 />
                             </div>

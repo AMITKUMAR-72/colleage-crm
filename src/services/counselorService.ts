@@ -17,7 +17,7 @@ export const CounselorService = {
         return response.data;
     },
 
-    getCounselorById: async (id: number) => {
+    getCounselorById: async (id: string | number) => {
         const response = await api.get<CounselorDTO>(`/api/counselors/id/${id}`);
         return response.data;
     },
@@ -136,6 +136,16 @@ export const CounselorService = {
     /** POST /api/counselors/manual-assign/lead/{leadId}/counselor/{counselorId} */
     manualAssignLead: async (leadId: number, counselorId: number) => {
         const response = await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}`);
+        return response.data;
+    },
+
+    getCounselorMe: async () => {
+        const response = await api.get<CounselorDTO>('/api/counselors/me');
+        return response.data;
+    },
+
+    getCombinedLeadCounts: async (counselorId: string | number) => {
+        const response = await api.get(`/api/counselor/leads/counselor/${counselorId}/count/combined`);
         return response.data;
     },
 };

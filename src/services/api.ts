@@ -7,7 +7,7 @@ const STANDALONE_DEMO = false;
 
 // Use direct backend URL to bypass proxy
 // If needed, override with NEXT_PUBLIC_API_BASE_URL (e.g. in production deployments).
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://apis.rafunirp.com';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8085';
 
 // Global in-flight request counter — incremented before each request, decremented after
 let _pendingCount = 0;

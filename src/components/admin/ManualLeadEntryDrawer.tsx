@@ -16,7 +16,6 @@ interface ManualLeadEntryDrawerProps {
 }
 
 const INTAKE_YEARS = ['2025', '2026', '2027'];
-const FIXED_SOURCES = ['Walk In', 'Instagram', 'Facebook', 'Google Ads'];
 
 export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: ManualLeadEntryDrawerProps) {
     const [formData, setFormData] = useState<LeadRequestDTO>({
@@ -54,19 +53,35 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                 if (depts.length === 0) console.warn('[ManualEntry] No departments loaded');
 
                 // Sources
-                const rawSources = sourceData.status === 'fulfilled' ? sourceData.value : [];
-                const dbSources = Array.isArray(rawSources) ? rawSources : (rawSources as any)?.data || [];
+                const rawSourcesData = sourceData.status === 'fulfilled' ? sourceData.value : [];
+                let normalizedDbSources: CampaignDTO[] = [];
+
+                const extractArray = (blob: any): any[] => {
+                    if (Array.isArray(blob)) return blob;
+                    if (blob && typeof blob === 'object') {
+                        return (blob.data && Array.isArray(blob.data)) ? blob.data : 
+                               (blob.content && Array.isArray(blob.content)) ? blob.content : [];
+                    }
+                    return [];
+                };
+
+                const dbSources = extractArray(rawSourcesData);
                 const sourceMap = new Map<string, CampaignDTO>();
 
-                dbSources.forEach((s: CampaignDTO) => {
-                    const normalized = s.name.toLowerCase().replace(/[\s_]/g, '');
-                    sourceMap.set(normalized, s);
-                });
-
-                FIXED_SOURCES.forEach(name => {
-                    const normalized = name.toLowerCase().replace(/[\s_]/g, '');
-                    if (!sourceMap.has(normalized)) {
-                        sourceMap.set(normalized, { id: -1, name });
+                dbSources.forEach((s: any, idx: number) => {
+                    if (!s) return;
+                    
+                    const name = typeof s === 'string' ? s : 
+                                 (s.name || s.campaignName || s.sourceName || s.campaign || s.source || s.campaign_name || 'Unknown');
+                    
+                    const id = typeof s === 'object' ? 
+                               (s.id || s.campaignId || s.sourceId || idx + 100) : (idx + 100);
+                    
+                    const cleanName = String(name).trim();
+                    const key = cleanName.toLowerCase().replace(/[\s_]/g, '');
+                    
+                    if (cleanName && cleanName !== 'Unknown') {
+                        sourceMap.set(key, { id: Number(id), name: cleanName });
                     }
                 });
 
@@ -361,11 +376,12 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                             <select
                                                 value={selectedSourceId}
                                                 onChange={handleSourceChange}
-                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none"
+                                                disabled={loadingMeta}
+                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none disabled:opacity-50"
                                             >
-                                                <option value="">Select Source</option>
-                                                {sources.map(s => (
-                                                    <option key={`${s.id}-${s.name}`} value={s.id}>{s.name}</option>
+                                                <option value="">{loadingMeta ? 'Loading Sources...' : `Select Source (${sources.length})`}</option>
+                                                {sources.map((s, idx) => (
+                                                    <option key={`${s.id}-${idx}`} value={s.id}>{s.name}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />

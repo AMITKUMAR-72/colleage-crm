@@ -24,16 +24,17 @@ export default function Sidebar() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [counselorTypes, setCounselorTypes] = useState<string[]>([]);
 
+    // Hydration for Counselor Roles: Fetch specialization to toggle Sessions visibility
     useEffect(() => {
-        if (role === 'COUNSELOR' && user?.id) {
-            api.get(`/api/counselors/id/${user.id}`)
+        if (role === 'COUNSELOR') {
+            api.get('/api/counselors/me')
                 .then(res => {
                     const data = res.data?.data || res.data;
                     setCounselorTypes(data?.counselorTypes || []);
                 })
-                .catch(err => console.error('Sidebar counselor details error:', err));
+                .catch(err => console.error('Sidebar specialization fetch error:', err));
         }
-    }, [role, user]);
+    }, [role]);
 
     const navItems = [
         { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'], icon: ShieldCheck },
@@ -51,11 +52,12 @@ export default function Sidebar() {
     ];
 
     const filteredItems = navItems.filter(item => {
+        // First check base role permission
         if (!item.roles.includes(role || '')) return false;
         
-        // Hide Sessions for pure TELECALLERs
+        // Specialized logic for Sessions visibility
         if (role === 'COUNSELOR' && item.label === 'Sessions') {
-            // Only allow if they have INTERNAL or EXTERNAL.
+            // Must have INTERNAL or EXTERNAL type to see Sessions
             const hasAccess = counselorTypes.includes('INTERNAL') || counselorTypes.includes('EXTERNAL');
             return hasAccess;
         }

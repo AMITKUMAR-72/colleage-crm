@@ -33,6 +33,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (token && token !== 'undefined' && storedUser) {
                 try {
                     const parsedUser = JSON.parse(storedUser);
+                    
+                    // Re-check JWT for subject/id to be safe
+                    if (token && token !== 'undefined') {
+                       const base64Url = token.split('.')[1];
+                       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                       const payload = JSON.parse(window.atob(base64));
+                       parsedUser.id = payload.userId || payload.userid || payload.id || payload.sub || parsedUser.id;
+                    }
+                    
                     setUser(parsedUser);
                 } catch (e) {
                     console.error("Session restoration failed", e);
@@ -122,6 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const roleClaim = payload.role || payload.roles || (payload.authorities && payload.authorities[0]);
                 if (roleClaim) {
                     detectedRole = normalizeRole(roleClaim);
+                }
+
+                // NEW: Extract userId from JWT if present — might be alphanumeric for counselors
+                if (payload.userId || payload.userid || payload.id || payload.sub) {
+                    userId = payload.userId || payload.userid || payload.id || payload.sub;
+                    console.log("[AuthContext] Found userId/subject in JWT:", userId);
                 }
             } catch (e) {
                 console.error("JWT decode failed during login", e);
