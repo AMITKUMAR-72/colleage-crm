@@ -34,7 +34,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
             setCounselor(data);
             setEditForm({ 
                 name: data.name, 
-                phone: data.phone, 
+                phone: Array.isArray(data.phone) ? data.phone.join(', ') : '', 
                 departments: Array.isArray(data.departments) ? data.departments.join(', ') : '' 
             });
             onProfileLoaded?.(data);
@@ -66,6 +66,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
         try {
             const payload = {
                 ...editForm,
+                phone: editForm.phone.split(',').map(p => p.trim()).filter(p => p !== ''),
                 departments: editForm.departments.split(',').map(d => d.trim()).filter(d => d !== '')
             };
             const updated = await CounselorService.updateProfile(email, payload);
@@ -102,7 +103,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                 <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
                 <div className="absolute -bottom-10 left-8">
                     <div className="w-20 h-20 rounded-2xl bg-white shadow-2xl flex items-center justify-center text-3xl font-black text-[#600202] border-4 border-white transform transition-transform hover:rotate-3">
-                        {counselor.name.charAt(0).toUpperCase()}
+                        {(counselor.name || 'C').charAt(0).toUpperCase()}
                     </div>
                 </div>
             </div>
@@ -148,7 +149,7 @@ export default function CounselorProfile({ email, onProfileLoaded, onProfileErro
                         <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Total Leads</p>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">
-                        <p className="text-sm font-black text-gray-700 truncate leading-none">{counselor.phone || '—'}</p>
+                        <p className="text-sm font-black text-gray-700 truncate leading-none">{Array.isArray(counselor.phone) ? counselor.phone.join(', ') : (counselor.phone || '—')}</p>
                         <p className="text-[9px] font-bold text-gray-400 mt-1.5 uppercase tracking-widest">Phone</p>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100/50">

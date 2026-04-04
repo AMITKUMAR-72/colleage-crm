@@ -42,7 +42,16 @@ export default function AffiliateDashboard() {
         setLoading(true);
 
         try {
-            await LeadService.integrateAffiliatePartner(formData as any);
+            // Transform form data to match the required AffiliatePartner integration payload format
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                address: formData.address,
+                phones: [formData.phone], // Convert single phone string to array
+                course: formData.course
+            };
+            
+            await LeadService.integrateAffiliatePartner(payload as any);
             toast.success('Lead submitted successfully!', {
                 icon: '🚀',
                 style: {
@@ -158,10 +167,10 @@ export default function AffiliateDashboard() {
                                             <td className="px-8 py-5">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-11 h-11 rounded-2xl bg-[#4d0101]/5 flex items-center justify-center text-[#4d0101] font-bold text-sm uppercase group-hover:bg-[#4d0101] group-hover:text-white transition-all shadow-sm">
-                                                        {lead.name.charAt(0)}
+                                                        {lead.name?.charAt(0) || '?'}
                                                     </div>
                                                     <div>
-                                                        <div className="text-sm font-bold text-gray-900">{lead.name}</div>
+                                                        <div className="text-sm font-bold text-gray-900">{lead.name || 'Anonymous'}</div>
                                                         <div className="text-[10px] font-bold text-gray-400 mt-0.5">#{lead.id}</div>
                                                     </div>
                                                 </div>

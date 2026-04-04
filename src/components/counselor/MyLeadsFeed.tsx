@@ -6,7 +6,8 @@ import { CourseService } from '@/services/courseService';
 import { DepartmentService } from '@/services/departmentService';
 import { LeadResponseDTO, LeadStatus, LeadScore, CourseDTO, DepartmentDTO } from '@/types/api';
 import {
-    Search, RotateCcw, Mail, Globe, BookOpen, ChevronDown, GraduationCap, Phone, MapPin
+    Search, RotateCcw, Mail, Globe, BookOpen, ChevronDown, GraduationCap, Phone, MapPin,
+    Flame, Sun, Snowflake
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import LeadNotes from '../LeadNotes';
@@ -16,9 +17,15 @@ import { useAuth } from '@/context/AuthContext';
 import CounselorProfileHeader from '../CounselorProfileHeader';
 
 const SCORE_COLORS: Record<string, string> = {
-    'HOT': 'bg-rose-100 text-rose-700',
-    'WARM': 'bg-orange-100 text-orange-700',
-    'COLD': 'bg-blue-100 text-blue-700',
+    'HOT': 'from-rose-500 to-orange-500 text-white shadow-rose-200',
+    'WARM': 'from-orange-400 to-amber-400 text-white shadow-amber-100',
+    'COLD': 'from-sky-400 to-blue-500 text-white shadow-blue-100',
+};
+
+const SCORE_ICONS: Record<string, React.ReactNode> = {
+    'HOT': <Flame className="w-4 h-4 md:w-5 md:h-5" />,
+    'WARM': <Sun className="w-4 h-4 md:w-5 md:h-5" />,
+    'COLD': <Snowflake className="w-4 h-4 md:w-5 md:h-5" />,
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -36,16 +43,17 @@ const STATUS_COLORS: Record<string, string> = {
     'REASSIGNED': 'bg-purple-100 text-purple-700 border-purple-200',
     'IN_A_SESSION': 'bg-violet-100 text-violet-700 border-violet-200',
     'QUEUED': 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
+    'FAKE': 'bg-rose-100 text-rose-700 border-rose-200',
 };
 
 const ALL_STATUSES: LeadStatus[] = [
-    'LOST',
+    'FAKE',
     'CONTACTED'
 ];
 
 const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
 
-type SearchType = 'ALL' | 'ID' | 'EMAIL' | 'COURSE' | 'SCORE' | 'DATE';
+type SearchType = 'ALL' | 'ID' | 'EMAIL' | 'NAME' | 'PHONE' | 'COURSE' | 'SCORE' | 'DATE' | 'SOURCE';
 
 interface MyLeadsFeedProps {
     counselorId: number;
@@ -75,7 +83,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const [selectedType, setSelectedType] = useState<string>('');
     const [selectedDepartment, setSelectedDepartment] = useState<string>('');
     const [counselorSetup, setCounselorSetup] = useState(false);
-    
+
     // To store what was actually clicked/searched
     const [searchTrigger, setSearchTrigger] = useState(0);
 
@@ -116,7 +124,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 const meRes: any = await CounselorService.getCounselorMe();
                 // Check if the counselor object is wrapped in a "data" property
                 const me = meRes?.data || meRes;
-                
+
                 if (me && (me.counselorId || me.id)) {
                     const types = me.counselorTypes || [];
                     const depts = me.departments || [];
@@ -135,7 +143,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                     const activeCid = me.counselorId || me.id || counselorId;
                     console.log("[MyLeadsFeed] Requesting counts for:", activeCid);
                     const countsRes: any = await CounselorService.getCombinedLeadCounts(activeCid);
-                    
+
                     // The count response might also be wrapped in data
                     const cData = countsRes?.data || (countsRes?.totalCombined !== undefined ? countsRes : null);
                     if (cData) {
@@ -161,7 +169,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
             // Use the alphanumeric counselorId from the "me" response if available, or fallback to props
             // Note: In typical flows, the user.id from AuthContext might be numeric, but the specialized leads
             // endpoint often needs the alphanumeric USR-... or COUN-... ID.
-            
+
             // Re-fetch "me" if we don't have it, or just use user.id
             const me = await CounselorService.getCounselorMe();
             const activeCid = me.counselorId || counselorId;
@@ -219,7 +227,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
             setSearchTrigger(prev => prev + 1); // This will trigger loadLeads which now handles dept/type
             return;
         }
-        
+
         // If they just changed Dept/Type but text search is empty, also use loadLeads
         if (!searchValue.trim()) {
             setPage(0);
@@ -242,6 +250,12 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 case 'EMAIL':
                     raw = await CounselorService.searchLeadByEmail(val);
                     break;
+                case 'NAME':
+                    raw = await CounselorService.searchLeadsByName(val);
+                    break;
+                case 'PHONE':
+                    raw = await CounselorService.searchLeadByPhone(val);
+                    break;
                 case 'COURSE':
                     raw = await CounselorService.searchLeadsByCourse(val);
                     break;
@@ -250,6 +264,9 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                     break;
                 case 'DATE':
                     raw = await CounselorService.searchLeadsByDate(val);
+                    break;
+                case 'SOURCE':
+                    raw = await CounselorService.searchLeadsBySource(val);
                     break;
             }
 
@@ -283,17 +300,18 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         setSelectedLead(lead);
     };
 
-    const handleScoreChange = async (leadId: number, newScore: LeadScore) => {
+    const handleScoreChange = async (leadId: string | number, newScore: LeadScore) => {
         if (isSubmitting.current) return;
         isSubmitting.current = true;
         setUpdateProcessing(true);
         try {
             await CounselorService.updateLeadScore(leadId, newScore);
-            setLeads(prev => prev.map(l => (l.id === leadId) ? { ...l, score: newScore } : l));
-            if (selectedLead?.id === leadId) {
+            setLeads(prev => prev.map(l => (l.id == leadId || (l as any).leadId == leadId) ? { ...l, score: newScore } : l));
+            if (selectedLead?.id == leadId || (selectedLead as any)?.leadId == leadId) {
                 setSelectedLead(prev => prev ? { ...prev, score: newScore } : null);
             }
             toast.success('Score updated');
+            setSelectedLead(null); // Make the lead card "disappear" after action
             if (onActionComplete) onActionComplete();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to update score');
@@ -457,10 +475,13 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                     <input
                                         type="text"
                                         placeholder={
-                                            searchType === 'ID' ? "ID..." :
-                                                searchType === 'EMAIL' ? "Email..." :
-                                                    searchType === 'COURSE' ? "Course..." :
-                                                        "Search leads..."
+                                            searchType === 'ID' ? "Search by ID..." :
+                                                searchType === 'EMAIL' ? "Search by Email..." :
+                                                    searchType === 'NAME' ? "Search by Name..." :
+                                                        searchType === 'PHONE' ? "Search by Phone..." :
+                                                            searchType === 'COURSE' ? "Search by Course..." :
+                                                                searchType === 'SOURCE' ? "Search by Source..." :
+                                                                    "Global Search..."
                                         }
                                         value={searchValue}
                                         onChange={(e) => setSearchValue(e.target.value)}
@@ -479,10 +500,13 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                 }}
                                 className="flex-1 sm:flex-initial px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:ring-4 focus:ring-indigo-500/10 outline-none cursor-pointer"
                             >
-                                <option value="ALL">All Type</option>
-                                <option value="ID">ID</option>
+                                <option value="ALL">Global Search</option>
+                                <option value="NAME">Name</option>
+                                <option value="PHONE">Phone</option>
                                 <option value="EMAIL">Email</option>
+                                <option value="ID">ID</option>
                                 <option value="COURSE">Course</option>
+                                <option value="SOURCE">Source</option>
                                 <option value="SCORE">Score</option>
                                 <option value="DATE">Date</option>
                             </select>
@@ -517,7 +541,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
 
             {/* ── Workflow Based Rows ────────────────────────────────────────── */}
             <div className="flex flex-col gap-10 mt-6 pb-20">
-                
+
                 {/* 1. Assigned Leads Row */}
                 <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
@@ -541,7 +565,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                     <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
                                         <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-[#4d0101]" />
                                         <div className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
-                                            {lead.name.charAt(0).toUpperCase()}
+                                            {(lead.name || 'U').charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-black text-slate-900 truncate uppercase mt-0.5">{lead.name}</p>
@@ -586,7 +610,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                     <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
                                         <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-indigo-500" />
                                         <div className="w-11 h-11 rounded-2xl bg-indigo-50/30 border border-indigo-100/50 shadow-sm flex items-center justify-center text-indigo-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
-                                            {lead.name.charAt(0).toUpperCase()}
+                                            {(lead.name || 'U').charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-black text-slate-900 truncate uppercase mt-0.5">{lead.name}</p>
@@ -608,30 +632,30 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                     </div>
                 </div>
 
-                {/* 3. Lost Leads Row */}
+                {/* 3. Fake Leads Row */}
                 <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-1000">
                     <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-1.5 h-10 bg-rose-500 rounded-full"></div>
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Lost Leads</h3>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Closed File • Non-Convertible</p>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Fake Leads</h3>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Invalid Records • Reported Junk</p>
                             </div>
                         </div>
                         <span className="px-3 py-1 bg-rose-50 text-rose-700 text-[10px] font-black rounded-lg border border-rose-100 uppercase">
-                            {leads.filter(l => l.status === 'LOST').length}
+                            {leads.filter(l => l.status === 'FAKE').length}
                         </span>
                     </div>
                     <div className="divide-y divide-slate-50">
-                        {leads.filter(l => l.status === 'LOST').length === 0 ? (
-                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No lost leads</div>
+                        {leads.filter(l => l.status === 'FAKE').length === 0 ? (
+                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No fake leads</div>
                         ) : (
-                            leads.filter(l => l.status === 'LOST').map(lead => (
+                            leads.filter(l => l.status === 'FAKE').map(lead => (
                                 <div key={lead.id || lead.leadId} className="group transition-all hover:bg-slate-50/10">
                                     <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
                                         <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-rose-500" />
                                         <div className="w-11 h-11 rounded-2xl bg-rose-50/30 border border-rose-100/50 shadow-sm flex items-center justify-center text-rose-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
-                                            {lead.name.charAt(0).toUpperCase()}
+                                            {(lead.name || 'U').charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-black text-slate-900 truncate uppercase mt-0.5">{lead.name}</p>
@@ -665,40 +689,40 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 )}
             </div>
 
-                {/* Footer Pagination */}
-                {!searching && !loading && leads.length > 0 && (
-                    <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {loading ? 'Updating…' : `Showing Page ${page + 1}`}
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => {
-                                    setPage(p => Math.max(0, p - 1));
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                                disabled={page === 0 || loading}
-                                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 transition-all text-slate-600 shadow-sm"
-                            >
-                                ← Prev
-                            </button>
-                            <span className="px-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center bg-white border border-slate-100 rounded-xl shadow-sm">
-                                {page + 1} / {totalPages || 1}
-                            </span>
-                            <button
-                                onClick={() => {
-                                    setPage(p => Math.min(Math.max(0, totalPages - 1), p + 1));
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                                disabled={page >= (totalPages - 1) || loading}
-                                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 transition-all text-slate-600 shadow-sm"
-                            >
-                                Next →
-                            </button>
-                        </div>
+            {/* Footer Pagination */}
+            {!searching && !loading && leads.length > 0 && (
+                <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {loading ? 'Updating…' : `Showing Page ${page + 1}`}
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                setPage(p => Math.max(0, p - 1));
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            disabled={page === 0 || loading}
+                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 transition-all text-slate-600 shadow-sm"
+                        >
+                            ← Prev
+                        </button>
+                        <span className="px-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center bg-white border border-slate-100 rounded-xl shadow-sm">
+                            {page + 1} / {totalPages || 1}
+                        </span>
+                        <button
+                            onClick={() => {
+                                setPage(p => Math.min(Math.max(0, totalPages - 1), p + 1));
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            disabled={page >= (totalPages - 1) || loading}
+                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 transition-all text-slate-600 shadow-sm"
+                        >
+                            Next →
+                        </button>
                     </div>
-                )}
-            
+                </div>
+            )}
+
             {/* Premium Lead Details Popup */}
             {selectedLead && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4">
@@ -815,34 +839,59 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                 </div>
 
                                 {/* Premium Score Selector */}
-                                {getCourseName(selectedLead.course) !== null && (
-                                    <div className="p-5 md:p-8 bg-slate-50/50 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                        <div className="flex items-center justify-between mb-4 md:mb-6">
+                                <div className="p-5 md:p-8 bg-slate-50/50 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                    <div className="flex items-center justify-between mb-4 md:mb-6">
+                                        <div className="space-y-1">
                                             <label className="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Investment Score</label>
-                                            <span className="text-[9px] md:text-[10px] font-extrabold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-sm">Current: {selectedLead.score}</span>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Lead prioritization level</p>
                                         </div>
-                                        <div className="flex gap-2 md:gap-4">
-                                            {ALL_SCORES.map(s => {
-                                                const isCurrent = selectedLead.score === s;
-                                                const isDisabled = !isCurrent && (
-                                                    (selectedLead.score === 'HOT')
-                                                );
-
-                                                return (
-                                                    <button
-                                                        key={s}
-                                                        disabled={updateProcessing || isDisabled || isCurrent}
-                                                        onClick={() => selectedLead && handleScoreChange(selectedLead.id, s)}
-                                                        className={`flex-1 group relative overflow-hidden transition-all duration-500 rounded-2xl md:rounded-3xl p-3 md:p-4 flex flex-col items-center gap-1.5 md:gap-2 border-2 ${isCurrent ? SCORE_COLORS[s] + ' border-current shadow-lg md:shadow-xl md:scale-105' : isDisabled ? 'bg-slate-50/50 text-slate-200 border-slate-100 cursor-not-allowed opacity-40' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200 hover:text-indigo-600'}`}
-                                                    >
-                                                        <span className="text-[9px] md:text-xs font-black uppercase tracking-widest relative z-10">{s}</span>
-                                                        <div className={`w-1 md:w-1.5 h-1 md:h-1.5 rounded-full ${isCurrent ? 'bg-current animate-pulse' : 'bg-slate-200'} relative z-10`} />
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                                        <span className="text-[9px] md:text-[10px] font-extrabold text-slate-400 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm uppercase tracking-widest">
+                                            Current: <span className="text-slate-900 ml-1">{selectedLead.score}</span>
+                                        </span>
                                     </div>
-                                )}
+                                    <div className="flex gap-2 md:gap-4">
+                                        {ALL_SCORES.map(s => {
+                                            const isCurrent = selectedLead.score === s;
+                                            const isStatusDisabled = ['TELECALLER_ASSIGNED', 'COUNSELOR_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED', 'FAKE'].includes(selectedLead.status);
+                                            const isCourseMissing = !getCourseName(selectedLead.course);
+                                            const isDisabled = isStatusDisabled || isCourseMissing;
+
+                                            return (
+                                                <button
+                                                    key={s}
+                                                    disabled={updateProcessing || isDisabled}
+                                                    onClick={() => selectedLead && handleScoreChange(selectedLead.id, s)}
+                                                    className={`flex-1 group relative overflow-hidden transition-all duration-500 rounded-2xl md:rounded-3xl p-4 md:p-6 flex flex-col items-center gap-2 md:gap-3 border-2 ${
+                                                        isCurrent 
+                                                            ? `bg-gradient-to-br ${SCORE_COLORS[s]} border-transparent shadow-xl scale-105 z-10` 
+                                                            : (isDisabled ? 'bg-slate-50 text-slate-200 border-slate-50 cursor-not-allowed opacity-40' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200 hover:bg-slate-50')
+                                                    }`}
+                                                >
+                                                    <div className={`transition-transform duration-500 group-hover:scale-110 ${isCurrent ? 'text-white' : 'text-slate-300 group-hover:text-slate-500'}`}>
+                                                        {SCORE_ICONS[s]}
+                                                    </div>
+                                                    <span className={`text-[10px] md:text-xs font-black uppercase tracking-[0.1em] relative z-10 ${isCurrent ? 'text-white' : 'text-slate-500'}`}>
+                                                        {s}
+                                                    </span>
+                                                    {isCurrent && (
+                                                        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-white animate-pulse" />
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {(['TELECALLER_ASSIGNED', 'COUNSELOR_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED', 'NEW', 'FAKE'].includes(selectedLead.status) || !getCourseName(selectedLead.course)) && (
+                                        <div className="mt-4 px-4 py-3 bg-[#4d0101]/5 rounded-2xl border border-[#4d0101]/10 animate-pulse">
+                                            <p className="text-center text-[10px] font-black text-[#4d0101] uppercase tracking-widest leading-relaxed">
+                                                {selectedLead.status === 'FAKE' 
+                                                    ? 'Fake leads cannot be prioritized'
+                                                    : (!getCourseName(selectedLead.course) 
+                                                        ? 'Academic program must be assigned before prioritization'
+                                                        : 'Contact lead first to enable investment scoring')}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Call to Action Section */}
                                 <div className="group relative overflow-hidden bg-slate-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl transition-all active:scale-[0.98]">

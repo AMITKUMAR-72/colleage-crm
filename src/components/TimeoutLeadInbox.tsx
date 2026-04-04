@@ -318,17 +318,17 @@ export default function TimeoutLeadInbox() {
                                 }).map(c => (
                                     <button
                                         key={c.counselorId}
-                                        onClick={() => isBulkReassignModalOpen ? handleBulkReassign(c.counselorId) : handleReassign(c.counselorId)}
+                                        onClick={() => isBulkReassignModalOpen ? handleBulkReassign(Number(c.counselorId)) : handleReassign(Number(c.counselorId))}
                                         disabled={isReassignLoading}
                                         className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded bg-slate-100 text-slate-600 flex items-center justify-center font-black text-xs">
-                                                {c.name.charAt(0).toUpperCase()}
+                                                {(c.name || 'C').charAt(0).toUpperCase()}
                                             </div>
                                             <div className="flex flex-col items-start leading-tight">
                                                 <span className="text-sm font-bold text-slate-700">{c.name}</span>
-                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.counselorTypes?.join(', ')} • {c.department}</span>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.counselorTypes?.join(', ')} • {c.departments?.join(', ')}</span>
                                             </div>
                                         </div>
                                         <div className="p-1 px-2 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest">

@@ -44,6 +44,7 @@ export default function Sidebar() {
         { label: 'My Lead', href: '/counselor/leads', roles: ['COUNSELOR'], icon: Users },
         { label: 'My Leave', href: '/counselor/leave', roles: ['COUNSELOR'], icon: Calendar },
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },
+        { label: 'API Integration', href: '/affiliate/integration', roles: ['AFFILIATE'], icon: ShieldCheck },
         { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
         { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', 'AFFILIATE'], icon: Upload },
         { label: 'Timed-Out Leads', href: '/timeout-leads', roles: ['ADMIN', 'MANAGER'], icon: Clock },

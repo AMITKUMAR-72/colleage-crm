@@ -118,6 +118,18 @@ export const CounselorService = {
         return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
+    searchLeadsByName: async (name: string) => {
+        const response = await api.get(`/api/counselor/leads/search/name/${encodeURIComponent(name)}`);
+        const data = response.data as any;
+        return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
+    },
+
+    searchLeadByPhone: async (phone: string) => {
+        const response = await api.get(`/api/counselor/leads/search/phone/${encodeURIComponent(phone)}`);
+        const data = response.data as any;
+        return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
+    },
+
     updateLeadScore: async (leadId: number, score: LeadScore) => {
         const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${leadId}/score/${score}`);
         return response.data;

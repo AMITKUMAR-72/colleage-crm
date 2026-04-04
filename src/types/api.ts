@@ -17,7 +17,8 @@ export type LeadStatus =
     | 'TIMED_OUT'
     | 'REASSIGNED'
     | 'IN_A_SESSION'
-    | 'QUEUED';
+    | 'QUEUED'
+    | 'FAKE';
 
 // matches backend Scores.java
 export type LeadScore = 'HOT' | 'WARM' | 'COLD';
