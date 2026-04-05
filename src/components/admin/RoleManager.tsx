@@ -96,7 +96,7 @@ export default function RoleManager() {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 font-poppins text-black">
+        <div className="space-y-8 animate-in fade-in duration-500 font-sans text-black">
             {/* Main List View */}
             <div style={{ display: showModal ? 'none' : 'block' }} className="space-y-8">
 
@@ -185,7 +185,7 @@ export default function RoleManager() {
                 <div className="bg-white rounded-[1.2rem] w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
                     <div className="from-indigo-600 to-purple-600 p-8 text-white relative text-center">
                         <img src="/raffles-logo.png" alt="Raffles" className="h-24 w-auto object-contain mx-auto mb-4" />
-                        <h3 className="text-2xl text-black font-semibold tracking-tight font-poppins">
+                        <h3 className="text-2xl text-black font-semibold tracking-tight font-sans">
                             Create System Role
                         </h3>
                         <p className="opacity-80 text-black font-medium text-sm mt-1 max-w-md mx-auto">

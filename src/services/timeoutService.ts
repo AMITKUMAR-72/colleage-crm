@@ -63,13 +63,13 @@ export const TimeOutService = {
         return []; // Should not reach here ordinarily
     },
     // Reassign a timed-out lead to a different counselor
-    reassignLead: async (counselorId: number, leadId: number, leadEmail: string) => {
-        const response = await api.post(`/api/leads/timeout/assign/${leadId}/${counselorId}`);
+    reassignLead: async (counselorId: string | number, leadId: string | number, leadEmail: string, counselorType: string) => {
+        const response = await api.post(`/api/leads/timeout/assign/${leadId}/${counselorId}/${counselorType}`);
         return response.data;
     },
     // Bulk reassign
-    bulkReassignTimeoutLeads: async (counselorId: number, leadIds: number[]) => {
-        const response = await api.post(`/api/leads/timeout/bulk-assign/${counselorId}`, { leadIds });
+    bulkReassignTimeoutLeads: async (counselorId: string | number, leadIds: number[], counselorType: string) => {
+        const response = await api.post(`/api/leads/timeout/bulk-assign/${counselorId}/${counselorType}`, { leadIds });
         return response.data;
     }
 };

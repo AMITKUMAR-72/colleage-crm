@@ -39,6 +39,22 @@ export default function AffiliateDashboard() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validation checks
+        const address = formData.address || '';
+        const phone = formData.phone || '';
+        const course = (formData.course || '').toUpperCase();
+
+        if (address.length < 10 || address.length > 50) {
+            toast.error('Address must be between 10 and 50 characters');
+            return;
+        }
+
+        if (!/^\d{10}$/.test(phone)) {
+            toast.error('Phone number must be exactly 10 digits');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -46,9 +62,9 @@ export default function AffiliateDashboard() {
             const payload = {
                 name: formData.name,
                 email: formData.email,
-                address: formData.address,
-                phones: [formData.phone], // Convert single phone string to array
-                course: formData.course
+                address: address,
+                phones: [phone], // Convert single phone string to array
+                course: course
             };
             
             await LeadService.integrateAffiliatePartner(payload as any);
@@ -272,10 +288,14 @@ export default function AffiliateDashboard() {
                                         type="tel"
                                         required
                                         pattern="[0-9]{10}"
+                                        maxLength={10}
                                         className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-[#dbb212] focus:bg-white focus:border-transparent outline-none transition-all text-sm font-bold text-gray-700 placeholder:text-gray-300 shadow-inner"
                                         placeholder="Mobile (10 digits)"
                                         value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) setFormData({ ...formData, phone: val });
+                                        }}
                                     />
                                 </div>
 
@@ -284,8 +304,10 @@ export default function AffiliateDashboard() {
                                     <input
                                         type="text"
                                         required
+                                        minLength={10}
+                                        maxLength={50}
                                         className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-[#dbb212] focus:bg-white focus:border-transparent outline-none transition-all text-sm font-bold text-gray-700 placeholder:text-gray-300 shadow-inner"
-                                        placeholder="City, State"
+                                        placeholder="Full Resident Address (Min 10 chars)"
                                         value={formData.address}
                                         onChange={e => setFormData({ ...formData, address: e.target.value })}
                                     />

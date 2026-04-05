@@ -60,19 +60,6 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]
                     ? raw
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
                 
-                // Check if any selected lead has null course
-                const hasNullCourse = allLeads.some(l => 
-                    leadIds.includes(l.id) && 
-                    (!l.course || (typeof l.course === 'object' && !(l.course as any).course))
-                );
-
-                // ONLY SHOW TELECALLERS, and filter out INTERNAL if course is null
-                list = list.filter(c => {
-                    if (!c.counselorTypes?.includes('TELECALLER')) return false;
-                    if (hasNullCourse && c.counselorTypes?.includes('INTERNAL')) return false;
-                    return true;
-                });
-                
                 setCounselors(list);
             } catch {
                 toast.error('Could not load counselors');
@@ -82,7 +69,7 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]
         }
     };
 
-    const handleBulkAssign = async (e: React.MouseEvent, counselorId: number) => {
+    const handleBulkAssign = async (e: React.MouseEvent, counselorId: number, type: string) => {
         e.stopPropagation();
         if (leadIds.length === 0) {
             toast.error('No leads selected');
@@ -90,7 +77,7 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]
         }
         setAssigning(counselorId);
         try {
-            const res = await LeadService.bulkAssignLeads(counselorId, leadIds);
+            const res = await LeadService.bulkAssignLeads(counselorId, type, leadIds);
             if (res && res.successCount !== undefined) {
                 toast.success(`Success: ${res.successCount}, Failed: ${res.failCount || 0}`);
             } else {
@@ -125,29 +112,48 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]
             {open && (
                 <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
                     <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Telecaller</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Counselor Type</p>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                         {loading ? (
-                            <div className="py-6 text-center text-xs font-bold text-slate-400 animate-pulse italic">fetching telecallers…</div>
+                            <div className="py-6 text-center text-xs font-bold text-slate-400 animate-pulse italic">fetching counselors…</div>
                         ) : counselors.length === 0 ? (
-                            <div className="py-6 text-center text-xs font-bold text-slate-400 italic">No telecallers found</div>
+                            <div className="py-6 text-center text-xs font-bold text-slate-400 italic">No counselors found</div>
                         ) : (
                             counselors.map((c, idx) => (
-                                <button
+                                <div
                                     key={c.counselorId ?? idx}
-                                    onClick={e => handleBulkAssign(e, c.counselorId)}
-                                    disabled={assigning === c.counselorId}
-                                    className="w-full text-left px-5 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 flex items-center justify-between group"
+                                    className="w-full px-5 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 flex flex-col gap-2"
                                 >
                                     <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-slate-800 group-hover:text-[#4d0101]">{c.name}</span>
-                                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{c.counselorTypes?.join(', ')}</span>
+                                        <span className="text-xs font-bold text-slate-800">{c.name}</span>
                                     </div>
-                                    {assigning === c.counselorId && (
-                                        <span className="text-[10px] font-black text-[#4d0101] animate-pulse lowercase italic">saving…</span>
-                                    )}
-                                </button>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {c.counselorTypes && c.counselorTypes.length > 0 ? (
+                                            c.counselorTypes.map(type => {
+                                                const isDisabled = type === 'INTERNAL' || type === 'EXTERNAL';
+                                                return (
+                                                    <button
+                                                        key={type}
+                                                        onClick={e => !isDisabled && handleBulkAssign(e, c.counselorId, type)}
+                                                        disabled={isDisabled || assigning === c.counselorId}
+                                                        className={`px-2 py-1 border rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                            isDisabled
+                                                                ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                                                : assigning === c.counselorId
+                                                                    ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                                        }`}
+                                                    >
+                                                        {isDisabled ? `${type} (Restricted)` : assigning === c.counselorId ? 'saving…' : type}
+                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
+                                        )}
+                                    </div>
+                                </div>
                             ))
                         )}
                     </div>

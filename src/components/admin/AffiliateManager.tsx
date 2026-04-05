@@ -151,7 +151,7 @@ export default function AffiliateManager() {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 font-poppins text-black">
+        <div className="space-y-8 animate-in fade-in duration-500 font-sans text-black">
             {/* Main List View */}
             <div style={{ display: showModal ? 'none' : 'block' }} className="space-y-8">
 
@@ -290,14 +290,14 @@ export default function AffiliateManager() {
 
             {/* Form View */}
             <div
-                className="flex items-start justify-center transition-all font-poppins"
+                className="flex items-start justify-center transition-all font-sans"
                 style={{ display: showModal ? 'flex' : 'none', backgroundColor: 'transparent' }}
             >
                 <div className="bg-white rounded-[1.2rem] w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
                     <div className="from-indigo-600 to-purple-600 p-6 sm:p-8 text-white relative text-center">
                         <img src="/raffles-logo.png" alt="Raffles" className="h-16 sm:h-24 w-auto object-contain mx-auto mb-4" />
-                        <h3 className="text-xl sm:text-2xl text-black font-semibold tracking-tight font-poppins">
-                            {editingAffiliate ? 'Modify Affiliate' : 'Create Affiliate'}
+                        <h3 className="text-xl sm:text-2xl text-black font-semibold tracking-tight font-sans">
+                            {editingAffiliate ? 'Edit Affiliate' : 'Add Affiliate'}
                         </h3>
                         <p className="opacity-80 text-black font-medium text-[10px] sm:text-sm mt-1 max-w-md mx-auto px-4">
                             {editingAffiliate ? 'Update the details of the affiliate partner.' : 'Fill in the details to register a new affiliate partner.'}
@@ -386,15 +386,15 @@ export default function AffiliateManager() {
                             <button
                                 type="button"
                                 onClick={() => setShowModal(false)}
-                                className="order-2 sm:order-1 flex-1 py-3.5 sm:py-4 rounded-2xl border border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-all"
+                                className="order-2 sm:order-1 flex-1 py-3.5 sm:py-4 rounded-2xl border border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-all font-sans"
                             >
-                                Dismiss
+                                Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-[#4d0101] text-white font-black shadow-xl shadow-rose-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-[#4d0101] text-white font-black shadow-xl shadow-rose-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all font-sans"
                             >
-                                {editingAffiliate ? 'Update' : 'Register'}
+                                {editingAffiliate ? 'Save Changes' : 'Add Partner'}
                             </button>
                         </div>
                     </form>
@@ -403,7 +403,7 @@ export default function AffiliateManager() {
 
             {/* Details Popup */}
             <div
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md transition-all font-poppins"
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md transition-all font-sans"
                 style={{ display: showDetailsPopup ? 'flex' : 'none', backgroundColor: 'rgba(17, 24, 39, 0.6)' }}
             >
                 {selectedAffiliateDetails && (
@@ -480,7 +480,7 @@ export default function AffiliateManager() {
                                         className="w-full py-3.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
                                     >
                                         <Edit2 className="w-4 h-4" />
-                                        Update Details
+                                        Edit Profile
                                     </button>
                                 </>
                             )}

@@ -196,8 +196,8 @@ export default function CampaignManager() {
                 <div className="bg-white rounded-[1.2rem] w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
                     <div className="from-indigo-600 to-purple-600 p-6 sm:p-8 text-white relative text-center">
                         <img src="/raffles-logo.png" alt="Raffles" className="h-16 sm:h-24 w-auto object-contain mx-auto mb-4" />
-                        <h3 className="text-xl sm:text-2xl text-black font-semibold tracking-tight font-poppins">
-                            Create Campaign Source
+                        <h3 className="text-xl sm:text-2xl text-black font-semibold tracking-tight font-sans">
+                            Add New Source
                         </h3>
                         <p className="opacity-80 text-black font-medium text-[10px] sm:text-sm mt-1 max-w-md mx-auto px-4">
                             Fill in the details to register a new external marketing campaign.
@@ -239,7 +239,7 @@ export default function CampaignManager() {
                                 type="submit"
                                 className="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-[#4d0101] text-white font-black shadow-xl shadow-rose-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                Confirm Registration
+                                Create Source
                             </button>
                         </div>
                     </form>

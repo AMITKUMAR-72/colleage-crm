@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AxiosError } from 'axios';
 import { LeadService } from '@/services/leadService';
+import { CampaignService } from '@/services/campaignService';
 import { LeadResponseDTO, LeadStatus, LeadScore } from '@/types/api';
 import LoadingButton from '@/components/ui/LoadingButton';
 
@@ -21,20 +22,47 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
         phone: '',
         address: '',
         course: '',
-        intake: '',
-        status: 'NEW' as LeadStatus,
-        score: 'WARM' as LeadScore
+        intake: '2026',
+        campaign: { name: '' }
     });
+    const [sources, setSources] = useState<any[]>([]);
+
+    useEffect(() => {
+        const loadSources = async () => {
+            try {
+                const data = await CampaignService.getAllSources();
+                setSources(data);
+            } catch (err) {
+                console.error("Failed to load sources", err);
+            }
+        };
+        if (isOpen) loadSources();
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!formData.campaign.name) {
+            setError("Please select a Source.");
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
-            const newLead = await LeadService.createLead(formData);
+            const payload = {
+                name: formData.name.trim(),
+                email: formData.email.trim(),
+                address: formData.address.trim(),
+                phones: [formData.phone.trim()],
+                course: formData.course.trim().toUpperCase(),
+                intake: formData.intake,
+                campaign: { name: formData.campaign.name }
+            };
+            const newLead = await LeadService.createLead(payload as any);
             onSuccess(newLead);
             onClose();
             // Reset form
@@ -44,9 +72,8 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
                 phone: '',
                 address: '',
                 course: '',
-                intake: '',
-                status: 'NEW',
-                score: 'WARM'
+                intake: '2026',
+                campaign: { name: '' }
             });
         } catch (err: unknown) {
             console.error("Failed to create lead", err);
@@ -133,64 +160,43 @@ export default function LeadFormModal({ isOpen, onClose, onSuccess }: LeadFormMo
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Course (Optional)</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Course <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
+                                required
                                 className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
-                                placeholder="e.g. MBA"
+                                placeholder="e.g. B.TECH"
                                 value={formData.course}
-                                onChange={e => setFormData({ ...formData, course: e.target.value })}
+                                onChange={e => setFormData({ ...formData, course: e.target.value.toUpperCase() })}
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Intake (Optional)</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Intake</label>
                             <input
                                 type="text"
-                                className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
-                                placeholder="e.g. Fall 2024"
-                                value={formData.intake}
-                                onChange={e => setFormData({ ...formData, intake: e.target.value })}
+                                readOnly
+                                className="w-full p-2 border border-gray-100 bg-gray-50 text-gray-500 rounded-lg outline-none cursor-not-allowed"
+                                value="2026"
                             />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Initial Status</label>
-                            <select
-                                className="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#dbb212] outline-none"
-                                value={formData.status}
-                                onChange={e => setFormData({ ...formData, status: e.target.value as LeadStatus })}
-                            >
-                                <option value="NEW">New</option>
-                                <option value="TELECALLER_ASSIGNED">Telecaller Assigned</option>
-                                <option value="INTERESTED">Interested</option>
-                                <option value="COUNSELOR_ASSIGNED">Counselor Assigned</option>
-                                <option value="EXTERNAL_ASSIGNED">External Assigned</option>
-                                <option value="ADMISSION_IN_PROCESS">Admission In Process</option>
-                                <option value="ADMISSION_DONE">Admission Done</option>
-                                <option value="LOST">Lost</option>
-                                <option value="UNASSIGNED">Unassigned</option>
-                                <option value="CONTACTED">Contacted</option>
-                                <option value="TIMED_OUT">Timed Out</option>
-                                <option value="REASSIGNED">Reassigned</option>
-                                <option value="IN_A_SESSION">In A Session</option>
-                                <option value="QUEUED">Queued</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Lead Score</label>
-                            <select
-                                className="w-full p-2 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-[#dbb212] outline-none"
-                                value={formData.score}
-                                onChange={e => setFormData({ ...formData, score: e.target.value as LeadScore })}
-                            >
-                                <option value="HOT">Hot 🔥</option>
-                                <option value="WARM">Warm ☀️</option>
-                                <option value="COLD">Cold ❄️</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Source <span className="text-red-500">*</span></label>
+                        <select
+                            required
+                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#dbb212] focus:border-[#dbb212] outline-none transition-all"
+                            value={formData.campaign.name}
+                            onChange={e => setFormData({ ...formData, campaign: { name: e.target.value } })}
+                        >
+                            <option value="">Select Source</option>
+                            {sources.map(s => (
+                                <option key={s.id} value={s.name}>{s.name}</option>
+                            ))}
+                        </select>
                     </div>
+
+
 
                     <div className="pt-4 flex gap-3">
                         <button

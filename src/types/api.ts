@@ -91,7 +91,7 @@ export interface LeadRequestDTO {
     intake?: string;
     status?: LeadStatus;
     score?: LeadScore;
-    campaign?: { id: number; name: string };
+    campaign?: { id?: number; name: string };
 }
 
 // Matches backend Campaign_DTO.java (Source)
@@ -249,4 +249,17 @@ export interface SlaUpdateResponseDTO {
 export interface MaxCapacityUpdateResponseDTO {
     maxCapacity: number;
     message?: string;
+}
+
+export interface LeadFilters {
+    email: string;
+    status: string;
+    course: string;
+    campaign: string;
+    score: string;
+    id?: string;
+    phone?: string;
+    name?: string;
+    startDate?: string;
+    endDate?: string;
 }

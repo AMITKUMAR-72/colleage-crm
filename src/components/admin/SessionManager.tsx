@@ -25,8 +25,8 @@ export default function SessionManager() {
     ]);
 
     // Assign Mentor 
-    const [assignSessionId, setAssignSessionId] = useState<number | ''>('');
-    const [assignMentorId, setAssignMentorId] = useState<number | ''>('');
+    const [assignSessionId, setAssignSessionId] = useState<string | number | ''>('');
+    const [assignMentorId, setAssignMentorId] = useState<string | number | ''>('');
 
     // Filters
     const [filterType, setFilterType] = useState('all'); // all, date, status, mentorAssigned, department
@@ -139,8 +139,9 @@ export default function SessionManager() {
                 location: '',
                 notes: ''
             }));
-        } catch (error) {
-            toast.error('Failed to create session');
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "Failed to create session";
+            toast.error(msg);
         }
     };
 
@@ -148,7 +149,7 @@ export default function SessionManager() {
         e.preventDefault();
         try {
             if (bulkFormData.length === 0) throw new Error("Add at least one session");
-            
+
             const sanitizedArray = bulkFormData.map((session: any) => {
                 const s = { ...session };
                 if (s.startTime && s.startTime.length === 16) s.startTime += ':00';
@@ -160,25 +161,27 @@ export default function SessionManager() {
             toast.success('Bulk sessions created');
             setBulkFormData([{ startTime: '', endTime: '', maxCapacity: 50, location: '', notes: '' }]);
             loadSessions();
-        } catch (error) {
-            toast.error('Failed to create bulk sessions');
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "Failed to create bulk sessions";
+            toast.error(msg);
         }
     };
 
     const handleAssignMentor = async () => {
         if (!assignSessionId || !assignMentorId) return toast.error("Select both session and mentor");
         try {
-            await SessionService.assignMentorToSession(Number(assignSessionId), Number(assignMentorId));
+            await SessionService.assignMentorToSession(assignSessionId, assignMentorId);
             toast.success("Mentor assigned successfully");
             setAssignSessionId('');
             setAssignMentorId('');
             loadSessions();
-        } catch (error) {
-            toast.error("Failed to assign mentor");
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "Failed to assign mentor";
+            toast.error(msg);
         }
     };
 
-    const handleCancelSession = async (id: number) => {
+    const handleCancelSession = async (id: string | number) => {
         console.log("Initiating cancellation for Session ID:", id);
         if (id === undefined || id === null) {
             toast.error("Cannot cancel: Session ID is missing");
@@ -193,13 +196,13 @@ export default function SessionManager() {
             await SessionService.cancelSession(id);
             toast.success(`Session #${id} cancelled successfully`);
             loadSessions();
-        } catch (error) {
-            console.error("Cancellation error:", error);
-            toast.error("Failed to cancel session. Please try again.");
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "Failed to cancel session";
+            toast.error(msg);
         }
     };
 
-    const handleViewLeads = async (id: number) => {
+    const handleViewLeads = async (id: string | number) => {
         try {
             const data = await SessionService.getLeadsWithNotesForSession(id);
             setLeadsWithNotes(Array.isArray(data) ? data : []);
@@ -214,7 +217,7 @@ export default function SessionManager() {
         if (!assigningLeadToSession) return;
         try {
             await SessionService.assignLeadToSession({
-                leadId: Number(assignLeadModalData.leadId),
+                leadId: assignLeadModalData.leadId,
                 notes: assignLeadModalData.notes,
                 preferredDate: assigningLeadToSession.startTime
             });
@@ -222,8 +225,9 @@ export default function SessionManager() {
             setAssigningLeadToSession(null);
             setAssignLeadModalData({ leadId: '', notes: '' });
             loadSessions();
-        } catch (error) {
-            toast.error("Failed to assign lead");
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "Failed to assign lead";
+            toast.error(msg);
         }
     };
 
@@ -563,7 +567,7 @@ export default function SessionManager() {
                                                                 const sid = session.id || session.sessionId;
                                                                 console.log("Cancel button clicked. Session data:", session);
                                                                 if (sid) {
-                                                                    handleCancelSession(Number(sid));
+                                                                    handleCancelSession(sid);
                                                                 } else {
                                                                     toast.error("Session ID not found in data");
                                                                 }
@@ -643,11 +647,15 @@ export default function SessionManager() {
                             </p>
                         </div>
                         <form onSubmit={handleAssignLeadSubmit} className="p-6 space-y-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2">
+                                <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-1">Important Note</p>
+                                <p className="text-xs font-medium text-amber-950">Offline sessions can only be created for <span className="font-bold underline decoration-amber-500 underline-offset-2 italic">HOT</span> leads.</p>
+                            </div>
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Lead ID</label>
                                 <input
                                     required
-                                    type="number"
+                                    type="text"
                                     value={assignLeadModalData.leadId}
                                     onChange={(e) => setAssignLeadModalData({ ...assignLeadModalData, leadId: e.target.value })}
                                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm"

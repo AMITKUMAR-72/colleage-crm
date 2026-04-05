@@ -29,7 +29,9 @@ export interface LoginRequest {
 export interface SignupRequest {
     email: string;
     name: string;
+    phone?: string;
     password?: string;
+    role?: string;
 }
 
 export const AuthService = {

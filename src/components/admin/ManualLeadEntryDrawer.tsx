@@ -22,11 +22,9 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
         name: '',
         email: '',
         phones: [],
-        address: '', // Mocked or optional
+        address: '',
         course: '',
-        intake: '2026',
-        status: 'UNASSIGNED',
-        score: 'WARM'
+        intake: '2026'
     });
 
     const [selectedDepartment, setSelectedDepartment] = useState<string>('');
@@ -129,45 +127,41 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
     };
 
     const handleSourceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const sourceId = e.target.value;
-        setSelectedSourceId(sourceId);
-
-        const source = sources.find(s => s.id.toString() === sourceId);
-        if (source) {
-            // Note: if id is -1, backend might need to handle creation or we just send the name
-            setFormData(prev => ({
-                ...prev,
-                campaign: source.id > 0 ? { id: source.id, name: source.name } : { id: 0, name: source.name } as any
-            }));
-        }
+        const sourceName = e.target.value;
+        setSelectedSourceId(sourceName);
+        setFormData(prev => ({ ...prev, campaign: { name: sourceName } }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const primaryPhone = formData.phones?.[0];
-        if (!formData.name || !formData.email || !primaryPhone || !formData.address) {
-            toast.error('Name, Email, Contact, and Address are required.');
+        if (!formData.name || !formData.email || !primaryPhone || !formData.address || !formData.campaign?.name) {
+            toast.error('All fields (Name, Email, Contact, Address, and Source) are mandatory.');
             return;
         }
 
         setSubmitting(true);
         const toastId = toast.loading('Creating lead...');
         try {
+            // Filter out empty phones and trim them
+            const cleanFormData = {
+                ...formData,
+                phones: (formData.phones || []).filter(p => p && p.trim()).map(p => p.trim())
+            };
+
             let newLead;
             const sourceName = formData.campaign?.name || '';
 
             // Route to specific integration endpoints based on source
             const normalizedSource = sourceName.toLowerCase();
             if (normalizedSource === 'facebook') {
-                newLead = await LeadService.integrateFacebook(formData);
+                newLead = await LeadService.integrateFacebook(cleanFormData as any);
             } else if (normalizedSource === 'instagram') {
-                newLead = await LeadService.integrateInstagram(formData);
+                newLead = await LeadService.integrateInstagram(cleanFormData as any);
             } else if (normalizedSource === 'google ads') {
-                // Use the Google Form integration for Google Ads as requested
-                newLead = await LeadService.integrateGoogleForm(formData);
+                newLead = await LeadService.integrateGoogleForm(cleanFormData as any);
             } else {
-                // Standard manual creation for Walk In and others
-                newLead = await LeadService.createLead(formData);
+                newLead = await LeadService.createLead(cleanFormData as any);
             }
 
             toast.success('Lead created and stored successfully!', { id: toastId });
@@ -182,9 +176,7 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                 phones: [],
                 address: '',
                 course: '',
-                intake: '2026',
-                status: 'UNASSIGNED',
-                score: 'WARM'
+                intake: '2026'
             });
             setSelectedDepartment('');
             setSelectedSourceId('');
@@ -235,6 +227,10 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                             value={formData.name}
                                             onChange={handleInputChange}
                                             placeholder="e.g. John Doe"
+                                            minLength={3}
+                                            maxLength={20}
+                                            pattern="^[A-Za-z ]+$"
+                                            title="Alphabetical names only (3-20 chars)"
                                             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                             required
                                         />
@@ -267,7 +263,9 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                                 name="phone0"
                                                 value={formData.phones?.[0] || ''}
                                                 onChange={handleInputChange}
-                                                placeholder="+91..."
+                                                placeholder="10-digit number"
+                                                pattern="^[0-9]{10}$"
+                                                title="10-digit phone number strictly required"
                                                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                                 required
                                             />
@@ -300,7 +298,9 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                                 name="address"
                                                 value={formData.address}
                                                 onChange={handleInputChange}
-                                                placeholder="City, Region"
+                                                placeholder="Min 10, Max 50 chars"
+                                                minLength={10}
+                                                maxLength={50}
                                                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
                                                 required
                                             />
@@ -311,94 +311,50 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                 {/* Dept & Course Dropdown Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Department</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Course <span className="text-red-500">*</span></label>
                                         <div className="relative group">
-                                            <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
-                                            <select
-                                                value={selectedDepartment}
-                                                onChange={(e) => {
-                                                    setSelectedDepartment(e.target.value);
-                                                    setFormData(prev => ({ ...prev, course: '' }));
-                                                }}
-                                                disabled={loadingMeta}
-                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none disabled:opacity-50"
-                                            >
-                                                <option value="">{loadingMeta ? 'Loading...' : 'Select Department'}</option>
-                                                {departments.map(dept => (
-                                                    <option key={dept.id} value={dept.department}>{dept.department}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                            <BookOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
+                                            <input
+                                                type="text"
+                                                name="course"
+                                                value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, course: e.target.value.toUpperCase() }))}
+                                                placeholder="e.g. B.TECH"
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-bold text-sm text-slate-800 placeholder:text-slate-400"
+                                                required
+                                            />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Course</label>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Intake</label>
                                         <div className="relative group">
-                                            <BookOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
-                                            {loadingMeta || filteredCourses.length > 0 ? (
-                                                <>
-                                                    <select
-                                                        name="course"
-                                                        value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
-                                                        onChange={handleInputChange}
-                                                        disabled={loadingMeta}
-                                                        className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none disabled:opacity-50"
-                                                    >
-                                                        <option value="">{loadingMeta ? 'Loading...' : 'Select Course'}</option>
-                                                        {filteredCourses.map(course => (
-                                                            <option key={course.id} value={course.course}>{course.course}{course.department ? ` (${course.department})` : ''}</option>
-                                                        ))}
-                                                    </select>
-                                                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                                </>
-                                            ) : (
-                                                <input
-                                                    type="text"
-                                                    name="course"
-                                                    value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
-                                                    onChange={handleInputChange}
-                                                    disabled={loadingMeta}
-                                                    placeholder="e.g. B.Tech"
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition font-medium text-sm text-slate-800 placeholder:text-slate-400"
-                                                    required
-                                                />
-                                            )}
+                                            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 cursor-not-allowed outline-none"
+                                                value="2026"
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Source & Intake dropdown row */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Source</label>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Source <span className="text-red-500">*</span></label>
                                         <div className="relative group">
                                             <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
                                             <select
+                                                required
                                                 value={selectedSourceId}
                                                 onChange={handleSourceChange}
                                                 disabled={loadingMeta}
-                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none disabled:opacity-50"
+                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-bold text-slate-800 appearance-none disabled:opacity-50"
                                             >
                                                 <option value="">{loadingMeta ? 'Loading Sources...' : `Select Source (${sources.length})`}</option>
                                                 {sources.map((s, idx) => (
-                                                    <option key={`${s.id}-${idx}`} value={s.id}>{s.name}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Intake Year</label>
-                                        <div className="relative group">
-                                            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4d0101] transition-colors" />
-                                            <select
-                                                name="intake"
-                                                value={formData.intake}
-                                                onChange={handleInputChange}
-                                                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4d0101]/20 focus:border-[#4d0101] transition text-sm font-medium text-slate-800 appearance-none"
-                                            >
-                                                {INTAKE_YEARS.map(y => (
-                                                    <option key={y} value={y}>{y}</option>
+                                                    <option key={`${s.id}-${idx}`} value={s.name}>{s.name}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -435,10 +391,10 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                                         <div key={lead.id || idx} className="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-[#4d0101]/30 transition-colors">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-[#4d0101]/5 rounded-lg flex items-center justify-center text-[#4d0101] font-bold border border-[#4d0101]/10">
-                                                    {lead.name.charAt(0).toUpperCase()}
+                                                    {lead.name ? lead.name.charAt(0).toUpperCase() : 'L'}
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-sm font-bold text-slate-800">{lead.name}</h4>
+                                                    <h4 className="text-sm font-bold text-slate-800">{lead.name || 'Unnamed Lead'}</h4>
                                                     <p className="text-xs text-slate-500">{lead.email}</p>
                                                 </div>
                                             </div>

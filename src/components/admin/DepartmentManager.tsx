@@ -208,7 +208,7 @@ export default function DepartmentManager() {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="New Department Name"
+                            placeholder="Department Name"
                             className="flex-1 p-2.5 sm:p-2 border border-black rounded-xl sm:rounded-lg focus:ring-2 focus:ring-[#dbb212] outline-none font-medium"
                             required
                         />
@@ -217,7 +217,7 @@ export default function DepartmentManager() {
                             disabled={loading}
                             className="w-full sm:w-auto px-6 py-3 sm:px-4 sm:py-2 bg-[#4d0101] text-white rounded-xl sm:rounded-lg hover:bg-[#600202] disabled:opacity-50 font-bold transition-all"
                         >
-                            {loading ? 'Adding...' : 'Add Department'}
+                            {loading ? 'Creating...' : 'Create Department'}
                         </button>
                     </form>
 

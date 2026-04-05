@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 
@@ -13,15 +13,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const poppins = Poppins({
-  weight: ["400", "700", "900"],
-  variable: "--font-poppins",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "Raffles CRM",
   description: "Raffles University College Management System",
+  icons: {
+    icon: '/raffles-logo.png',
+  },
 };
 
 import { AuthProvider } from '@/context/AuthContext';
@@ -34,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}
         suppressHydrationWarning={true}
       >
         <AuthProvider>
@@ -51,7 +53,7 @@ export default function RootLayout({
             style: {
               background: '#1e293b',
               color: '#f1f5f9',
-              fontFamily: 'var(--font-poppins), sans-serif',
+              fontFamily: 'var(--font-inter), sans-serif',
               fontWeight: '700',
               fontSize: '13px',
               borderRadius: '14px',

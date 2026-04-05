@@ -15,7 +15,7 @@ export const SessionService = {
     },
 
     // Assign lead to session
-    assignLeadToSession: async (payload: { leadId: number; notes: string; preferredDate: string }) => {
+    assignLeadToSession: async (payload: { leadId: string | number; notes: string; preferredDate: string }) => {
         const response = await api.post<any>(`/api/offlineSession/assign`, payload);
         // Handle backend returning { data: { ... } }
         const data = response.data.data ? response.data.data : response.data;
@@ -23,14 +23,14 @@ export const SessionService = {
     },
 
     // List available sessions by department ID
-    getAvailableSessionsByDepartmentId: async (departmentId: number) => {
+    getAvailableSessionsByDepartmentId: async (departmentId: string | number) => {
         const response = await api.get<SessionDTO[]>(`/api/offlineSession/available/${departmentId}`);
         return response.data;
     },
 
     // List available sessions by department name
     getAvailableSessionsByDepartmentName: async (departmentName: string) => {
-        const response = await api.get<SessionDTO[]>(`/api/offlineSession/available/department/${departmentName}`);
+        const response = await api.get<SessionDTO[]>(`/api/availableSessions/department/${departmentName}`);
         return response.data;
     },
 
@@ -47,19 +47,19 @@ export const SessionService = {
     },
 
     // Get leads assigned to session with notes
-    getLeadsWithNotesForSession: async (sessionId: number) => {
+    getLeadsWithNotesForSession: async (sessionId: string | number) => {
         const response = await api.get(`/api/offlineSession/${sessionId}/leads-with-notes`);
         return response.data;
     },
 
     // Assign mentor to session
-    assignMentorToSession: async (sessionId: number, mentorId: number) => {
+    assignMentorToSession: async (sessionId: string | number, mentorId: string | number) => {
         const response = await api.post(`/api/offlineSession/${sessionId}/assign-mentor/${mentorId}`);
         return response.data;
     },
 
     // Cancel session
-    cancelSession: async (sessionId: number) => {
+    cancelSession: async (sessionId: string | number) => {
         console.log(`[SessionService] POST request to /api/offlineSession/${sessionId}/cancel`);
         const response = await api.post(`/api/offlineSession/${sessionId}/cancel`);
         return response.data;
@@ -89,19 +89,19 @@ export const SessionService = {
     },
 
     // Get available mentors for session (Trigger search)
-    getAvailableMentorsForSession: async (sessionId: number) => {
+    getAvailableMentorsForSession: async (sessionId: string | number) => {
         const response = await api.put(`/api/offlineSession/${sessionId}/available-mentors`);
         return response.data;
     },
 
     // 113. Get session by ID
-    getSessionById: async (sessionId: number) => {
+    getSessionById: async (sessionId: string | number) => {
         const response = await api.get<SessionDTO>(`/api/offlineSession/${sessionId}`);
         return response.data;
     },
 
     // 114. List leads in session
-    getSessionLeads: async (sessionId: number) => {
+    getSessionLeads: async (sessionId: string | number) => {
         const response = await api.get(`/api/offlineSession/${sessionId}/leads`);
         return response.data;
     },
@@ -119,13 +119,13 @@ export const SessionService = {
     },
 
     // 117. Session leads with notes (Mentor)
-    getMentorSessionLeadsWithNotes: async (sessionId: number) => {
+    getMentorSessionLeadsWithNotes: async (sessionId: string | number) => {
         const response = await api.get(`/api/offlineSession/mentor/session-leads/${sessionId}`);
         return response.data;
     },
 
     // 118. List session assignments for a lead
-    getSessionAssignmentsForLead: async (leadId: number) => {
+    getSessionAssignmentsForLead: async (leadId: string | number) => {
         const response = await api.get(`/api/offlineSession/assignment/lead/${leadId}`);
         return response.data;
     },

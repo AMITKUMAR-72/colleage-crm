@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { LeadResponseDTO, CounselorDTO } from '@/types/api';
+import { LeadResponseDTO, CounselorDTO, NoteDTO } from '@/types/api';
 import { LeadService } from '@/services/leadService';
 import { CounselorService } from '@/services/counselorService';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -28,12 +28,17 @@ const STATUS_COLORS: Record<string, string> = {
 export default function FakeLeadsPage() {
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
-    const [selectedCounselorId, setSelectedCounselorId] = useState<number | 'all'>('all');
+    const [selectedCounselorId, setSelectedCounselorId] = useState<string | 'all'>('all');
     const [loading, setLoading] = useState(true);
     const [counselorsLoading, setCounselorsLoading] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
     const [page, setPage] = useState(0);
     const [pageSize] = useState(10);
+ 
+    // Lead details & notes state
+    const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
+    const [notes, setNotes] = useState<NoteDTO[]>([]);
+    const [notesLoading, setNotesLoading] = useState(false);
 
     useEffect(() => {
         document.title = "Fake Leads Management | Admin Portal";
@@ -83,6 +88,22 @@ export default function FakeLeadsPage() {
     useEffect(() => {
         fetchLeads();
     }, [fetchLeads]);
+ 
+    const handleViewLead = async (lead: LeadResponseDTO) => {
+        setSelectedLead(lead);
+        setNotes([]);
+        setNotesLoading(true);
+        try {
+            const data: any = await LeadService.getNotes(lead.id);
+            const list: NoteDTO[] = Array.isArray(data) ? data : data?.data ?? [];
+            setNotes(list);
+        } catch (error) {
+            console.error('Failed to fetch notes:', error);
+            toast.error('Could not load notes');
+        } finally {
+            setNotesLoading(false);
+        }
+    };
 
     const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -98,7 +119,6 @@ export default function FakeLeadsPage() {
                             className="space-y-1"
                         >
                             <div className="flex items-center gap-2">
-
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                     Fake Lead Management
                                 </span>
@@ -120,7 +140,6 @@ export default function FakeLeadsPage() {
                                 className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-slate-700 text-[10px] font-black uppercase tracking-widest border border-slate-200 shadow-sm hover:border-rose-200 transition-all disabled:opacity-50"
                             >
                                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-
                             </motion.button>
                         </div>
                     </div>
@@ -143,7 +162,7 @@ export default function FakeLeadsPage() {
                                     value={selectedCounselorId}
                                     onChange={(e) => {
                                         const val = e.target.value;
-                                        setSelectedCounselorId(val === 'all' ? 'all' : Number(val));
+                                        setSelectedCounselorId(val);
                                         setPage(0);
                                     }}
                                     disabled={counselorsLoading}
@@ -232,7 +251,8 @@ export default function FakeLeadsPage() {
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ delay: idx * 0.05 }}
-                                                className="group hover:bg-slate-50/50 transition-all cursor-default"
+                                                onClick={() => handleViewLead(lead)}
+                                                className="group hover:bg-slate-50/50 transition-all cursor-pointer"
                                             >
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-4">
@@ -271,7 +291,13 @@ export default function FakeLeadsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6 text-right">
-                                                    <button className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-slate-900/10 hover:shadow-rose-600/20 active:scale-95">
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleViewLead(lead);
+                                                        }}
+                                                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-slate-900/10 hover:shadow-rose-600/20 active:scale-95"
+                                                    >
                                                         Inspect
                                                     </button>
                                                 </td>
@@ -335,6 +361,114 @@ export default function FakeLeadsPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Lead Details Slide-over */}
+                <AnimatePresence>
+                    {selectedLead && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setSelectedLead(null)}
+                                className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]"
+                            />
+                            <motion.div
+                                initial={{ x: '100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '100%' }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                className="fixed inset-y-0 right-0 w-full sm:max-w-md bg-white shadow-2xl z-[101] flex flex-col"
+                            >
+                                {/* Slide-over Header */}
+                                <div className="px-8 py-10 border-b border-slate-50 bg-slate-50/50">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Lead Profile</span>
+                                        <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-white rounded-xl transition-colors text-slate-400">✕</button>
+                                    </div>
+                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">{selectedLead.name}</h2>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ref: #{selectedLead.id} • {selectedLead.status}</p>
+                                </div>
+
+                                {/* Slide-over Body */}
+                                <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                                    {/* Contact Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Phone className="w-3 h-3 text-rose-500" />
+                                            Contact Registry
+                                        </h3>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
+                                                <p className="text-xs font-bold text-slate-700">{selectedLead.email || 'None Registered'}</p>
+                                            </div>
+                                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Mobile Line</p>
+                                                <p className="text-xs font-bold text-slate-700">{selectedLead.phone || 'None Registered'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Academic Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Calendar className="w-3 h-3 text-rose-500" />
+                                            Application Details
+                                        </h3>
+                                        <div className="bg-slate-900 p-6 rounded-3xl text-white shadow-xl shadow-slate-900/10">
+                                            <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-2">Interested Course</p>
+                                            <p className="text-sm font-bold">{typeof selectedLead.course === 'object' ? selectedLead.course.course : selectedLead.course || 'Unspecified'}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Notes Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Search className="w-3 h-3 text-rose-500" />
+                                            Interaction History (Notes)
+                                        </h3>
+                                        
+                                        <div className="space-y-4">
+                                            {notesLoading ? (
+                                                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                                                    <div className="w-6 h-6 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Decrypting logs...</p>
+                                                </div>
+                                            ) : notes.length === 0 ? (
+                                                <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[32px]">
+                                                    <p className="text-xs font-bold text-slate-300 italic">No historical notes recorded</p>
+                                                </div>
+                                            ) : (
+                                                notes.map((note, i) => (
+                                                    <div key={i} className="bg-slate-50 p-5 rounded-[24px] border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all group">
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full">LOG #{i + 1}</span>
+                                                            <span className="text-[9px] font-bold text-slate-300">
+                                                                {note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'Historical'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-600 font-bold leading-relaxed">{note.note}</p>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Slide-over Footer */}
+                                <div className="p-8 bg-slate-50 border-t border-slate-100">
+                                    <button
+                                        onClick={() => setSelectedLead(null)}
+                                        className="w-full py-4 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all"
+                                    >
+                                        Close Inspector
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
             </div>
         </DashboardLayout>
     );

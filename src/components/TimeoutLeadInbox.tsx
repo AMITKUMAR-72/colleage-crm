@@ -39,11 +39,11 @@ export default function TimeoutLeadInbox() {
     const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
     const [isBulkReassignModalOpen, setIsBulkReassignModalOpen] = useState(false);
 
-    const handleBulkReassign = async (counselorId: number) => {
+    const handleBulkReassign = async (counselorId: string, type: string) => {
         if (selectedLeads.length === 0) return;
         setIsReassignLoading(true);
         try {
-            await TimeOutService.bulkReassignTimeoutLeads(counselorId, selectedLeads);
+            await TimeOutService.bulkReassignTimeoutLeads(counselorId, selectedLeads, type);
             const counselor = counselors.find(c => c.counselorId === counselorId);
             toast.success(`${selectedLeads.length} leads assigned to counselor: ${counselor?.name || counselorId}`);
             setSelectedLeads([]);
@@ -70,11 +70,11 @@ export default function TimeoutLeadInbox() {
         }
     };
 
-    const handleReassign = async (counselorId: number) => {
+    const handleReassign = async (counselorId: string, type: string) => {
         if (!reassigning) return;
         setIsReassignLoading(true);
         try {
-            await TimeOutService.reassignLead(counselorId, reassigning.id, reassigning.email);
+            await TimeOutService.reassignLead(counselorId, reassigning.id, reassigning.email, type);
             const counselor = counselors.find(c => c.counselorId === counselorId);
             toast.success(`Lead assigned to counselor ${counselor?.name || counselorId}`);
             setReassigning(null);
@@ -196,13 +196,12 @@ export default function TimeoutLeadInbox() {
                                             onChange={toggleAllLeads}
                                         />
                                     </th>
-                                    <th className="px-4 sm:px-6 py-4">Name</th>
-                                    <th className="hidden sm:table-cell px-6 py-4">Contact</th>
-                                    <th className="hidden sm:table-cell px-6 py-4">Email</th>
-                                    <th className="hidden md:table-cell px-6 py-4">Course</th>
-                                    <th className="hidden lg:table-cell px-6 py-4">Counselor</th>
-                                    <th className="px-4 sm:px-6 py-4">Status & Time</th>
-                                    <th className="px-4 sm:px-6 py-4 text-center">Action</th>
+                                    <th className="px-6 py-4">Name</th>
+                                    <th className="px-6 py-4">Email</th>
+                                    <th className="px-6 py-4">Campaign</th>
+                                    <th className="px-6 py-4 text-center">Score</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100/50">
@@ -218,52 +217,33 @@ export default function TimeoutLeadInbox() {
                                                 />
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-bold text-slate-800 text-sm">{lead.name || 'not availabe'}</div>
-                                            <div className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">{lead.id}</div>
+                                        <td className="px-6 py-4 font-bold text-slate-800 text-sm">
+                                            {lead.name || 'not availabe'}
                                         </td>
-                                        <td className="hidden sm:table-cell px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-medium text-slate-700 text-sm">{lead.email || 'not availabe'}</span>
-                                                <span className="text-xs text-slate-500">{lead.phone || 'not availabe'}</span>
-                                            </div>
+                                        <td className="px-6 py-4 text-slate-600 text-sm">
+                                            {lead.email || 'not availabe'}
                                         </td>
-                                        <td className="hidden sm:table-cell px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-
-                                                <span className="text-xs text-slate-500">{lead.phone || 'not availabe'}</span>
-                                            </div>
+                                        <td className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">
+                                            {(lead as any).campaign || '—'}
                                         </td>
-                                        <td className="hidden md:table-cell px-6 py-4">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-xs">
-                                                {typeof lead.course === 'object' ? lead.course.course : (lead.course || 'not availabe')}
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${
+                                                (lead as any).score === 'HOT' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                                (lead as any).score === 'WARM' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                                'bg-blue-50 text-blue-600 border-blue-100'
+                                            }`}>
+                                                {(lead as any).score || 'COLD'}
                                             </span>
                                         </td>
-                                        <td className="hidden lg:table-cell px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-bold text-slate-800 text-sm">
-                                                    {(lead as any).counselor?.name || (lead as any).counselorName || (lead as any).assignedTo?.name || (lead as any).counselorEmail || 'Unassigned'}
-                                                </span>
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                                                    {(lead as any).counselor?.counselorTypes?.join(', ') || (lead as any).counselorTypes?.join(', ') || '-'}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 sm:px-6 py-4">
-                                            <div className="flex flex-col gap-1.5">
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border w-fit ${STATUS_COLORS[lead.status] || STATUS_COLORS['NEW']}`}>
-                                                    {lead.status.replace(/_/g, ' ')}
-                                                </span>
-                                                <div className="text-[10px]">
-                                                    <span className="text-slate-800 font-semibold">{lead.timedOutAt ? new Date(lead.timedOutAt).toLocaleDateString() : '—'}</span>
-                                                    <span className="text-slate-500 ml-1">{lead.timedOutAt ? new Date(lead.timedOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                                                </div>
-                                            </div>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${STATUS_COLORS[lead.status] || STATUS_COLORS['NEW']}`}>
+                                                {lead.status.replace(/_/g, ' ')}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <button
                                                 onClick={() => setReassigning(lead)}
-                                                className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all"
+                                                className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm"
                                             >
                                                 REASSIGN
                                             </button>
@@ -296,46 +276,88 @@ export default function TimeoutLeadInbox() {
                         </div>
                         <div className="p-4 max-h-[400px] overflow-y-auto space-y-2">
                             {counselors.length > 0 ? (
-                                counselors.filter(c => {
-                                    if (c.status !== 'AVAILABLE') return false;
+                                counselors.map(c => {
+                                    const isAvailable = c.status === 'AVAILABLE';
+                                    let isRestricted = false;
 
-                                    // Check if lead course is null for single reassign
                                     if (reassigning) {
                                         const isCourseNull = !reassigning.course || (typeof reassigning.course === 'object' && !(reassigning.course as any).course);
-                                        if (isCourseNull && c.counselorTypes?.includes('INTERNAL')) return false;
+                                        // If course is null, only TELECALLER type counselors are allowed
+                                        if (isCourseNull && !c.counselorTypes?.includes('TELECALLER')) {
+                                            isRestricted = true;
+                                        }
                                     }
 
-                                    // Check if any selected lead has null course for bulk reassign
                                     if (isBulkReassignModalOpen) {
                                         const hasNullCourse = leads.some(l =>
                                             selectedLeads.includes(l.id) &&
                                             (!l.course || (typeof l.course === 'object' && !(l.course as any).course))
                                         );
-                                        if (hasNullCourse && c.counselorTypes?.includes('INTERNAL')) return false;
+                                        if (hasNullCourse && !c.counselorTypes?.includes('TELECALLER')) {
+                                            isRestricted = true;
+                                        }
                                     }
 
-                                    return true;
-                                }).map(c => (
-                                    <button
-                                        key={c.counselorId}
-                                        onClick={() => isBulkReassignModalOpen ? handleBulkReassign(Number(c.counselorId)) : handleReassign(Number(c.counselorId))}
-                                        disabled={isReassignLoading}
-                                        className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded bg-slate-100 text-slate-600 flex items-center justify-center font-black text-xs">
-                                                {(c.name || 'C').charAt(0).toUpperCase()}
+                                    const isDisabled = !isAvailable || isRestricted;
+
+                                    return (
+                                        <div
+                                            key={c.counselorId}
+                                            className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                                                isDisabled 
+                                                    ? 'bg-slate-50 border-slate-100' 
+                                                    : 'border-slate-100 hover:border-slate-200 bg-white'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded flex items-center justify-center font-black text-xs ${
+                                                    isDisabled ? 'bg-slate-200 text-slate-400' : 'bg-slate-100 text-slate-600'
+                                                }`}>
+                                                    {(c.name || 'C').charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="flex flex-col items-start leading-tight">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-sm font-bold ${isDisabled ? 'text-slate-400' : 'text-slate-700'}`}>{c.name}</span>
+                                                        <span className="text-[8px] font-black text-slate-400 bg-slate-50 px-1 rounded uppercase tracking-widest">ID: {c.counselorId}</span>
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase">{c.counselorTypes?.join(', ')} • {c.departments?.join(', ')}</span>
+                                                    {isRestricted && (
+                                                        <span className="text-[8px] text-rose-500 font-bold uppercase tracking-tighter mt-0.5">Telecaller assignment only (No Course)</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col items-start leading-tight">
-                                                <span className="text-sm font-bold text-slate-700">{c.name}</span>
-                                                <span className="text-[9px] font-black text-slate-400 uppercase">{c.counselorTypes?.join(', ')} • {c.departments?.join(', ')}</span>
+                                            <div className="flex flex-wrap gap-1.5 justify-end">
+                                                {c.counselorTypes?.map(type => {
+                                                    const isTelecaller = type === 'TELECALLER';
+                                                    const isTypeDisabled = isDisabled || !isTelecaller;
+                                                    
+                                                    return (
+                                                        <button
+                                                            key={type}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (isTypeDisabled) return;
+                                                                if (isBulkReassignModalOpen) {
+                                                                    handleBulkReassign(String(c.counselorId), type);
+                                                                } else {
+                                                                    handleReassign(String(c.counselorId), type);
+                                                                }
+                                                            }}
+                                                            disabled={isTypeDisabled || isReassignLoading}
+                                                            className={`px-2 py-1 rounded text-[9px] font-black border uppercase tracking-widest transition-all ${
+                                                                isTypeDisabled 
+                                                                    ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900'
+                                                            }`}
+                                                        >
+                                                            {type}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                        <div className="p-1 px-2 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest">
-                                            {c.status}
-                                        </div>
-                                    </button>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <p className="text-center py-8 text-xs font-bold text-slate-400 uppercase tracking-widest">No available counselors</p>
                             )}

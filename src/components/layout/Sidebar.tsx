@@ -80,7 +80,7 @@ export default function Sidebar() {
                         className="w-12 h-12 shrink-0 object-contain bg-white rounded-xl p-1.5"
                     />
                 </div>
-                <div className="font-[var(--font-poppins)]">
+                <div className="font-sans">
                     <span className="block font-black text-white leading-none text-xl tracking-tight">RAFFLES</span>
                     <span className="text-[10px] text-[#dbb212] font-black tracking-[0.4em] uppercase leading-none mt-1.5 block opacity-90">Management</span>
                 </div>

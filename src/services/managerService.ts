@@ -11,7 +11,7 @@ export const ManagerService = {
         return data;
     },
 
-    getAssignmentsByCounselor: async (counselorId: number) => {
+    getAssignmentsByCounselor: async (counselorId: string | number) => {
         const response = await api.get<AssignedLeadDTO[]>(`/api/assignedLeads/counselor/${counselorId}`);
         return response.data;
     },
@@ -21,13 +21,15 @@ export const ManagerService = {
         return response.data;
     },
 
-    getAssignmentsByLead: async (leadId: number) => {
+    getAssignmentsByLead: async (leadId: string | number) => {
         const response = await api.get<AssignedLeadDTO[]>(`/api/assignedLeads/lead/${leadId}`);
         return response.data;
     },
 
     getAssignmentsByDateRange: async (start: string, end: string) => {
-        const response = await api.get<AssignedLeadDTO[]>(`/api/assignedLeads/date-range/start/${start}/end/${end}`);
+        const startISO = start.includes('T') ? start : `${start}T00:00:00`;
+        const endISO = end.includes('T') ? end : `${end}T23:59:59`;
+        const response = await api.get<AssignedLeadDTO[]>(`/api/assignedLeads/date-range/start/${startISO}/end/${endISO}`);
         return response.data;
     },
 
@@ -43,12 +45,12 @@ export const ManagerService = {
         return response.data;
     },
 
-    getContactedByAssignedTo: async (counselorId: number) => {
+    getContactedByAssignedTo: async (counselorId: string | number) => {
         const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/assigned-to/${counselorId}`);
         return response.data;
     },
 
-    getContactedByAssignedBy: async (userId: number) => {
+    getContactedByAssignedBy: async (userId: string | number) => {
         const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/assigned-by/${userId}`);
         return response.data;
     },
@@ -58,13 +60,15 @@ export const ManagerService = {
         return response.data;
     },
 
-    getContactedByLead: async (leadId: number) => {
+    getContactedByLead: async (leadId: string | number) => {
         const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/lead/${leadId}`);
         return response.data;
     },
 
     getContactedByDateRange: async (start: string, end: string) => {
-        const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/date-range/start/${start}/end/${end}`);
+        const startISO = start.includes('T') ? start : `${start}T00:00:00`;
+        const endISO = end.includes('T') ? end : `${end}T23:59:59`;
+        const response = await api.get<ContactedLeadDTO[]>(`/api/contactedLeads/date-range/start/${startISO}/end/${endISO}`);
         return response.data;
     },
 
@@ -73,25 +77,25 @@ export const ManagerService = {
         return response.data;
     },
 
-    manualAssignContacted: async (leadId: number, counselorId: number, type: string) => {
+    manualAssignContacted: async (leadId: string | number, counselorId: string | number, type: string) => {
         const response = await api.post(`/api/contactedLeads/manual-assign/lead/${leadId}/counselor/${counselorId}/type/${type}`);
         return response.data;
     },
 
-    bulkAssignContacted: async (counselorId: number, type: string, leadIds: number[]) => {
+    bulkAssignContacted: async (counselorId: string | number, type: string, leadIds: (string | number)[]) => {
         const response = await api.post(`/api/contactedLeads/bulk-assign/${counselorId}/type/${type}`, { leadIds });
         return response.data;
     },
 
-    getLeadNotes: async (leadId: number) => {
+    getLeadNotes: async (leadId: string | number) => {
         const response = await api.get<any[]>(`/api/note/${leadId}/notes`);
         return response.data;
     },
 
     // ─── Counselor Performance ───
-    getCounselorRecentLeads: async (counselorId: number, page: number, size: number) => {
+    getCounselorRecentLeads: async (counselorId: string | number, page: number, size: number) => {
         const response = await api.get<any>(`/api/leads/counselor/${counselorId}/recent/page/${page}/size/${size}`);
         console.log(`[ManagerService] getCounselorRecentLeads for ${counselorId}:`, response.data);
-        return response.data; // Expected { count: number, lead: Lead[] }
+        return response.data;
     }
 };

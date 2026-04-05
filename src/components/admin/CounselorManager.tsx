@@ -371,7 +371,7 @@ export default function CounselorManager() {
                 <div className="bg-white rounded-[1.2rem] w-full max-w-4xl overflow-hidden shadow-2xl border border-white/20 p-8 space-y-6">
                     <div className="text-center relative">
                         <img src="/raffles-logo.png" alt="Raffles" className="h-20 mx-auto mb-4" />
-                        <h3 className="text-2xl font-semibold">{editingCounselor ? 'Modify Counselor' : 'Create Counselor'}</h3>
+                        <h3 className="text-2xl font-semibold">{editingCounselor ? 'Edit Counselor' : 'Add Counselor'}</h3>
                         <button onClick={() => setShowModal(false)} className="absolute top-0 right-0 text-xl font-bold">✕</button>
                     </div>
 
@@ -510,8 +510,8 @@ export default function CounselorManager() {
                         </div>
 
                         <div className="flex gap-4 pt-4">
-                            <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl border border-gray-100 font-bold">Dismiss</button>
-                            <button type="submit" className="flex-1 py-4 rounded-2xl bg-[#4d0101] text-white font-black">Confirm</button>
+                            <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all">Cancel</button>
+                            <button type="submit" className="flex-1 py-4 rounded-2xl bg-[#4d0101] text-white font-black hover:bg-[#600202] transition-colors">Save Counselor</button>
                         </div>
                     </form>
                 </div>

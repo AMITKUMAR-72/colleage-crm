@@ -257,8 +257,8 @@ export default function CourseManager() {
                 <div className="bg-white rounded-[1.2rem] w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-white/20 text-black">
                     <div className="from-indigo-600 to-purple-600 p-8 text-white relative text-center">
                         <img src="/raffles-logo.png" alt="Raffles" className="h-24 w-auto object-contain mx-auto mb-4" />
-                        <h3 className="text-2xl text-black font-semibold tracking-tight font-poppins">
-                            Create Academic Course
+                        <h3 className="text-2xl text-black font-semibold tracking-tight font-sans">
+                            Add New Course
                         </h3>
                         <p className="opacity-80 text-black font-medium text-sm mt-1 max-w-md mx-auto">
                             Add a new subject
@@ -321,7 +321,7 @@ export default function CourseManager() {
                                 type="submit"
                                 className="flex-1 py-4 rounded-2xl bg-[#4d0101] from-indigo-600 to-purple-600 text-white font-black shadow-xl shadow-indigo-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                Confirm Registration
+                                Create Course
                             </button>
                         </div>
                     </form>

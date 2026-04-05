@@ -54,7 +54,6 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
             if (filterType === 'PRIORITY') payload.score = filterValue;
             if (filterType === 'COURSE') payload.course = filterValue;
             if (filterType === 'CAMPAIGN') payload.campaign = filterValue;
-            if (filterType === 'ORIGIN') payload.origin = filterValue;
             if (filterType === 'NAME') payload.name = filterValue;
             if (filterType === 'ID') payload.id = filterValue;
             if (filterType === 'PHONE') payload.phone = filterValue;
@@ -66,7 +65,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
         setFilterValue('');
         setStartDate('');
         setEndDate('');
-        onFilterChange({ email: '', status: '', course: '', campaign: '', score: '' });
+        onFilterChange({ email: '', status: '', course: '', campaign: '', score: '', startDate: '', endDate: '' });
     };
 
     return (
@@ -92,7 +91,6 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         <option value="PRIORITY">Score</option>
                         <option value="COURSE">Course</option>
                         <option value="CAMPAIGN">Campaign</option>
-                        <option value="ORIGIN">Origin</option>
                         <option value="DATE_RANGE">Date Range</option>
                     </select>
                 </div>
@@ -116,7 +114,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         </div>
                     ) : ( 
                         <div className="relative group">
-                            {['STATUS', 'PRIORITY', 'COURSE', 'ORIGIN', 'CAMPAIGN'].includes(filterType) ? (
+                            {['STATUS', 'PRIORITY', 'COURSE', 'CAMPAIGN'].includes(filterType) ? (
                                 <select
                                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all"
                                     value={filterValue}
@@ -130,19 +128,6 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                                             {c.department ? `${c.department} - ${c.course}` : c.course}
                                         </option>
                                     ))}
-                                    {filterType === 'ORIGIN' && (
-                                        <>
-                                            <option value="Website">Website</option>
-                                            <option value="WhatsApp">WhatsApp</option>
-                                            <option value="LinkedIn">LinkedIn</option>
-                                            <option value="Facebook">Facebook</option>
-                                            <option value="Instagram">Instagram</option>
-                                            <option value="Google Ads">Google Ads</option>
-                                            <option value="Walk In">Walk In</option>
-                                            <option value="Snapchat">Snapchat</option>
-                                            <option value="Referral">Referral</option>
-                                        </>
-                                    )}
                                     {filterType === 'CAMPAIGN' && campaigns.map(cp => <option key={cp.id} value={cp.name}>{cp.name}</option>)}
                                 </select>
                             ) : (

@@ -87,7 +87,7 @@ export const LeadService = {
         return response.data;
     },
 
-    getLeadById: async (id: number) => {
+    getLeadById: async (id: string | number) => {
         const response = await api.get<LeadResponseDTO>(`/api/leads/id/${id}`);
         return response.data;
     },
@@ -177,15 +177,14 @@ export const LeadService = {
             const extractArray = (res: any) => toPageResponse(res.data).content;
 
             if (params.startDate && params.endDate) {
-                let start = params.startDate;
-                let end = params.endDate;
-                if (start.length === 16) start += ':00';
-                if (end.length === 16) end += ':00';
-                return extractArray(await api.get(`/api/leads/date-range/start/${start}/end/${end}`));
+                const start = `${params.startDate}T00:00:00`;
+                const end = `${params.endDate}T23:59:59`;
+                const response = await api.get(`/api/leads/date-range/start/${start}/end/${end}`);
+                return toPageResponse(response.data).content;
             }
 
             if (params.id) {
-                const lead = await LeadService.getLeadById(Number(params.id));
+                const lead = await LeadService.getLeadById(params.id);
                 return lead ? [lead] : [];
             }
 
@@ -295,14 +294,14 @@ export const LeadService = {
         return data?.lead || data?.content || [];
     },
 
-    /** POST /api/leads/bulk-assign/{counselorId} */
-    bulkAssignLeads: async (counselorId: number, leadIds: number[]) => {
-        const response = await api.post(`/api/leads/bulk-assign/${counselorId}`, { leadIds });
+    /** POST /api/leads/bulk-assign/{counselorId}/{counselorType} */
+    bulkAssignLeads: async (counselorId: number | string, type: string, leadIds: number[]) => {
+        const response = await api.post(`/api/leads/bulk-assign/${counselorId}/${type}`, { leadIds });
         return response.data;
     },
 
     /** POST /api/assignedLeads/bulk-reassign/{counselorId}/{counselorType} */
-    bulkReassignLeads: async (counselorId: number, counselorType: string, leadIds: number[]) => {
+    bulkReassignLeads: async (counselorId: string | number, counselorType: string, leadIds: (string | number)[]) => {
         const response = await api.post(`/api/assignedLeads/bulk-reassign/${counselorId}/${counselorType}`, { leadIds });
         return response.data;
     },
@@ -325,8 +324,7 @@ export const LeadService = {
         return response.data;
     },
 
-    // 69. Update lead by ID (Partial — all fields supported)
-    async updateLeadById(id: number, data: Partial<LeadRequestDTO>) {
+    async updateLeadById(id: string | number, data: Partial<LeadRequestDTO>) {
         const response = await api.put<LeadResponseDTO>(`/api/leads/update/${id}`, data);
         return response.data;
     },
@@ -338,13 +336,8 @@ export const LeadService = {
     },
 
     // 189. Get fake leads by counselor ID (Testing)
-    getFakeLeadsByCounselor: async (counselorId: number, page: number = 0, size: number = 10) => {
+    getFakeLeadsByCounselor: async (counselorId: string | number, page: number = 0, size: number = 10) => {
         const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
-        return response.data;
-    },
-
-    getUnverifiedLeads: async () => {
-        const response = await api.get('/api/leads/unverified');
         return response.data;
     },
 };

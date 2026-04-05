@@ -17,7 +17,9 @@ export default function ManagerManager() {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        password: ''
+        phone: '',
+        password: '',
+        role: 'MANAGER'
     });
 
     const [isEditing, setIsEditing] = useState(false);
@@ -83,34 +85,23 @@ export default function ManagerManager() {
                     await UserService.updatePassword(editingUserId, formData.password);
                 }
                 toast.success('Manager updated successfully');
+                await loadManagers();
             } else {
-                // Attempt to register account with explicit MANAGER role parameter 
-                try {
-                    await UserService.createUser({
-                        name: formData.name,
-                        email: formData.email,
-                        password: formData.password,
-                        role: 'MANAGER' as any
-                    });
-                } catch (creationError: any) {
-                    const errorMsg = creationError?.response?.data?.message || '';
-                    if (!errorMsg.toLowerCase().includes('already exists')) {
-                        throw creationError; // Re-throw if it's not a duplicate email issue
-                    }
-                    // If the user already exists, suppress the creation error and promote them!
-                    console.warn(`[ManagerManager] Contact already exists natively! Force elevating ${formData.email} directly to MANAGER...`);
-                }
+                // Use signup endpoint as requested with the extended payload
+                await AuthService.signup({
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    password: formData.password,
+                    role: formData.role
+                });
                 
-                // Secondary execution perfectly cascades into role promotion state
-                await UserService.updateUserRole(formData.email, 'MANAGER');
-                
-                toast.success('Manager Node Registered and Synchronized Successfully');
+                toast.success(`${formData.role} Added Successfully`);
             }
             // Reset form
-            setFormData({ name: '', email: '', password: '' });
+            setFormData({ name: '', email: '', phone: '', password: '', role: 'MANAGER' });
             setIsEditing(false);
             setEditingUserId(null);
-            await loadManagers();
         } catch (error: any) {
             toast.error(error?.response?.data?.message || (isEditing ? 'Failed to update manager' : 'Failed to create manager'));
         }
@@ -120,20 +111,22 @@ export default function ManagerManager() {
         setFormData({
             name: manager.name,
             email: manager.email,
-            password: '' // Keep password empty for security, only update if typed
+            phone: (manager as any).phone || '',
+            password: '', // Keep password empty for security, only update if typed
+            role: typeof manager.role === 'string' ? manager.role : (manager.role as any).role || 'MANAGER'
         });
-        setEditingUserId(manager.id);
+        setEditingUserId(manager.id as number);
         setIsEditing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 font-poppins text-black">
+        <div className="space-y-6 animate-in fade-in duration-500 font-sans text-black">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
                 <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">{isEditing ? 'Update Manager' : 'Create System Manager'}</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{isEditing ? 'Edit Profile' : 'Add Manager'}</h3>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-widest pl-1">Manager Name</label>
                                 <input required minLength={3} maxLength={20} type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors font-semibold" placeholder="e.g. Jane Doe" />
@@ -142,16 +135,28 @@ export default function ManagerManager() {
                                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-widest pl-1">Email Address</label>
                                 <input required type="email" maxLength={50} name="email" value={formData.email} onChange={handleChange} disabled={isEditing} className={`w-full p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors font-semibold ${isEditing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-50'}`} placeholder="admin@raffles.com" />
                             </div>
+                            {!isEditing && (
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-widest pl-1">Phone Number</label>
+                                    <input required type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors font-semibold" placeholder="4578994587" />
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-widest pl-1">
                                     {isEditing ? 'New Password (Optional)' : 'Secure Password'}
                                 </label>
                                 <input required={!isEditing} minLength={6} maxLength={40} type="password" name="password" value={formData.password} onChange={handleChange} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] transition-colors" placeholder="••••••••" />
                             </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-widest pl-1">Assigned Role</label>
+                                <div className="w-full p-3 bg-gray-100 border border-gray-200 rounded-xl text-xs font-black text-purple-700 tracking-widest flex items-center gap-2">
+                                    <Building2 className="w-4 h-4" /> MANAGER
+                                </div>
+                            </div>
                         </div>
                         <div className="flex gap-3 pt-2">
                             <button type="submit" className="bg-[#4d0101] text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-[#600202] active:scale-95 transition-all text-sm tracking-wide">
-                                {isEditing ? 'Update Profile' : 'Register Manager'}
+                                {isEditing ? 'Save Changes' : 'Add Manager'}
                             </button>
                             {isEditing && (
                                 <button type="button" onClick={() => { setIsEditing(false); setEditingUserId(null); setFormData({ name: '', email: '', password: '' }); }} className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-200 active:scale-95 transition-all text-sm">
@@ -195,7 +200,7 @@ export default function ManagerManager() {
                             <table className="w-full text-sm text-left whitespace-nowrap">
                                 <thead className="text-[10px] text-gray-400 bg-gray-50/50 uppercase font-black tracking-widest">
                                     <tr>
-                                        <th className="px-6 py-5">Identity details</th>
+                                        <th className="px-6 py-5">Manager Details</th>
                                         <th className="hidden sm:table-cell px-6 py-5">Account Email</th>
                                         <th className="hidden md:table-cell px-6 py-5">Role Level</th>
                                         <th className="px-6 py-5 text-center">Status</th>
@@ -244,7 +249,7 @@ export default function ManagerManager() {
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
                                                     <button onClick={() => handleEditClick(manager)} className="text-indigo-600 font-bold hover:scale-105 active:scale-95 text-[10px] uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 transition-all shadow-sm">
-                                                        Configure
+                                                        Edit
                                                     </button>
                                                 </td>
                                             </tr>
@@ -260,7 +265,7 @@ export default function ManagerManager() {
                     <div className="w-full md:w-1/3 bg-slate-50 border border-slate-100 rounded-2xl p-6 h-fit animate-in slide-in-from-right-8 duration-300">
                         <div className="flex justify-between items-start mb-6 border-b border-gray-200 pb-4">
                             <div>
-                                <h3 className="font-black text-lg text-gray-900 tracking-tight">Manager Node</h3>
+                                <h3 className="font-black text-lg text-gray-900 tracking-tight">Manager Profile</h3>
                                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Profile View</p>
                             </div>
                             <button onClick={() => setSelectedManager(null)} className="w-8 h-8 rounded-full bg-gray-200/50 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">✕</button>
@@ -282,7 +287,7 @@ export default function ManagerManager() {
                             </div>
                         </div>
                         <button onClick={() => { handleEditClick(selectedManager); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="mt-8 w-full bg-white text-gray-900 font-bold py-3.5 rounded-xl border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow transition-all text-xs uppercase tracking-widest">
-                            Edit Node Identity
+                            Edit Profile
                         </button>
                     </div>
                 )}

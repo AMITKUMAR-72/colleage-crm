@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LeadResponseDTO, CounselorDTO, NoteDTO } from '@/types/api';
+import { LeadResponseDTO, CounselorDTO, NoteDTO, LeadFilters } from '@/types/api';
 import { CounselorService } from '@/services/counselorService';
 import { LeadService } from '@/services/leadService';
 import api from '@/services/api';
@@ -13,19 +13,6 @@ import CounselorProfileHeader from './CounselorProfileHeader';
 import { useAuth } from '@/context/AuthContext';
 import { UserService } from '@/services/userService';
 import toast from 'react-hot-toast';
-
-interface LeadFilters {
-    email: string;
-    status: string;
-    course: string;
-    campaign: string;
-    score: string;
-    id?: string;
-    phone?: string;
-    name?: string;
-    startDate?: string;
-    endDate?: string;
-}
 
 const PAGE_SIZE = 15;
 
@@ -83,21 +70,21 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
 
                 const isCourseNull = !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
-                
+
                 if (!isCourseNull) {
                     const leadCourseName = typeof lead.course === 'object' ? (lead.course as any).course : String(lead.course);
-                    
+
                     try {
                         const courseRes = await api.get(`/api/course/byCourse/${encodeURIComponent(leadCourseName)}`);
-                        const mappedDept = courseRes.data?.departmentName 
-                            || courseRes.data?.department?.name 
-                            || courseRes.data?.department 
+                        const mappedDept = courseRes.data?.departmentName
+                            || courseRes.data?.department?.name
+                            || courseRes.data?.department
                             || String(courseRes.data);
 
                         if (mappedDept && mappedDept !== 'undefined' && mappedDept !== '[object Object]') {
                             list = list.filter(c => {
                                 if (!c.departments || c.departments.length === 0) return false;
-                                return c.departments.some(d => 
+                                return c.departments.some(d =>
                                     d.toLowerCase() === mappedDept.toLowerCase() ||
                                     mappedDept.toLowerCase().includes(d.toLowerCase())
                                 );
@@ -138,6 +125,9 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
 
     const isCourseNull = !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
 
+    // If status is QUEUED, don't show the assign button as per request
+    if (lead.status === 'QUEUED') return null;
+
     return (
         <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
             <button
@@ -174,20 +164,25 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
                                         {c.counselorTypes && c.counselorTypes.length > 0 ? (
-                                            c.counselorTypes.map(type => (
-                                                <button
-                                                    key={type}
-                                                    onClick={e => handleAssign(e, c.counselorId, type)}
-                                                    disabled={assigning === `${c.counselorId}-${type}`}
-                                                    className={`px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
-                                                        assigning === `${c.counselorId}-${type}` 
-                                                            ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
-                                                            : 'hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
-                                                    } disabled:cursor-not-allowed`}
-                                                >
-                                                    {assigning === `${c.counselorId}-${type}` ? 'Assigning…' : type}
-                                                </button>
-                                            ))
+                                            c.counselorTypes
+                                                .map(type => {
+                                                    const isDisabled = type === 'INTERNAL' || type === 'EXTERNAL';
+                                                    return (
+                                                        <button
+                                                            key={type}
+                                                            onClick={e => !isDisabled && handleAssign(e, c.counselorId, type)}
+                                                            disabled={isDisabled || assigning === `${c.counselorId}-${type}`}
+                                                            className={`px-2 py-1 border rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${assigning === `${c.counselorId}-${type}`
+                                                                    ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                                    : isDisabled
+                                                                        ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                                                }`}
+                                                        >
+                                                            {assigning === `${c.counselorId}-${type}` ? 'Assigning…' : type}
+                                                        </button>
+                                                    );
+                                                })
                                         ) : (
                                             <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
                                         )}
@@ -405,12 +400,19 @@ export default function LeadInbox() {
                                             className="hover:bg-slate-50 transition-colors cursor-pointer"
                                         >
                                             <td className="px-5 py-3">
-                                                <div className="font-bold text-slate-800 text-sm">{lead.name || 'Unknown'}</div>
-                                                <div className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">#{lead.id}</div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-[#4d0101] text-white flex items-center justify-center font-black text-xs uppercase shadow-sm shrink-0">
+                                                        {lead.name?.charAt(0) || '?'}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="font-bold text-slate-800 text-sm truncate max-w-[140px]" title={lead.name}>{lead.name || 'Unknown'}</div>
+                                                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">#{lead.id}</div>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td className="px-5 py-3">
-                                                <div className="text-slate-700 text-xs font-medium">{lead.email || '—'}</div>
-                                                <div className="text-slate-400 text-[10px] mt-0.5">{lead.phone || '—'}</div>
+                                                <div className="text-slate-600 text-xs font-medium truncate max-w-[160px]" title={lead.email}>{lead.email || '—'}</div>
+                                                <div className="text-slate-400 text-[9px] font-bold mt-0.5">{[lead.phones] || "not avialable"}</div>
                                             </td>
                                             <td className="px-5 py-3">
                                                 <div className="text-slate-600 text-xs font-medium max-w-[120px] truncate">{getCourseDisplay(lead)}</div>
@@ -517,10 +519,17 @@ export default function LeadInbox() {
 
                         <div className="space-y-4">
                             {/* Identity */}
-                            <div className="bg-gradient-to-br from-[#4d0101]/5 to-indigo-50 p-4 rounded-xl border border-slate-100">
-                                <h3 className="font-black text-lg text-slate-900">{selectedLead.name}</h3>
-                                <p className="text-slate-500 text-sm mt-0.5">{selectedLead.email}</p>
-                                <p className="text-slate-500 text-sm">{selectedLead.phone}</p>
+                            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex items-center gap-4">
+                                <div className="w-14 h-14 bg-[#4d0101] text-white flex items-center justify-center rounded-2xl text-2xl font-black shadow-lg">
+                                    {selectedLead.name?.charAt(0) || '?'}
+                                </div>
+                                <div className="min-w-0">
+                                    <h3 className="font-black text-xl text-slate-900 truncate tracking-tight">{selectedLead.name || 'Unknown'}</h3>
+                                    <div className="text-slate-500 text-xs font-medium space-y-0.5 mt-0.5">
+                                        <p className="truncate opacity-80">{selectedLead.email}</p>
+                                        <p className="text-[#4d0101] font-bold">{selectedLead.phone}</p>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Status + Score */}

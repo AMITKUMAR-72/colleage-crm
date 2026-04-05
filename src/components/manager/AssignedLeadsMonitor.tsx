@@ -11,7 +11,7 @@ import LoadingButton from '@/components/ui/LoadingButton';
 import api from '@/services/api';
 
 // ─── Bulk Reassign Dropdown ──────────────────────────────────────────────────
-function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: number[]; assignments: AssignedLeadDTO[]; onAssigned: () => void }) {
+function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: (string | number)[]; assignments: AssignedLeadDTO[]; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -91,7 +91,7 @@ function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: num
         }
     };
 
-    const handleBulkReassign = async (e: React.MouseEvent, counselorId: number, type: string) => {
+    const handleBulkReassign = async (e: React.MouseEvent, counselorId: string | number, type: string) => {
         e.stopPropagation();
         if (leadIds.length === 0) {
             toast.error('No leads selected');
@@ -188,7 +188,7 @@ export default function AssignedLeadsMonitor() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
+    const [selectedLeadIds, setSelectedLeadIds] = useState<(string | number)[]>([]);
 
     // ─── Filter States ────────────────────────────────────────────────────────
     const [filterType, setFilterType] = useState<'ALL' | 'COUNSELOR' | 'STATUS' | 'LEAD_ID' | 'LEAD_NAME' | 'DATE_RANGE'>('ALL');
@@ -225,13 +225,13 @@ export default function AssignedLeadsMonitor() {
                 setIsPagingEnabled(false);
                 switch (filterType) {
                     case 'COUNSELOR':
-                        data = await ManagerService.getAssignmentsByCounselor(Number(filterValue));
+                        data = await ManagerService.getAssignmentsByCounselor(filterValue);
                         break;
                     case 'STATUS':
                         data = await ManagerService.getAssignmentsByStatus(filterValue);
                         break;
                     case 'LEAD_ID':
-                        data = await ManagerService.getAssignmentsByLead(Number(filterValue));
+                        data = await ManagerService.getAssignmentsByLead(filterValue);
                         break;
                     case 'LEAD_NAME':
                         data = await ManagerService.getAssignmentsByLeadName(filterValue);
@@ -270,7 +270,7 @@ export default function AssignedLeadsMonitor() {
         loadAssignments();
     };
 
-    const toggleSelection = (id: number) => {
+    const toggleSelection = (id: string | number) => {
         setSelectedLeadIds(prev =>
             prev.includes(id) ? prev.filter(lid => lid !== id) : [...prev, id]
         );
@@ -376,7 +376,7 @@ export default function AssignedLeadsMonitor() {
                         </div>
                     ) : (
                         <input
-                            type={filterType.includes('ID') ? 'number' : 'text'}
+                            type="text"
                             placeholder={filterType === 'ALL' ? "Search in results below..." : `Enter ${filterType.replace('_', ' ').toLowerCase()}...`}
                             value={searchTerm || filterValue}
                             onChange={(e) => {

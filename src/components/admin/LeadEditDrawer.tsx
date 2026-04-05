@@ -39,7 +39,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                 city: lead.city || '',
                 address: lead.address || '',
                 course: typeof lead.course === 'object' && lead.course ? (lead.course as any).course : (lead.course as string || ''),
-                intake: lead.intake || '',
+                intake: '2026',
                 status: lead.status as LeadStatus,
                 score: lead.score as LeadScore,
                 campaign: lead.campaign as any
@@ -98,15 +98,9 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
     };
 
     const handleSourceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const sourceId = e.target.value;
-        setSelectedSourceId(sourceId);
-        const source = sources.find(s => s.id.toString() === sourceId);
-        if (source) {
-            setFormData(prev => ({
-                ...prev,
-                campaign: { id: source.id, name: source.name } as any
-            }));
-        }
+        const sourceName = e.target.value;
+        setSelectedSourceId(sourceName);
+        setFormData(prev => ({ ...prev, campaign: { name: sourceName } }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -115,6 +109,8 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
 
         const payload: Partial<LeadRequestDTO> = {
             ...formData,
+            intake: '2026',
+            course: typeof formData.course === 'string' ? formData.course.toUpperCase() : (formData.course as any)?.course?.toUpperCase(),
             altPhone: formData.altPhone || undefined,
             whatsappNumber: formData.whatsappNumber || undefined,
             address: formData.address || 'Local Terminal',
@@ -124,8 +120,8 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
         };
 
         // Attached Campaign Context if available from registry
-        if (formData.campaign && formData.campaign.id > 0) {
-            payload.campaign = { id: formData.campaign.id, name: formData.campaign.name };
+        if (formData.campaign && formData.campaign.name) {
+            payload.campaign = { name: formData.campaign.name };
         }
 
         setSubmitting(true);
@@ -165,7 +161,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                             <div className="grid grid-cols-1 gap-6">
                                 {/* Name */}
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Full Identity</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Full Name</label>
                                     <div className="relative group">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
                                         <input
@@ -182,7 +178,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                 {/* Email & Phone Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Electronic Point</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Email Address</label>
                                         <div className="relative group">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
                                             <input
@@ -196,7 +192,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Primary Contact</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Phone Number</label>
                                         <div className="relative group">
                                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
                                             <input
@@ -212,7 +208,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-2 gap-6">
                                             <div>
-                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">WhatsApp Unit</label>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">WhatsApp</label>
                                                 <div className="relative group">
                                                     <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
                                                     <input
@@ -225,7 +221,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Metropolitan Node</label>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Address / City</label>
                                                 <div className="relative group">
                                                     <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
                                                     <input
@@ -242,81 +238,51 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Academic Branch</label>
+                                    <div className="md:grid-cols-2 gap-6">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Enrolled Course</label>
                                         <div className="relative group">
-                                            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                            <select
-                                                value={selectedDepartment}
-                                                onChange={(e) => {
-                                                    setSelectedDepartment(e.target.value);
-                                                    setFormData(prev => ({ ...prev, course: '' }));
-                                                }}
-                                                className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer"
-                                            >
-                                                <option value="">SELECT BRANCH</option>
-                                                {departments.map(dept => (
-                                                    <option key={dept.id} value={dept.department}>{dept.department}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Course Program</label>
-                                        <div className="relative group">
-                                            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                            <select
+                                            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
+                                            <input
+                                                type="text"
                                                 name="course"
                                                 value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
-                                                onChange={handleInputChange}
-                                                className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer"
-                                            >
-                                                <option value="">SELECT COURSE</option>
-                                                {filteredCourses.map(course => (
-                                                    <option key={course.id} value={course.course}>{course.course}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                onChange={(e) => setFormData(prev => ({ ...prev, course: e.target.value.toUpperCase() }))}
+                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-bold text-slate-800"
+                                                required
+                                                placeholder="e.g. B.TECH"
+                                            />
                                         </div>
                                     </div>
-                                </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Lead Source</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Source</label>
                                         <div className="relative group">
                                             <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <select
+                                                required
                                                 value={selectedSourceId}
                                                 onChange={handleSourceChange}
                                                 className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer"
                                             >
-                                                <option value="">SELECT SOURCE</option>
+                                                <option value="">SELECT SOURCE ({sources.length})</option>
                                                 {sources.map(s => (
-                                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                                    <option key={s.id} value={s.name}>{s.name}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Intake Year</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Intake Year</label>
                                         <div className="relative group">
                                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                            <select
-                                                name="intake"
-                                                value={formData.intake || ''}
-                                                onChange={handleInputChange}
-                                                className="w-full pl-11 pr-10 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-black text-[10px] uppercase tracking-widest text-slate-700 appearance-none cursor-pointer"
-                                            >
-                                                <option value="">SELECT INTAKE</option>
-                                                {INTAKE_YEARS.map(y => (
-                                                    <option key={y} value={y}>{y}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] focus:outline-none transition font-bold text-slate-500 cursor-not-allowed"
+                                                value="2026"
+                                            />
                                         </div>
                                     </div>
                                 </div>

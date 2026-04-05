@@ -10,7 +10,7 @@ import LoadingButton from '@/components/ui/LoadingButton';
 import api from '@/services/api';
 
 // ─── Notes Slide Over ──────────────────────────────────────────────────────
-function NotesSlideOver({ leadId, leadName, isOpen, onClose }: { leadId: number | null, leadName: string, isOpen: boolean, onClose: () => void }) {
+function NotesSlideOver({ leadId, leadName, isOpen, onClose }: { leadId: string | number | null, leadName: string, isOpen: boolean, onClose: () => void }) {
     const [notes, setNotes] = useState<NoteDTO[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -86,7 +86,7 @@ function NotesSlideOver({ leadId, leadName, isOpen, onClose }: { leadId: number 
 }
 
 // ─── Bulk Assign Dropdown ──────────────────────────────────────────────────
-function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssigned: () => void }) {
+function BulkAssignButton({ leadIds, onAssigned }: { leadIds: (string | number)[]; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -122,7 +122,7 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
         }
     };
 
-    const handleBulkAssign = async (e: React.MouseEvent, counselorId: number, type: string) => {
+    const handleBulkAssign = async (e: React.MouseEvent, counselorId: string | number, type: string) => {
         e.stopPropagation();
         if (leadIds.length === 0) {
             toast.error('No leads selected');
@@ -183,20 +183,25 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
                                         {c.counselorTypes && c.counselorTypes.length > 0 ? (
-                                            c.counselorTypes.map(type => (
-                                                <button
-                                                    key={type}
-                                                    onClick={e => handleBulkAssign(e, c.counselorId, type)}
-                                                    disabled={assigning === `${c.counselorId}-${type}`}
-                                                    className={`px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
-                                                        assigning === `${c.counselorId}-${type}` 
-                                                            ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
-                                                            : 'hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
-                                                    } disabled:cursor-not-allowed`}
-                                                >
-                                                    {assigning === `${c.counselorId}-${type}` ? 'saving…' : type}
-                                                </button>
-                                            ))
+                                            c.counselorTypes.map(type => {
+                                                const isDisabled = type === 'TELECALLER';
+                                                return (
+                                                    <button
+                                                        key={type}
+                                                        onClick={e => !isDisabled && handleBulkAssign(e, c.counselorId, type)}
+                                                        disabled={isDisabled || assigning === `${c.counselorId}-${type}`}
+                                                        className={`px-2 py-1 border text-[9px] font-black uppercase tracking-widest transition-all rounded-md ${
+                                                            isDisabled 
+                                                                ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                                                : assigning === `${c.counselorId}-${type}`
+                                                                    ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                                        }`}
+                                                    >
+                                                        {isDisabled ? `${type} (Restricted)` : assigning === `${c.counselorId}-${type}` ? 'saving…' : type}
+                                                    </button>
+                                                );
+                                            })
                                         ) : (
                                             <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
                                         )}
@@ -212,7 +217,7 @@ function BulkAssignButton({ leadIds, onAssigned }: { leadIds: number[]; onAssign
 }
 
 // ─── Individual Assign Dropdown ──────────────────────────────────────────────
-function SingleAssignButton({ leadId, onAssigned }: { leadId: number; onAssigned: () => void }) {
+function SingleAssignButton({ leadId, onAssigned }: { leadId: string | number; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -239,7 +244,7 @@ function SingleAssignButton({ leadId, onAssigned }: { leadId: number; onAssigned
                 let targetCourseName = '';
                 let nullCourse = true;
                 try {
-                    const leadRes = await api.get(`/api/leads/${leadId}`);
+                    const leadRes = await api.get(`/api/leads/id/${leadId}`);
                     const fullLead = leadRes.data;
                     if (fullLead?.course) {
                         nullCourse = false;
@@ -289,7 +294,7 @@ function SingleAssignButton({ leadId, onAssigned }: { leadId: number; onAssigned
         }
     };
 
-    const handleAssign = async (e: React.MouseEvent, counselorId: number, type: string) => {
+    const handleAssign = async (e: React.MouseEvent, counselorId: string | number, type: string) => {
         e.stopPropagation();
         setAssigning(`${counselorId}-${type}`);
         try {
@@ -336,20 +341,25 @@ function SingleAssignButton({ leadId, onAssigned }: { leadId: number; onAssigned
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
                                         {c.counselorTypes && c.counselorTypes.length > 0 ? (
-                                            c.counselorTypes.map(type => (
-                                                <button
-                                                    key={type}
-                                                    onClick={e => handleAssign(e, c.counselorId, type)}
-                                                    disabled={assigning === `${c.counselorId}-${type}`}
-                                                    className={`px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
-                                                        assigning === `${c.counselorId}-${type}` 
-                                                            ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
-                                                            : 'hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
-                                                    } disabled:cursor-not-allowed`}
-                                                >
-                                                    {assigning === `${c.counselorId}-${type}` ? 'saving…' : type}
-                                                </button>
-                                            ))
+                                            c.counselorTypes.map(type => {
+                                                const isDisabled = type === 'TELECALLER';
+                                                return (
+                                                    <button
+                                                        key={type}
+                                                        onClick={e => !isDisabled && handleAssign(e, c.counselorId, type)}
+                                                        disabled={isDisabled || assigning === `${c.counselorId}-${type}`}
+                                                        className={`px-2 py-1 border text-[9px] font-black uppercase tracking-widest transition-all rounded-md ${
+                                                            isDisabled 
+                                                                ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                                                : assigning === `${c.counselorId}-${type}`
+                                                                    ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                                        }`}
+                                                    >
+                                                        {isDisabled ? `${type} (Restricted)` : assigning === `${c.counselorId}-${type}` ? 'saving…' : type}
+                                                    </button>
+                                                );
+                                            })
                                         ) : (
                                             <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
                                         )}
@@ -370,7 +380,7 @@ export default function ContactedLeadsMonitor() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
+    const [selectedLeadIds, setSelectedLeadIds] = useState<(string | number)[]>([]);
 
     // ─── Filter States ────────────────────────────────────────────────────────
     const [filterType, setFilterType] = useState<'ALL' | 'COUNSELOR' | 'STATUS' | 'LEAD_ID' | 'LEAD_NAME'>('ALL');
@@ -379,7 +389,7 @@ export default function ContactedLeadsMonitor() {
     const [allCounselors, setAllCounselors] = useState<CounselorDTO[]>([]);
 
     // ─── Lead Notes State ────────────────────────────────────────────────────
-    const [selectedLeadRecord, setSelectedLeadRecord] = useState<{ id: number, name: string } | null>(null);
+    const [selectedLeadRecord, setSelectedLeadRecord] = useState<{ id: string | number, name: string } | null>(null);
     const [isNotesOpen, setIsNotesOpen] = useState(false);
 
     useEffect(() => {
@@ -409,13 +419,13 @@ export default function ContactedLeadsMonitor() {
                 setIsPagingEnabled(false);
                 switch (filterType) {
                     case 'COUNSELOR':
-                        data = await ManagerService.getContactedByAssignedTo(Number(filterValue));
+                        data = await ManagerService.getContactedByAssignedTo(filterValue);
                         break;
                     case 'STATUS':
                         data = await ManagerService.getContactedByStatus(filterValue as LeadStatus);
                         break;
                     case 'LEAD_ID':
-                        data = await ManagerService.getContactedByLead(Number(filterValue));
+                        data = await ManagerService.getContactedByLead(filterValue);
                         break;
                     case 'LEAD_NAME':
                         data = await ManagerService.getContactedByLeadName(filterValue);
@@ -448,7 +458,7 @@ export default function ContactedLeadsMonitor() {
         loadContacts();
     };
 
-    const toggleSelection = (leadId: number) => {
+    const toggleSelection = (leadId: string | number) => {
         setSelectedLeadIds(prev =>
             prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
         );
@@ -462,7 +472,7 @@ export default function ContactedLeadsMonitor() {
         }
     };
 
-    const handleViewNotes = (leadId: number, leadName: string, e: React.MouseEvent) => {
+    const handleViewNotes = (leadId: string | number, leadName: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setSelectedLeadRecord({ id: leadId, name: leadName });
         setIsNotesOpen(true);
@@ -537,7 +547,7 @@ export default function ContactedLeadsMonitor() {
                         </select>
                     ) : (
                         <input
-                            type={filterType.includes('ID') ? 'number' : 'text'}
+                            type="text"
                             placeholder={filterType === 'ALL' ? "Search in results below..." : `Enter ${filterType.replace('_', ' ').toLowerCase()}...`}
                             value={searchTerm || filterValue}
                             onChange={(e) => {

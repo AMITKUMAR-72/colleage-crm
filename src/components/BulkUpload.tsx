@@ -224,7 +224,7 @@ const BulkUpload = () => {
     }, {} as Record<string, string[]>) || {};
 
     return (
-        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col items-center w-full max-w-4xl mx-auto font-poppins text-black">
+        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col items-center w-full max-w-4xl mx-auto font-sans text-black">
             <h2 className="font-extrabold text-2xl text-slate-900 mb-8 flex items-center justify-center gap-3 w-full tracking-tight">
                 <Upload className="w-6 h-6 text-[#4d0101]" />
                 Bulk Lead Import
