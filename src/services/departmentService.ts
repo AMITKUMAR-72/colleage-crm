@@ -73,19 +73,6 @@ export const DepartmentService = {
         return response.data;
     },
 
-    // 58. List all department names
-    async getAllDepartmentNames() {
-        const response = await api.get('/api/department/name');
-        return response.data;
-    },
-
-    // 62. Update department details
-    async updateDepartment(id: number, data: Partial<DepartmentDTO>) {
-        const response = await api.put<DepartmentDTO>(`/api/department/update/${id}`, data);
-        return response.data;
-    },
-
-    // 63. Delete department
     async deleteDepartment(id: number) {
         const response = await api.delete(`/api/department/delete/${id}`);
         return response.data;

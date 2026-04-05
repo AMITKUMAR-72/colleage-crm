@@ -48,7 +48,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 const ALL_STATUSES: LeadStatus[] = [
     'FAKE',
-    'CONTACTED'
+    'CONTACTED',
+    'REASSIGNED',
+    'INTERESTED'
 ];
 
 const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD'];
@@ -118,20 +120,22 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         }));
     }, []);
 
+    // 1. Fetch Counselor Metadata (Once on mount)
     useEffect(() => {
-        const fetchCounselorMe = async () => {
+        const fetchInitialMetadata = async () => {
             try {
                 const meRes: any = await CounselorService.getCounselorMe();
-                // Check if the counselor object is wrapped in a "data" property
                 const me = meRes?.data || meRes;
 
                 if (me && (me.counselorId || me.id)) {
                     const types = me.counselorTypes || [];
                     const depts = me.departments || [];
                     setValidTypes(types);
+                    
+                    // Initial departments from counselor me
                     setValidDepartments(depts);
 
-                    // Default selection logic — only if not already set by user
+                    // Default selection logic
                     if (types.length > 0 && !selectedType) setSelectedType(types[0]);
                     if (depts.length > 0 && !selectedDepartment) {
                         const firstDept = depts[0];
@@ -139,16 +143,10 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                         setSelectedDepartment(dname);
                     }
 
-                    // Fetch combined counts
                     const activeCid = me.counselorId || me.id || counselorId;
-                    console.log("[MyLeadsFeed] Requesting counts for:", activeCid);
                     const countsRes: any = await CounselorService.getCombinedLeadCounts(activeCid);
-
-                    // The count response might also be wrapped in data
                     const cData = countsRes?.data || (countsRes?.totalCombined !== undefined ? countsRes : null);
-                    if (cData) {
-                        setCombinedCounts(cData);
-                    }
+                    if (cData) setCombinedCounts(cData);
                 }
             } catch (err) {
                 console.error("Failed to load counselor-me metadata", err);
@@ -156,8 +154,46 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 setCounselorSetup(true);
             }
         };
-        fetchCounselorMe();
-    }, []); // Run only once on mount
+        fetchInitialMetadata();
+    }, [counselorId]);
+
+    // 2. Refresh Departments when Type changes to EXTERNAL
+    useEffect(() => {
+        const refreshDepartments = async () => {
+            if (selectedType === 'EXTERNAL') {
+                try {
+                    const res: any = await DepartmentService.getAllDepartmentNames();
+                    console.log("[MyLeadsFeed] EXTERNAL depts raw:", res);
+                    
+                    // Robust extraction of the department array
+                    let processed: any[] = [];
+                    if (Array.isArray(res)) processed = res;
+                    else if (res?.data && Array.isArray(res.data)) processed = res.data;
+                    else if (res?.content && Array.isArray(res.content)) processed = res.content;
+                    else if (res?.results && Array.isArray(res.results)) processed = res.results;
+                    else if (res?.departments && Array.isArray(res.departments)) processed = res.departments;
+                    else if (typeof res === 'object' && res !== null) {
+                        // If it's a single object, wrap it
+                        if (res.department || res.name) processed = [res];
+                    }
+
+                    setValidDepartments(processed);
+                } catch (err) {
+                    console.error("Failed to load all departments", err);
+                }
+            } else if (counselorSetup) {
+                // Return to original counselor departments
+                try {
+                    const meRes: any = await CounselorService.getCounselorMe();
+                    const me = meRes?.data || meRes;
+                    if (me && me.departments) setValidDepartments(me.departments);
+                } catch (err) {
+                    console.error("Backtrack failed", err);
+                }
+            }
+        };
+        refreshDepartments();
+    }, [selectedType, counselorSetup]);
 
     const loadLeads = useCallback(async () => {
         if (!counselorSetup) return;
@@ -414,7 +450,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             </select>
                         </div>
                     )}
-                    {validDepartments.length > 0 && (
+                    {(selectedType === 'EXTERNAL' || validDepartments.length > 0) && (
                         <div className="flex-1 w-full">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 block mb-1">Your Department</label>
                             <select
@@ -587,6 +623,51 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                     </div>
                 </div>
 
+                {/* 1.5. Reassigned Leads Row */}
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-600">
+                    <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-10 bg-purple-400 rounded-full"></div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Reassigned Leads</h3>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Transferred History • Review Needed</p>
+                            </div>
+                        </div>
+                        <span className="px-3 py-1 bg-purple-50 text-purple-700 text-[10px] font-black rounded-lg border border-purple-100 uppercase">
+                            {leads.filter(l => l.status === 'REASSIGNED').length}
+                        </span>
+                    </div>
+                    <div className="divide-y divide-slate-50" id="reassigned">
+                        {leads.filter(l => l.status === 'REASSIGNED').length === 0 ? (
+                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No reassigned leads</div>
+                        ) : (
+                            leads.filter(l => l.status === 'REASSIGNED').map(lead => (
+                                <div key={lead.id || lead.leadId} className="group transition-all hover:bg-slate-50/10">
+                                    <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-purple-400" />
+                                        <div className="w-11 h-11 rounded-2xl bg-purple-50/30 border border-purple-100/50 shadow-sm flex items-center justify-center text-purple-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
+                                            {(lead.name || 'U').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-slate-900 truncate uppercase mt-0.5">{lead.name}</p>
+                                            <div className="flex items-center gap-4 mt-1 opacity-70">
+                                                <span className="text-[10px] font-bold text-slate-500 shrink-0">{lead.email}</span>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{getCourseName(lead.course)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6 shrink-0">
+                                            <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
+                                                {lead.status?.replace(/_/g, ' ')}
+                                            </span>
+                                            <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
                 {/* 2. Contacted Leads Row */}
                 <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
@@ -632,25 +713,25 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                     </div>
                 </div>
 
-                {/* 3. Fake Leads Row */}
-                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                {/* 3. Interested Leads Row */}
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-800">
                     <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-1.5 h-10 bg-rose-500 rounded-full"></div>
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Fake Leads</h3>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Invalid Records • Reported Junk</p>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Interested Leads</h3>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">High Intent • Closing Potential</p>
                             </div>
                         </div>
                         <span className="px-3 py-1 bg-rose-50 text-rose-700 text-[10px] font-black rounded-lg border border-rose-100 uppercase">
-                            {leads.filter(l => l.status === 'FAKE').length}
+                            {leads.filter(l => l.status === 'INTERESTED').length}
                         </span>
                     </div>
-                    <div className="divide-y divide-slate-50">
-                        {leads.filter(l => l.status === 'FAKE').length === 0 ? (
-                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No fake leads</div>
+                    <div className="divide-y divide-slate-50" id="interest">
+                        {leads.filter(l => l.status === 'INTERESTED').length === 0 ? (
+                            <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No interested leads</div>
                         ) : (
-                            leads.filter(l => l.status === 'FAKE').map(lead => (
+                            leads.filter(l => l.status === 'INTERESTED').map(lead => (
                                 <div key={lead.id || lead.leadId} className="group transition-all hover:bg-slate-50/10">
                                     <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
                                         <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-rose-500" />
@@ -676,6 +757,8 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                         )}
                     </div>
                 </div>
+
+                {/* 4. Fake Leads Row */}
 
                 {/* Empty State */}
                 {leads.length === 0 && !loading && (
@@ -817,7 +900,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                     </div>
 
                                     {/* Program Column */}
-                                    {selectedLead.status === 'CONTACTED' && (
+                                    {['CONTACTED', 'INTERESTED'].includes(selectedLead.status) && (
                                         <div className="space-y-3">
                                             <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Academic Program</label>
                                             <div className="group relative">
@@ -852,7 +935,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                     <div className="flex gap-2 md:gap-4">
                                         {ALL_SCORES.map(s => {
                                             const isCurrent = selectedLead.score === s;
-                                            const isStatusDisabled = ['TELECALLER_ASSIGNED', 'COUNSELOR_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED', 'FAKE'].includes(selectedLead.status);
+                                            const isStatusDisabled = ['TELECALLER_ASSIGNED', 'COUNSELOR_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED', 'FAKE', 'REASSIGNED'].includes(selectedLead.status);
                                             const isCourseMissing = !getCourseName(selectedLead.course);
                                             const isDisabled = isStatusDisabled || isCourseMissing;
 
@@ -880,7 +963,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                             );
                                         })}
                                     </div>
-                                    {(['TELECALLER_ASSIGNED', 'COUNSELOR_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED', 'NEW', 'FAKE'].includes(selectedLead.status) || !getCourseName(selectedLead.course)) && (
+                                    {(['TELECALLER_ASSIGNED', 'COUNSELOR_ASSIGNED', 'EXTERNAL_ASSIGNED', 'ASSIGNED', 'NEW', 'FAKE', 'REASSIGNED'].includes(selectedLead.status) || !getCourseName(selectedLead.course)) && (
                                         <div className="mt-4 px-4 py-3 bg-[#4d0101]/5 rounded-2xl border border-[#4d0101]/10 animate-pulse">
                                             <p className="text-center text-[10px] font-black text-[#4d0101] uppercase tracking-widest leading-relaxed">
                                                 {selectedLead.status === 'FAKE' 
