@@ -237,10 +237,10 @@ export default function FakeLeadsPage() {
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 font-black text-xs">
-                                                            {lead.name.charAt(0)}
+                                                            {lead.name?.charAt(0) || '?'}
                                                         </div>
                                                         <div>
-                                                            <div className="font-black text-slate-800 text-sm group-hover:text-rose-600 transition-colors uppercase tracking-tight">{lead.name}</div>
+                                                            <div className="font-black text-slate-800 text-sm group-hover:text-rose-600 transition-colors uppercase tracking-tight">{lead.name || 'Anonymous'}</div>
                                                             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 mt-1 border border-slate-100 rounded-md px-1.5 py-0.5 bg-white w-fit">Ref: #{lead.id}</div>
                                                         </div>
                                                     </div>
@@ -249,11 +249,11 @@ export default function FakeLeadsPage() {
                                                     <div className="space-y-1.5">
                                                         <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
                                                             <Phone className="w-3 h-3 text-slate-400" />
-                                                            {lead.phone}
+                                                            {lead.phone || 'No Phone'}
                                                         </div>
                                                         <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                                                             <Mail className="w-3 h-3 text-slate-300" />
-                                                            {lead.email}
+                                                            {lead.email || 'No Email'}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -267,7 +267,7 @@ export default function FakeLeadsPage() {
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase border shadow-sm ${STATUS_COLORS[lead.status] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                                                        {lead.status.replace(/_/g, ' ')}
+                                                        {lead.status?.replace(/_/g, ' ') || 'UNKNOWN'}
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6 text-right">

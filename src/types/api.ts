@@ -3,14 +3,14 @@ export type Role = 'ADMIN' | 'MANAGER' | 'COUNSELOR' | 'AFFILIATE' | 'USER' | 'M
 
 // ─── Lead Enums (matches backend Status.java exactly) ───
 export type LeadStatus =
-    | 'NEW'
+    | 
     | 'TELECALLER_ASSIGNED'
     | 'QUALIFIED'
     | 'COUNSELOR_ASSIGNED'
     | 'EXTERNAL_ASSIGNED'
     | 'ADMISSION_IN_PROCESS'
     | 'ADMISSION_DONE'
-    | 'LOST'
+
     | 'UNASSIGNED'
     | 'CONTACTED'
     | 'INTERESTED'
