@@ -50,15 +50,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!user) return null;
 
     return (
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen overflow-x-hidden">
             <Sidebar />
-            <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 relative min-w-0">
+            <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pt-20 md:pt-8 relative min-w-0 transition-all">
                 <AnimatePresence mode="wait">
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
                         className="w-full max-w-[1600px] mx-auto"
                     >
                         {children}

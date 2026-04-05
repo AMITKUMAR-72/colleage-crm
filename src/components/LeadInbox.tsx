@@ -370,90 +370,158 @@ export default function LeadInbox() {
                     </div>
 
                     {/* Body — max-height 40vh */}
-                    <div style={{ maxHeight: '40vh' }} className="overflow-y-auto overflow-x-auto">
+                    <div className="overflow-y-auto no-scrollbar">
                         {loading ? (
-                            <div className="py-16 flex justify-center items-center">
-                                <div className="w-8 h-8 border-4 border-[#4d0101]/20 border-t-[#4d0101] rounded-full animate-spin" />
+                            <div className="py-20 flex flex-col justify-center items-center gap-3">
+                                <div className="w-10 h-10 border-4 border-[#4d0101]/20 border-t-[#4d0101] rounded-full animate-spin" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Fetching Real-time Leads</p>
                             </div>
                         ) : pagedLeads.length === 0 ? (
-                            <div className="py-14 text-center">
-                                <p className="text-slate-400 font-medium lowercase italic text-sm">no leads found</p>
+                            <div className="py-20 text-center bg-slate-50/30">
+                                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200">
+                                    <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <h3 className="text-sm font-black text-slate-900 uppercase">No Leads Found</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Refine your search criteria</p>
                             </div>
                         ) : (
-                            <table className="w-full text-sm text-left">
-                                <thead className="text-[10px] text-slate-400 uppercase bg-slate-50/60 border-b border-slate-200 tracking-widest font-black sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-5 py-3 font-black">Lead Details</th>
-                                        <th className="px-5 py-3 font-black">Contact</th>
-                                        <th className="px-5 py-3 font-black">Course</th>
-                                        <th className="px-5 py-3 font-black">Campaign</th>
-                                        <th className="px-5 py-3 font-black">Status</th>
-                                        <th className="px-5 py-3 font-black">Score</th>
-                                        <th className="px-5 py-3 font-black text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
+                            <>
+                                {/* Mobile/Tablet Card View */}
+                                <div className="md:hidden divide-y divide-slate-100">
                                     {pagedLeads.map((lead) => (
-                                        <tr
-                                            key={lead.id}
-                                            onClick={() => handleViewLead(lead.id)}
-                                            className="hover:bg-slate-50 transition-colors cursor-pointer"
-                                        >
-                                            <td className="px-5 py-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-[#4d0101] text-white flex items-center justify-center font-black text-xs uppercase shadow-sm shrink-0">
+                                        <div key={lead.id} className="p-4 active:bg-slate-50 transition-colors cursor-pointer" onClick={() => handleViewLead(lead.id)}>
+                                            <div className="flex items-start justify-between gap-4 mb-3">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-10 h-10 rounded-xl bg-[#4d0101] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-[#4d0101]/20">
                                                         {lead.name?.charAt(0) || '?'}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className="font-bold text-slate-800 text-sm truncate max-w-[140px]" title={lead.name}>{lead.name || 'Unknown'}</div>
-                                                        <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">#{lead.id}</div>
+                                                        <h4 className="text-sm font-black text-slate-900 truncate uppercase tracking-tight">{lead.name || 'Unknown'}</h4>
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">#{lead.id}</p>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <div className="text-slate-600 text-xs font-medium truncate max-w-[160px]" title={lead.email}>{lead.email || '—'}</div>
-                                                <div className="text-slate-400 text-[9px] font-bold mt-0.5">{[lead.phones] || "not avialable"}</div>
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <div className="text-slate-600 text-xs font-medium max-w-[120px] truncate">{getCourseDisplay(lead)}</div>
-                                                {lead.intake && (
-                                                    <div className="text-[10px] text-slate-400 font-bold">{lead.intake}</div>
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <span className="text-xs font-bold text-slate-600">{getCampaignDisplay(lead)}</span>
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[String(lead.status)] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                                                    {String(lead.status || '').replace(/_/g, ' ') || 'UNKNOWN'}
+                                                <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black tracking-widest uppercase border whitespace-nowrap self-start mt-1 ${STATUS_COLORS[String(lead.status)] || 'bg-slate-50 text-slate-500 border-slate-100'}`}>
+                                                    {String(lead.status || '').replace(/_/g, ' ')}
                                                 </span>
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${SCORE_COLORS[lead.score] || 'bg-slate-100 text-slate-500'}`}>
-                                                    {lead.score || '—'}
-                                                </span>
-                                            </td>
-                                            <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
-                                                <div className="flex items-center justify-end gap-2">
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] mb-4 opacity-80">
+                                                <div className="space-y-0.5">
+                                                    <p className="font-black text-slate-400 uppercase tracking-tighter shrink-0">Email</p>
+                                                    <p className="font-bold text-slate-700 truncate">{lead.email || '—'}</p>
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="font-black text-slate-400 uppercase tracking-tighter shrink-0">Course</p>
+                                                    <p className="font-bold text-slate-700 truncate">{getCourseDisplay(lead)}</p>
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="font-black text-slate-400 uppercase tracking-tighter shrink-0">Campaign</p>
+                                                    <p className="font-bold text-slate-700 truncate">{getCampaignDisplay(lead)}</p>
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="font-black text-slate-400 uppercase tracking-tighter shrink-0">Score</p>
+                                                    <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${SCORE_COLORS[lead.score] || 'bg-slate-100 text-slate-500'}`}>
+                                                        {lead.score || '—'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-50">
+                                                <div className="flex gap-2">
                                                     <button
-                                                        onClick={() => {
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             setLeadToEdit(lead);
                                                             setIsEditOpen(true);
                                                         }}
-                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
-                                                        title="Edit Lead"
+                                                        className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5"
                                                     >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                        </svg>
+                                                        Edit
                                                     </button>
+                                                </div>
+                                                <div onClick={e => e.stopPropagation()}>
                                                     <AssignButton lead={lead} onAssigned={fetchLeads} />
                                                 </div>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
+                                </div>
+
+                                {/* Desktop Table View */}
+                                <table className="hidden md:table w-full text-sm text-left">
+                                    <thead className="text-[10px] text-slate-400 uppercase bg-slate-50/60 border-b border-slate-200 tracking-widest font-black sticky top-0 z-10">
+                                        <tr>
+                                            <th className="px-5 py-3 font-black">Lead Details</th>
+                                            <th className="px-5 py-3 font-black">Contact</th>
+                                            <th className="px-5 py-3 font-black">Course</th>
+                                            <th className="px-5 py-3 font-black">Campaign</th>
+                                            <th className="px-5 py-3 font-black">Status</th>
+                                            <th className="px-5 py-3 font-black">Score</th>
+                                            <th className="px-5 py-3 font-black text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {pagedLeads.map((lead) => (
+                                            <tr
+                                                key={lead.id}
+                                                onClick={() => handleViewLead(lead.id)}
+                                                className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                            >
+                                                <td className="px-5 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-[#4d0101] text-white flex items-center justify-center font-black text-xs uppercase shadow-sm shrink-0">
+                                                            {lead.name?.charAt(0) || '?'}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="font-bold text-slate-800 text-sm truncate max-w-[140px]" title={lead.name}>{lead.name || 'Unknown'}</div>
+                                                            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">#{lead.id}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <div className="text-slate-600 text-xs font-medium truncate max-w-[160px]" title={lead.email}>{lead.email || '—'}</div>
+                                                    <div className="text-slate-400 text-[9px] font-bold mt-0.5">{Array.isArray(lead.phones) ? lead.phones[0] : (lead.phones || "Not available")}</div>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <div className="text-slate-600 text-xs font-medium max-w-[120px] truncate">{getCourseDisplay(lead)}</div>
+                                                    {lead.intake && (
+                                                        <div className="text-[10px] text-slate-400 font-bold">{lead.intake}</div>
+                                                    )}
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <span className="text-xs font-bold text-slate-600">{getCampaignDisplay(lead)}</span>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <span className={`px-2 py-1 rounded text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[String(lead.status)] || 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                                                        {String(lead.status || '').replace(/_/g, ' ') || 'UNKNOWN'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${SCORE_COLORS[lead.score] || 'bg-slate-100 text-slate-500'}`}>
+                                                        {lead.score || '—'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setLeadToEdit(lead);
+                                                                setIsEditOpen(true);
+                                                            }}
+                                                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+                                                            title="Edit Lead"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                            </svg>
+                                                        </button>
+                                                        <AssignButton lead={lead} onAssigned={fetchLeads} />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </>
                         )}
                     </div>
 

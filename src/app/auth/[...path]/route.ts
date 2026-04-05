@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = process.env.BACKEND_URL || 'https://api.rafunirp.com';
+const BACKEND_BASE = process.env.BACKEND_URL || 'https://apis.rafunirp.com';
 
 async function handler(
     request: NextRequest,

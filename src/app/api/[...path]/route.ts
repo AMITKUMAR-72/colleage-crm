@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = process.env.BACKEND_URL || 'https://api.rafunirp.com';
+const BACKEND_BASE = process.env.BACKEND_URL || 'https://apis.rafunirp.com';
 
 /**
  * Catch-all server-side proxy for /api/* → BACKEND_BASE/api/*

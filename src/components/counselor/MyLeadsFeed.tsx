@@ -406,23 +406,23 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         <div className="space-y-4">
             {/* Lead Distribution Stats - Top Right Side UI */}
             {combinedCounts && (
-                <div className="flex flex-wrap items-center justify-end gap-3 mb-2 animate-in fade-in slide-in-from-right-4 duration-1000">
-                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 sm:gap-3 mb-2 animate-in fade-in slide-in-from-right-4 duration-1000">
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm flex-1 sm:flex-initial min-w-[100px]">
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Internal</span>
-                        <span className="text-xs font-black text-slate-900">{combinedCounts.internalLeads || 0}</span>
+                        <span className="text-xs font-black text-slate-900 ml-auto sm:ml-0">{combinedCounts.internalLeads || 0}</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm flex-1 sm:flex-initial min-w-[100px]">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tele</span>
-                        <span className="text-xs font-black text-slate-900">{combinedCounts.telecallerLeads || 0}</span>
+                        <span className="text-xs font-black text-slate-900 ml-auto sm:ml-0">{combinedCounts.telecallerLeads || 0}</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm flex-1 sm:flex-initial min-w-[100px]">
                         <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">External</span>
-                        <span className="text-xs font-black text-slate-900">{combinedCounts.externalLeads || 0}</span>
+                        <span className="text-xs font-black text-slate-900 ml-auto sm:ml-0">{combinedCounts.externalLeads || 0}</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-[#4d0101] px-4 py-1.5 rounded-xl shadow-lg shadow-[#4d0101]/10">
+                    <div className="flex items-center justify-center gap-2 bg-[#4d0101] px-4 py-2 rounded-xl shadow-lg shadow-[#4d0101]/10 w-full sm:w-auto">
                         <span className="text-[9px] font-black text-white/70 uppercase tracking-widest">Combined</span>
                         <span className="text-xs font-black text-white">{combinedCounts.totalCombined || 0}</span>
                     </div>
@@ -808,9 +808,9 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
 
             {/* Premium Lead Details Popup */}
             {selectedLead && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300" onClick={() => setSelectedLead(null)} />
-                    <div className="bg-white w-full max-w-5xl max-h-[95vh] rounded-[2rem] md:rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.3)] relative z-10 overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-500 border border-white/50">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedLead(null)} />
+                    <div className="bg-white w-full max-w-[95vw] sm:max-w-4xl lg:max-w-6xl h-full sm:h-auto sm:max-h-[92vh] sm:rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden flex flex-col md:flex-row transform-gpu animate-in zoom-in-95 duration-500 border border-white/50">
 
                         {/* Left Side: Information Canvas */}
                         <div className="flex-1 overflow-y-auto p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100/50 bg-white">
@@ -1004,8 +1004,8 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                         </div>
 
                         {/* Right Side: Activity & Notes */}
-                        <div className="w-full md:w-[350px] lg:w-[400px] bg-slate-50/80 backdrop-blur-xl h-[400px] md:h-auto overflow-y-auto p-6 md:p-10 flex flex-col">
-                            <div className="mb-6 md:mb-10">
+                        <div className="w-full md:w-[320px] lg:w-[380px] bg-slate-50/80 backdrop-blur-xl h-full md:h-auto overflow-y-auto p-6 md:p-8 flex flex-col border-t md:border-t-0 md:border-l border-slate-200">
+                            <div className="mb-6">
                                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Lead Logs</h3>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Context & Intelligence</p>
                             </div>
