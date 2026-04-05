@@ -76,12 +76,12 @@ function AdminDashboardContent() {
             <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-12 md:pt-0">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <span className="bg-[#4d0101]/10 text-[#600202] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-[#4d0101]/20">
-                            Admin Portal
+                        <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-slate-200">
+                            Operational Hub
                         </span>
                         <div className="h-1 w-1 bg-slate-300 rounded-full" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-[#dbb212]">
-                            Premium Control
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            System Management
                         </span>
                     </div>
                     <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
@@ -96,8 +96,8 @@ function AdminDashboardContent() {
                 <div className="flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 w-full overflow-x-auto no-scrollbar">
                     <button
                         onClick={() => handleTabChange('OVERVIEW')}
-                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'OVERVIEW'
-                            ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${activeTab === 'OVERVIEW'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-100'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
                             }`}
                     >
@@ -105,8 +105,8 @@ function AdminDashboardContent() {
                     </button>
                     <button
                         onClick={() => handleTabChange('COUNSELORS')}
-                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'COUNSELORS'
-                            ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${activeTab === 'COUNSELORS'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-100'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
                             }`}
                     >
@@ -114,8 +114,8 @@ function AdminDashboardContent() {
                     </button>
                     <button
                         onClick={() => handleTabChange('MONITOR')}
-                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'MONITOR'
-                            ? 'bg-white text-[#600202] shadow-lg shadow-rose-900/5 translate-y-[-1px]'
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${activeTab === 'MONITOR'
+                            ? 'bg-white text-indigo-600 shadow-sm border border-slate-100'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
                             }`}
                     >
@@ -123,7 +123,7 @@ function AdminDashboardContent() {
                     </button>
                     <button
                         onClick={() => setIsAddLeadOpen(true)}
-                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap text-slate-400 hover:text-slate-600 hover:bg-white/50`}
+                        className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap text-slate-400 hover:text-slate-600 hover:bg-white/50`}
                     >
                         + Add Lead
                     </button>

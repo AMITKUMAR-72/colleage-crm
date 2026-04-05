@@ -123,6 +123,32 @@ export const LeadService = {
         return response.data;
     },
 
+    // Explicit Search Methods (Resolving LeadInbox.tsx errors & Matching API Audit)
+    getLeadsByStatus: async (status: LeadStatus) => {
+        const response = await api.get(`/api/leads/searchBy/status/${status}`);
+        return toPageResponse(response.data).content;
+    },
+
+    getLeadsByCourse: async (course: string) => {
+        const response = await api.get(`/api/leads/searchBy/course/${encodeURIComponent(course)}`);
+        return toPageResponse(response.data).content;
+    },
+
+    getLeadsByCampaign: async (campaign: string) => {
+        const response = await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(campaign)}`);
+        return toPageResponse(response.data).content;
+    },
+
+    getLeadsByScore: async (score: LeadScore) => {
+        const response = await api.get(`/api/leads/searchBy/score/${score}`);
+        return toPageResponse(response.data).content;
+    },
+
+    getLeadsByName: async (name: string) => {
+        const response = await api.get(`/api/leads/searchBy/name/${encodeURIComponent(name)}`);
+        return toPageResponse(response.data).content;
+    },
+
     // Search & Filter — each filter uses its own endpoint
     searchLeads: async (params: {
         email?: string,
@@ -130,6 +156,7 @@ export const LeadService = {
         course?: string,
         status?: string,
         campaign?: string,
+        origin?: string,
         score?: string,
         startDate?: string,
         endDate?: string,
@@ -137,19 +164,17 @@ export const LeadService = {
         phone?: string
     }) => {
         try {
-            // If searching by email, use the working email endpoint
             if (params.email) {
                 const lead = await LeadService.getLeadByEmail(params.email);
                 return lead ? [lead] : [];
             }
+            if (params.name) return await LeadService.getLeadsByName(params.name);
+            if (params.course) return await LeadService.getLeadsByCourse(params.course);
+            if (params.status) return await LeadService.getLeadsByStatus(params.status as LeadStatus);
+            if (params.campaign) return await LeadService.getLeadsByCampaign(params.campaign);
+            if (params.score) return await LeadService.getLeadsByScore(params.score as LeadScore);
 
-            const extractArray = (res: any) => res?.data?.lead || res?.data?.content || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
-
-            if (params.name && params.name.length >= 2) return extractArray(await api.get(`/api/leads/searchBy/name/${encodeURIComponent(params.name)}`));
-            if (params.course) return extractArray(await api.get(`/api/leads/searchBy/course/${encodeURIComponent(params.course)}`));
-            if (params.status) return extractArray(await api.get(`/api/leads/searchBy/status/${encodeURIComponent(params.status)}`));
-            if (params.campaign) return extractArray(await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(params.campaign)}`));
-            if (params.score) return extractArray(await api.get(`/api/leads/searchBy/score/${encodeURIComponent(params.score)}`));
+            const extractArray = (res: any) => toPageResponse(res.data).content;
 
             if (params.startDate && params.endDate) {
                 let start = params.startDate;
@@ -282,11 +307,37 @@ export const LeadService = {
         return response.data;
     },
 
+    // 78. Website Lead Webhook
+    async integrateWebsite(data: LeadRequestDTO) {
+        const response = await api.post<LeadResponseDTO>('/api/leads/integration/Website', data);
+        return response.data;
+    },
+
+    // 87. Verify OTP for a lead
+    async verifyOtp(phone: string, otp: string) {
+        const response = await api.post(`/api/leads/verify-otp/${encodeURIComponent(phone)}/${encodeURIComponent(otp)}`);
+        return response.data;
+    },
+
+    // 88. List all unverified leads
+    async getUnverifiedLeads() {
+        const response = await api.get<LeadResponseDTO[]>('/api/leads/unverified');
+        return response.data;
+    },
+
+    // 69. Update lead by ID (Partial — all fields supported)
+    async updateLeadById(id: number, data: Partial<LeadRequestDTO>) {
+        const response = await api.put<LeadResponseDTO>(`/api/leads/update/${id}`, data);
+        return response.data;
+    },
+
+    // 188. Generate and get fake leads (Paginated — Testing)
     getFakeLeads: async (page: number = 0, size: number = 10) => {
         const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/${page}/${size}`);
         return response.data;
     },
 
+    // 189. Get fake leads by counselor ID (Testing)
     getFakeLeadsByCounselor: async (counselorId: number, page: number = 0, size: number = 10) => {
         const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
         return response.data;

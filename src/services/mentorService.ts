@@ -29,6 +29,12 @@ export const MentorService = {
         return response.data;
     },
 
+    // 92. Get mentor by phone
+    getMentorByPhone: async (phone: string) => {
+        const response = await api.get<MentorDTO>(`/api/mentors/phone/${encodeURIComponent(phone)}`);
+        return response.data;
+    },
+
     // Check mentor availability
     checkMentorAvailability: async (id: number) => {
         const response = await api.get<boolean>(`/api/mentors/check-availability/${id}`);

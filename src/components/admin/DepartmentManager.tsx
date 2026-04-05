@@ -65,7 +65,6 @@ export default function DepartmentManager() {
                 const counselorsStart = data.indexOf('"counselors":[');
                 if (counselorsStart !== -1) {
                     const counselorsStr = data.substring(counselorsStart + 14);
-                    // Split by counselorId to find objects
                     const chunks = counselorsStr.split(/"counselorId":\s*/);
                     for (let i = 1; i < chunks.length; i++) {
                         const chunk = chunks[i];
@@ -73,7 +72,6 @@ export default function DepartmentManager() {
                         if (!idMatch) continue;
                         const counselorId = parseInt(idMatch[1]);
 
-                        // avoid duplicate counselors from recursive nested loops
                         if (counselors.find(c => c.counselorId === counselorId)) continue;
 
                         const extractString = (key: string) => {
@@ -128,9 +126,22 @@ export default function DepartmentManager() {
             }
 
             setSelectedDepartment(parsedDept);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to load department details:", error);
-            toast.error('Failed to load department details');
+            // Graceful fallback: show department with empty nested data
+            // instead of crashing when Hibernate lazy loading fails
+            const msg = error?.response?.data?.message || error?.message || '';
+            if (msg.includes('lazily initialize') || msg.includes('no session') || error?.response?.status === 500) {
+                toast.error('Backend serialization issue — showing partial data');
+                setSelectedDepartment({
+                    id: 0,
+                    department: deptName,
+                    courses: [],
+                    counselors: []
+                });
+            } else {
+                toast.error('Failed to load department details');
+            }
         } finally {
             setLoadingDetails(false);
         }

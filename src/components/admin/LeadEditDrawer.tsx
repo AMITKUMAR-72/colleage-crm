@@ -34,19 +34,25 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                 name: lead.name || '',
                 email: lead.email || '',
                 phone: lead.phone || '',
+                altPhone: lead.altPhone || '',
+                whatsappNumber: lead.whatsappNumber || '',
+                city: lead.city || '',
                 address: lead.address || '',
-                course: typeof lead.course === 'object' ? (lead.course as any)?.course : lead.course || '',
+                course: typeof lead.course === 'object' && lead.course ? (lead.course as any).course : (lead.course as string || ''),
                 intake: lead.intake || '',
                 status: lead.status as LeadStatus,
                 score: lead.score as LeadScore,
                 campaign: lead.campaign as any
             });
 
-            if (typeof lead.course === 'object' && (lead.course as any).department) {
-                setSelectedDepartment((lead.course as any).department);
+            const courseObj = typeof lead.course === 'object' && lead.course ? (lead.course as any) : null;
+            if (courseObj?.department) {
+                setSelectedDepartment(courseObj.department);
             }
-            if (lead.campaign && (lead.campaign as any).id) {
-                setSelectedSourceId((lead.campaign as any).id.toString());
+
+            const campObj = typeof lead.campaign === 'object' && lead.campaign ? (lead.campaign as any) : null;
+            if (campObj?.id) {
+                setSelectedSourceId(String(campObj.id));
             }
         }
     }, [lead]);
@@ -57,7 +63,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
             try {
                 const [deptData, courseData, sourceData] = await Promise.allSettled([
                     DepartmentService.getAllDepartments(),
-                    CourseService.getAllCourses(),
+                    CourseService.getAllCoursesRaw(), // Full entity data
                     CampaignService.getAllSources()
                 ]);
 
@@ -107,10 +113,25 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
         e.preventDefault();
         if (!lead) return;
 
+        const payload: Partial<LeadRequestDTO> = {
+            ...formData,
+            altPhone: formData.altPhone || undefined,
+            whatsappNumber: formData.whatsappNumber || undefined,
+            address: formData.address || 'Local Terminal',
+            city: formData.city || undefined,
+            origin: formData.campaign?.name || lead.origin,
+            phones: [formData.phone, formData.altPhone, formData.whatsappNumber].filter(Boolean) as string[]
+        };
+
+        // Attached Campaign Context if available from registry
+        if (formData.campaign && formData.campaign.id > 0) {
+            payload.campaign = { id: formData.campaign.id, name: formData.campaign.name };
+        }
+
         setSubmitting(true);
         const toastId = toast.loading('Updating lead...');
         try {
-            const updated = await LeadService.updateLead(lead.email, formData);
+            const updated = await LeadService.updateLead(lead.email, payload);
             toast.success('Lead updated successfully!', { id: toastId });
             if (onSuccess) onSuccess(updated);
             onClose();
@@ -175,7 +196,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Mobile Tether</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Primary Contact</label>
                                         <div className="relative group">
                                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
                                             <input
@@ -186,6 +207,37 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                                 className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-bold text-slate-800"
                                                 required
                                             />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">WhatsApp Unit</label>
+                                                <div className="relative group">
+                                                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
+                                                    <input
+                                                        type="tel"
+                                                        name="whatsappNumber"
+                                                        value={formData.whatsappNumber || ''}
+                                                        onChange={handleInputChange}
+                                                        className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-bold text-slate-800"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1 italic">Metropolitan Node</label>
+                                                <div className="relative group">
+                                                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
+                                                    <input
+                                                        type="text"
+                                                        name="city"
+                                                        value={formData.city || ''}
+                                                        onChange={handleInputChange}
+                                                        className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-bold text-slate-800"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -52,13 +52,21 @@ export const AuthService = {
         return response.data;
     },
 
+    // 3. Initiate password reset (sends email)
     forgotPassword: async (email: string) => {
         const response = await api.post('/auth/forgot-password', { email });
         return response.data;
     },
 
+    // 4. Complete password reset using token
     resetPassword: async (data: { token: string; newPassword: string; confirmPassword: string }) => {
         const response = await api.post('/auth/reset-password', data);
+        return response.data;
+    },
+
+    // 5. Logout / Invalidate current JWT (Blacklist)
+    serverLogout: async () => {
+        const response = await api.post('/auth/logout');
         return response.data;
     }
 };

@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
     // Ignore type errors during production builds
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/backend/:path*",
+        destination: "https://apis.rafunirp.com/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -19,5 +19,11 @@ export const MonitorService = {
             };
         }
         return response.data;
+    },
+
+    // 136. Fetch entity history
+    getEntityHistory: async (entityType: string, entityId: string | number) => {
+        const response = await api.get(`/api/audit/entity/${entityType}/${entityId}`);
+        return response.data;
     }
 };

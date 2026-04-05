@@ -27,7 +27,7 @@ export default function LeaveManagement() {
         setHistoryLoading(true);
         try {
             const data = await LeaveService.getMyLeaves();
-            setLeaveHistory(Array.isArray(data) ? data : data?.data || []);
+            setLeaveHistory(Array.isArray(data) ? data : (data as any)?.data || []);
         } catch (error) {
             console.error('Failed to fetch leave history:', error);
         } finally {

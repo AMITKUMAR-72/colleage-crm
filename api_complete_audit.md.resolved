@@ -1,0 +1,235 @@
+# Raffles CRM — Complete API Integration Audit (189 Endpoints)
+
+> **Date**: 2026-03-24 | **Version**: v3.0 | **Total Endpoints**: 189
+
+This document maps every backend endpoint to its frontend service function, identifies gaps, and tracks implementation status.
+
+---
+
+## 📊 Coverage Summary
+
+| Module | Endpoints | Implemented | Missing | Status |
+|:---|:---:|:---:|:---:|:---:|
+| **Authentication** | 5 | 2 | 3 | 🟡 Partial |
+| **Campaign** | 7 | 5 | 2 | 🟡 Partial |
+| **Affiliate** | 9 | 9 | 0 | ✅ Complete |
+| **Counselor** | 13 | 11 | 2 | 🟡 Partial |
+| **Counselor Lead** | 12 | 10 | 2 | 🟡 Partial |
+| **Course** | 9 | 5 | 4 | 🟡 Partial |
+| **Department** | 8 | 5 | 3 | 🟡 Partial |
+| **Lead** | 25 | 21 | 4 | 🟡 Partial |
+| **Mentor** | 10 | 10 | 0 | ✅ Complete |
+| **Session** | 20 | 17 | 3 | 🟡 Partial |
+| **Note** | 3 | 3 | 0 | ✅ Complete |
+| **Role** | 5 | 4 | 1 | 🟡 Partial |
+| **TimedOut** | 8 | 8 | 0 | ✅ Complete |
+| **Audit** | 2 | 1 | 1 | 🟡 Partial |
+| **User** | 8 | 2 | 6 | 🔴 Low |
+| **Assignment** | 7 | 7 | 0 | ✅ Complete |
+| **Contacted** | 9 | 9 | 0 | ✅ Complete |
+| **Config** | 3 | 3 | 0 | ✅ Complete |
+| **Leaves** | 7 | 0 | 7 | 🔴 New |
+| **Enum** | 12 | 1 | 11 | 🔴 New |
+| **Dashboard** | 5 | 0 | 5 | 🔴 New |
+| **Fake Leads** | 2 | 0 | 2 | 🔴 New |
+| **TOTAL** | **189** | **133** | **56** | |
+
+---
+
+## 🔬 Detailed Endpoint-to-Function Map
+
+### Module 1: Authentication (1–5)
+
+| # | Method | Endpoint | Service Function | File | Status |
+|:--|:---:|:---|:---|:---|:---:|
+| 1 | POST | `/auth/signup` | `AuthService.signup()` | [authService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/authService.ts) | ✅ |
+| 2 | POST | `/auth/login` | `AuthService.login()` | [authService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/authService.ts) | ✅ |
+| 3 | POST | `/auth/forgot-password` | `AuthService.forgotPassword()` | [authService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/authService.ts) | ❌ **NEW** |
+| 4 | POST | `/auth/reset-password` | `AuthService.resetPassword()` | [authService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/authService.ts) | ❌ **NEW** |
+| 5 | POST | `/auth/logout` | `AuthService.serverLogout()` | [authService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/authService.ts) | ❌ **NEW** |
+
+### Module 2: Campaign Sources (6–12)
+
+| # | Method | Endpoint | Service Function | File | Status |
+|:--|:---:|:---|:---|:---|:---:|
+| 6 | POST | `/api/campaign/source/create` | `CampaignService.createSource()` | [campaignService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/campaignService.ts) | ✅ |
+| 7 | GET | `/api/campaign/source` | `CampaignService.getAllSources()` | [campaignService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/campaignService.ts) | ✅ |
+| 8 | GET | `/api/campaign/source/id/{id}` | `CampaignService.getSourceById()` | [campaignService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/campaignService.ts) | ✅ |
+| 9 | GET | `/api/campaign/source/name/{name}` | `CampaignService.getSourceByName()` | [campaignService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/campaignService.ts) | ✅ |
+| 10 | GET | `/api/campaign/source/status/{status}` | `CampaignService.getSourcesByStatus()` | [campaignService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/campaignService.ts) | ❌ **NEW** |
+| 11 | PUT | `/api/campaign/source/update/{id}` | `CampaignService.updateSource()` | [campaignService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/campaignService.ts) | ❌ **NEW** |
+| 12 | PATCH | `/api/campaign/source/update-status/{id}/{status}` | `CampaignService.updateSourceStatus()` | [campaignService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/campaignService.ts) | ❌ **NEW** |
+
+### Module 3: Affiliate (13–21)
+
+| # | Method | Endpoint | Service Function | File | Status |
+|:--|:---:|:---|:---|:---|:---:|
+| 13 | POST | `/api/campaign/affiliate/create` | `AffiliateService.registerAffiliate()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 14 | GET | `/api/campaign/affiliate` | `AffiliateService.getAllAffiliates()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 15 | GET | `/api/campaign/affiliate/id/{id}` | `AffiliateService.getAffiliateById()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 16 | GET | `/api/campaign/affiliate/email/{email}` | `AffiliateService.getAffiliateByEmail()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 17 | GET | `/api/campaign/affiliate/companyName/{cn}` | `AffiliateService.getAffiliateByCompanyName()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 18 | GET | `/api/campaign/affiliate/active/{status}` | `AffiliateService.getAffiliatesByActiveStatus()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 19 | PUT | `/api/campaign/affiliate/update/{id}` | `AffiliateService.updateAffiliate()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 20 | PATCH | `/api/campaign/affiliate/update-active/{id}/{status}` | `AffiliateService.updateAffiliateActiveStatus()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+| 21 | GET | `/api/campaign/affiliate/my-leads` | `AffiliateService.getMyLeads()` | [affiliateService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/affiliateService.ts) | ✅ |
+
+### Module 4: Counselor Profile (22–34)
+
+| # | Method | Endpoint | Service Function | File | Status |
+|:--|:---:|:---|:---|:---|:---:|
+| 22 | POST | `/api/counselors/create` | `CounselorService.createCounselor()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 23 | GET | `/api/counselors` | `CounselorService.getAllCounselors()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 24 | GET | `/api/counselors/id/{id}` | `CounselorService.getCounselorById()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 25 | GET | `/api/counselors/email/{email}` | `CounselorService.getCounselorByEmail()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 26 | GET | `/api/counselors/phone/{phone}` | `CounselorService.getCounselorByPhone()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ❌ **NEW** |
+| 27 | POST | `/api/counselors/updateStatus/email/{e}/status/{s}` | `CounselorService.updateStatus()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 28 | POST | `/api/counselors/updatePriority/email/{e}/priority/{p}` | `CounselorService.updatePriority()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 29 | PUT | `/api/counselors/update/email/{email}` | `CounselorService.updateProfile()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 30 | PUT | `/api/counselors/updateTypes/email/{email}` | `CounselorService.updateTypes()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ❌ **NEW** |
+| 31 | POST | `/api/counselors/manual-assign/lead/{l}/counselor/{c}` | `CounselorService.manualAssignLead()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 32 | GET | `/api/counselors/searchBy/status/{status}` | `CounselorService.searchByStatus()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 33 | GET | `/api/counselors/searchBy/name/{name}` | `CounselorService.searchByName()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 34 | GET | `/api/counselors/searchBy/type/{type}` | `CounselorService.searchByType()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ❌ **NEW** |
+
+### Module 5: Counselor Lead Ops (35–46)
+
+| # | Method | Endpoint | Service Function | File | Status |
+|:--|:---:|:---|:---|:---|:---:|
+| 35 | GET | `/api/counselor/leads/all/{page}/{size}` | `CounselorService.getAssignedLeads()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 36 | GET | `/api/counselor/leads/search/id/{id}` | `CounselorService.searchLeadById()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 37 | GET | `/api/counselor/leads/search/email/{email}` | `CounselorService.searchLeadByEmail()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 38 | GET | `/api/counselor/leads/search/phone/{phone}` | `CounselorService.searchLeadByPhone()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ❌ **NEW** |
+| 39 | GET | `/api/counselor/leads/search/source/{source}` | `CounselorService.searchLeadsBySource()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 40 | GET | `/api/counselor/leads/search/score/{score}` | `CounselorService.searchLeadsByScore()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 41 | GET | `/api/counselor/leads/search/course/{course}` | `CounselorService.searchLeadsByCourse()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 42 | GET | `/api/counselor/leads/search/date/{date}` | `CounselorService.searchLeadsByDate()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 43 | GET | `/api/counselor/leads/search/name/{name}` | `CounselorService.searchLeadsByName()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ❌ **NEW** |
+| 44 | POST | `/api/counselor/lead/{leadId}/score/{score}` | `CounselorService.updateLeadScore()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 45 | POST | `/api/counselor/lead/{leadId}/status/{status}` | `CounselorService.updateLeadStatus()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+| 46 | PUT | `/api/counselor/lead/{leadId}/course/{courseName}` | `CounselorService.updateLeadCourse()` | [counselorService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/counselorService.ts) | ✅ |
+
+### Module 6: Course (47–55) & Department (56–63)
+
+| # | Method | Endpoint | Service Function | File | Status |
+|:--|:---:|:---|:---|:---|:---:|
+| 47 | POST | `/api/course/create` | `CourseService.createCourse()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ✅ |
+| 48 | GET | `/api/course/name` | `CourseService.getAllCourses()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ✅ |
+| 49 | GET | `/api/course` | `CourseService.getAllCoursesRaw()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ❌ **NEW** |
+| 50 | GET | `/api/course/{id}` | `CourseService.getCourseById()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ✅ |
+| 51 | GET | `/api/course/byCourse/{course}` | `CourseService.getCourseByName()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ✅ |
+| 52 | POST | `/api/course/updateName/id/{id}/name/{course}` | `CourseService.updateCourseName()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ✅ |
+| 53 | PUT | `/api/course/update/{id}` | `CourseService.updateCourse()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ❌ **NEW** |
+| 54 | DELETE | `/api/course/delete/{id}` | `CourseService.deleteCourse()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ❌ **NEW** |
+| 55 | POST | `/api/course/bulk-create` | `CourseService.bulkCreate()` | [courseService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/courseService.ts) | ❌ **NEW** |
+| 56 | POST | `/api/department/create` | `DepartmentService.createDepartment()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ✅ |
+| 57 | GET | `/api/department` | `DepartmentService.getAllDepartments()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ✅ |
+| 58 | GET | `/api/department/name` | `DepartmentService.getAllDepartmentNames()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ❌ **NEW** |
+| 59 | GET | `/api/department/{id}` | `DepartmentService.getDepartmentById()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ✅ |
+| 60 | GET | `/api/department/name/{department}` | `DepartmentService.getDepartmentByName()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ✅ |
+| 61 | POST | `/api/department/updateName/id/{id}/name/{dept}` | `DepartmentService.updateDepartmentName()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ✅ |
+| 62 | PUT | `/api/department/update/{id}` | `DepartmentService.updateDepartment()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ❌ **NEW** |
+| 63 | DELETE | `/api/department/delete/{id}` | `DepartmentService.deleteDepartment()` | [departmentService.ts](file:///C:/Users/Sooja/OneDrive/Desktop/FrontendOfCrm/src/services/departmentService.ts) | ❌ **NEW** |
+
+### Module 7: Lead (64–88)
+
+| # | Method | Endpoint | Status |
+|:--|:---:|:---|:---:|
+| 64–86 | * | Core Lead CRUD, Search, Bulk, Integration | ✅ Implemented |
+| 87 | POST | `/api/leads/verify-otp/{phone}/{otp}` | ❌ **NEW** |
+| 88 | GET | `/api/leads/unverified` | ❌ **NEW** |
+
+### Module 8: Mentor & Session (89–118) — Mostly ✅
+
+| # | Missing? | Endpoint |
+|:--|:---:|:---|
+| 113 | ❌ | `GET /api/offlineSession/{sessionId}` — getSessionById |
+| 114 | ❌ | `GET /api/offlineSession/{sessionId}/leads` — getSessionLeads |
+| 115–118 | ❌ | Mentor session-leads, assignment/lead endpoints |
+
+### Module 9: Note (119–121) ✅ Complete
+### Module 10: Role (122–126)
+
+| # | Missing? | Endpoint |
+|:--|:---:|:---|
+| 126 | ❌ | `PUT /api/role/update/{id}` — updateRole |
+
+### Module 11: TimedOut (127–134) ✅ Complete
+### Module 12: Audit (135–136)
+
+| # | Missing? | Endpoint |
+|:--|:---:|:---|
+| 136 | ❌ | `GET /api/audit/entity/{type}/{id}` — getEntityHistory |
+
+### Module 13: User Management (137–144)
+
+| # | Missing? | Endpoint |
+|:--|:---:|:---|
+| 137 | ❌ | `POST /api/users/create` |
+| 138 | ❌ | `GET /api/users` |
+| 139 | ❌ | `GET /api/users/id/{id}` |
+| 140 | ❌ | `GET /api/users/username/{name}` |
+| 141 | ❌ | `GET /api/users/email/{email}` |
+| 142 | ❌ | `PATCH /api/users/id/{userId}/password` |
+| 143 | ❌ | `PUT /api/users/id/{userId}` |
+| 144 | ✅ | `POST /api/users/update/{email}/role/{role}` |
+
+### Module 14: Assignment & Contacted (145–160) ✅ Complete
+### Module 15: Config (161–163) ✅ Complete
+
+### Module 16: Leaves (164–170) — **ALL NEW**
+
+| # | Method | Endpoint | Description |
+|:--|:---:|:---|:---|
+| 164 | POST | `/api/leaves/apply` | Counselor applies for leave |
+| 165 | GET | `/api/leaves/my` | Counselor views own leaves |
+| 166 | GET | `/api/leaves/counselor/{counselorId}` | Manager views counselor's leaves |
+| 167 | GET | `/api/leaves/all` | Manager lists all leaves |
+| 168 | GET | `/api/leaves/{leaveId}` | Get leave details |
+| 169 | PUT | `/api/leaves/{leaveId}/status/{status}` | Approve/Reject leave |
+| 170 | PUT | `/api/leaves/{leaveId}/dates` | Adjust leave dates |
+
+### Module 17: Enum (171–182) — **ALL NEW**
+
+| # | Method | Endpoint | Description |
+|:--|:---:|:---|:---|
+| 171 | GET | `/api/enum/all` | All enums as map |
+| 172 | GET | `/api/enum/lead-status` | Lead status values |
+| 173 | GET | `/api/enum/user-status` | User status values |
+| 174 | GET | `/api/enum/sla-status` | SLA status values |
+| 175 | GET | `/api/enum/session-status` | Session status values (✅ exists in sessionService) |
+| 176 | GET | `/api/enum/scores` | Lead score values |
+| 177 | GET | `/api/enum/priority` | Priority values |
+| 178 | GET | `/api/enum/counselor-type` | Counselor type values |
+| 179 | GET | `/api/enum/counselor-status` | Counselor status values |
+| 180 | GET | `/api/enum/audit-action` | Audit action types |
+| 181 | GET | `/api/enum/assign-status` | Assignment status values |
+| 182 | GET | `/api/enum/active-status` | Active status values |
+
+### Module 18: Dashboard (183–187) — **ALL NEW**
+
+| # | Method | Endpoint | Description |
+|:--|:---:|:---|:---|
+| 183 | GET | `/api/dashboard/summary` | Dashboard summary stats |
+| 184 | GET | `/api/dashboard/lead-volume` | Lead volume over time |
+| 185 | GET | `/api/dashboard/campaign-stats` | Campaign performance |
+| 186 | GET | `/api/dashboard/counselor-stats` | Counselor performance |
+| 187 | GET | `/api/dashboard/city-stats` | Geo stats by city |
+
+### Module 19: Fake Leads (188–189) — **ALL NEW**
+
+| # | Method | Endpoint | Description |
+|:--|:---:|:---|:---|
+| 188 | GET | `/api/leads/fake/{page}/{size}` | Generate fake leads |
+| 189 | GET | `/api/leads/fake/counselor/{cId}/{page}/{size}` | Fake leads by counselor |
+
+---
+
+## 🛠️ Implementation Priority
+
+1. **🔴 Critical**: Auth (forgot/reset password, logout), User Management CRUD, Leaves, Enum, Dashboard
+2. **🟡 Important**: Missing Campaign, Counselor, Course, Department, Session endpoints
+3. **🟢 Optional**: Fake Leads (testing only)
+
+---
+**Audit Completed**: 2026-03-24 03:02 IST

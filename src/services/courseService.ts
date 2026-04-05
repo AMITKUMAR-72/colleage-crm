@@ -13,24 +13,34 @@ export const CourseService = {
         const response = await api.get<CourseDTO>(`/api/course/${id}`);
         return response.data;
     },
-    async getAllCourses() {
-        const response = await api.get<any>('/api/course/name');
-        let data = response.data;
 
-        // Handle raw string (truncated JSON) with more flexible regex
+    normalizeCourses(data: any): CourseDTO[] {
+        let normalized = data;
+
+        // Handle raw string (truncated JSON) with more robust order-agnostic regex
         if (typeof data === 'string') {
-            const matches = [...data.matchAll(/"id":(\d+),"(?:course|courseName|name)":"([^"]+)"/g)];
-            data = matches.map(m => ({ id: parseInt(m[1]), course: m[2] }));
+            const regex = /{.*?}/g; // Extract each course object
+            const objects = data.match(regex) || [];
+            normalized = objects.map(obj => {
+                const id = obj.match(/"id":(\d+)/)?.[1];
+                const course = obj.match(/"(?:course|courseName|name)":"([^"]+)"/)?.[1];
+                const department = obj.match(/"department":"([^"]+)"/)?.[1];
+                return { 
+                    id: id ? parseInt(id) : 0, 
+                    course: course || '', 
+                    department: department || '' 
+                };
+            });
         }
 
         // Handle paginated response
-        if (data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.content)) {
-            data = data.content;
+        if (normalized && typeof normalized === 'object' && !Array.isArray(normalized) && Array.isArray(normalized.content)) {
+            normalized = normalized.content;
         }
 
-        if (Array.isArray(data)) {
-            return data.map((item, index) => {
-                if (typeof item === 'string') return { id: index, course: item };
+        if (Array.isArray(normalized)) {
+            return normalized.map((item, index) => {
+                if (typeof item === 'string') return { id: index, course: item, department: '' };
                 if (item && typeof item === 'object') {
                     const rawCourse = item.course ?? item.courseName ?? item.name ?? 'Unknown';
                     const rawDept = item.department ?? item.departmentName ?? item.dept ?? item.department_name ?? item.dept_name ?? '';
@@ -47,14 +57,45 @@ export const CourseService = {
                 return item;
             });
         }
-        return Array.isArray(data) ? data : [];
+        return Array.isArray(normalized) ? normalized : [];
     },
+
+    async getAllCourses() {
+        const response = await api.get<any>('/api/course/name');
+        return this.normalizeCourses(response.data);
+    },
+
     async getCourseByName(name: string) {
         const response = await api.get<CourseDTO>(`/api/course/byCourse/${name}`);
         return response.data;
     },
+
     async updateCourseName(id: number, course: string) {
         const response = await api.post<CourseDTO>(`/api/course/updateName/id/${id}/name/${course}`);
+        return response.data;
+    },
+
+    // 49. List all courses (raw — not just names)
+    async getAllCoursesRaw() {
+        const response = await api.get<any>('/api/course');
+        return this.normalizeCourses(response.data);
+    },
+
+    // 53. Update course details
+    async updateCourse(id: number, data: Partial<CourseDTO>) {
+        const response = await api.put<CourseDTO>(`/api/course/update/${id}`, data);
+        return response.data;
+    },
+
+    // 54. Delete course
+    async deleteCourse(id: number) {
+        const response = await api.delete(`/api/course/delete/${id}`);
+        return response.data;
+    },
+
+    // 55. Create bulk courses
+    async bulkCreate(courses: Array<{ course: string; department: string }>) {
+        const response = await api.post('/api/course/bulk-create', courses);
         return response.data;
     }
 };

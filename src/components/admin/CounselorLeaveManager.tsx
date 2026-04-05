@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CounselorDTO } from '@/types/api';
 import { CounselorService } from '@/services/counselorService';
-import { LeaveService, LeaveDTO } from '@/services/leaveService';
+import { LeaveService, LeaveRequestDTO as LeaveDTO } from '@/services/leaveService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Calendar, CheckCircle, XCircle, Clock, ChevronRight, UserCircle, Briefcase, Mail, Edit3, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -107,7 +107,7 @@ export default function CounselorLeaveManager() {
     };
 
     const startEditing = (leave: LeaveDTO) => {
-        setEditingDatesId(leave.id);
+        setEditingDatesId(leave.id!);
         setEditStartDate(leave.startDate);
         setEditEndDate(leave.endDate);
     };
@@ -391,7 +391,7 @@ export default function CounselorLeaveManager() {
                                                                 </div>
                                                                 <div className="flex items-center gap-2 ml-auto pt-4 md:pt-0">
                                                                     <button
-                                                                        onClick={() => handleUpdateDates(leave.id)}
+                                                                        onClick={() => handleUpdateDates(leave.id!)}
                                                                         className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors shadow-sm"
                                                                     >
                                                                         <Save className="w-3.5 h-3.5" />
@@ -413,13 +413,13 @@ export default function CounselorLeaveManager() {
                                                     {leave.status === 'PENDING' ? (
                                                         <div className="flex gap-2">
                                                             <button
-                                                                onClick={() => handleUpdateStatus(leave.id, 'APPROVED')}
+                                                                onClick={() => handleUpdateStatus(leave.id!, 'APPROVED')}
                                                                 className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-sm"
                                                             >
                                                                 Approve
                                                             </button>
                                                             <button
-                                                                onClick={() => handleUpdateStatus(leave.id, 'REJECTED')}
+                                                                onClick={() => handleUpdateStatus(leave.id!, 'REJECTED')}
                                                                 className="px-5 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-colors border border-slate-200"
                                                             >
                                                                 Reject
