@@ -7,7 +7,7 @@ import { DepartmentService } from '@/services/departmentService';
 import { LeadResponseDTO, LeadStatus, LeadScore, CourseDTO, DepartmentDTO } from '@/types/api';
 import {
     Search, RotateCcw, Mail, Globe, BookOpen, ChevronDown, GraduationCap, Phone, MapPin,
-    Flame, Sun, Snowflake
+    Flame, Sun, Snowflake, Bell
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import LeadNotes from '../LeadNotes';
@@ -15,6 +15,7 @@ import LoadingButton from '@/components/ui/LoadingButton';
 import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import CounselorProfileHeader from '../CounselorProfileHeader';
+import ReminderModal from './ReminderModal';
 
 const SCORE_COLORS: Record<string, string> = {
     'HOT': 'from-rose-500 to-orange-500 text-white shadow-rose-200',
@@ -74,6 +75,12 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
     const [updateProcessing, setUpdateProcessing] = useState(false);
     const isSubmitting = React.useRef(false);
+
+    // Reminder modal state
+    const [reminderModalOpen, setReminderModalOpen] = useState(false);
+    const [reminderLeadTarget, setReminderLeadTarget] = useState<{
+        id: number; name: string; score: string;
+    } | null>(null);
 
     // Search state
     const [searching, setSearching] = useState(false);
@@ -341,7 +348,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         isSubmitting.current = true;
         setUpdateProcessing(true);
         try {
-            await CounselorService.updateLeadScore(leadId, newScore);
+            await CounselorService.updateLeadScore(Number(leadId), newScore);
             setLeads(prev => prev.map(l => (l.id == leadId || (l as any).leadId == leadId) ? { ...l, score: newScore } : l));
             if (selectedLead?.id == leadId || (selectedLead as any)?.leadId == leadId) {
                 setSelectedLead(prev => prev ? { ...prev, score: newScore } : null);
@@ -976,6 +983,24 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                     )}
                                 </div>
 
+                                {/* Set Reminder Button */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setReminderLeadTarget({
+                                                id: selectedLead.id,
+                                                name: selectedLead.name,
+                                                score: selectedLead.score || 'COLD',
+                                            });
+                                            setReminderModalOpen(true);
+                                        }}
+                                        className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#4d0101] to-[#600202] text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:from-[#600202] hover:to-[#7a0303] transition-all shadow-lg shadow-[#4d0101]/20 active:scale-[0.98] group"
+                                    >
+                                        <Bell className="w-4 h-4 group-hover:animate-bounce" />
+                                        Set Follow-up Reminder
+                                    </button>
+                                </div>
+
                                 {/* Call to Action Section */}
                                 <div className="group relative overflow-hidden bg-slate-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl transition-all active:scale-[0.98]">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
@@ -1015,6 +1040,21 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Reminder Modal */}
+            {reminderLeadTarget && (
+                <ReminderModal
+                    isOpen={reminderModalOpen}
+                    onClose={() => { setReminderModalOpen(false); setReminderLeadTarget(null); }}
+                    leadId={reminderLeadTarget.id}
+                    leadName={reminderLeadTarget.name}
+                    leadScore={reminderLeadTarget.score}
+                    onSuccess={() => {
+                        setReminderModalOpen(false);
+                        setReminderLeadTarget(null);
+                    }}
+                />
             )}
         </div>
     );

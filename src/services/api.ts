@@ -7,7 +7,7 @@ const STANDALONE_DEMO = false;
 
 // Use direct backend URL to bypass proxy
 // If needed, override with NEXT_PUBLIC_API_BASE_URL (e.g. in production deployments).
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://apis.rafunirp.com';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 // Global in-flight request counter — incremented before each request, decremented after
 let _pendingCount = 0;
@@ -35,8 +35,14 @@ export function useGlobalLoading() {
 // Methods that mutate data — we show success toasts for these
 const MUTATION_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 
-// Endpoints whose toast messages should be suppressed (silent auth flows)
-const SILENT_URLS = ['/auth/login', '/auth/refresh'];
+// Endpoints whose toast messages should be suppressed (silent auth flows and background checks)
+const SILENT_URLS = [
+    '/auth/login', 
+    '/auth/refresh',
+    '/api/reminders/me/due',
+    '/api/reminders/me/missed',
+    '/api/reminders/me/pending'
+];
 
 const api = axios.create({
     baseURL: API_BASE_URL,

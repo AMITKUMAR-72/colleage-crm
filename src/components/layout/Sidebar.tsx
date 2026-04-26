@@ -15,7 +15,8 @@ import {
     LayoutDashboard,
     Users,
     UserSquare2,
-    Calendar
+    Calendar,
+    Bell
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -45,6 +46,7 @@ export default function Sidebar() {
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },
         { label: 'API Integration', href: '/affiliate/integration', roles: ['AFFILIATE'], icon: ShieldCheck },
         { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
+        { label: 'Reminders', href: '/reminders', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Bell },
         { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', 'AFFILIATE'], icon: Upload },
         { label: 'Timed-Out Leads', href: '/timeout-leads', roles: ['ADMIN', 'MANAGER'], icon: Clock },
         { label: 'Monitor', href: '/admin?tab=MONITOR', roles: ['ADMIN'], icon: ShieldCheck },
