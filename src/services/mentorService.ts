@@ -72,9 +72,15 @@ export const MentorService = {
         return response.data?.data || response.data || [];
     },
 
-    // Update my profile (Mentor)
-    updateMyProfile: async (data: Partial<MentorDTO>) => {
-        const response = await api.put<MentorDTO>('/api/mentors/profile/update', data);
+    // #67 - Update mentor professional profile (Admin)
+    updateMentor: async (email: string, data: Partial<MentorDTO>) => {
+        const response = await api.patch<MentorDTO>(`/api/mentors/update/${encodeURIComponent(email)}`, data);
+        return response.data;
+    },
+
+    // Self profile update (Mentor - uses the update endpoint with own email)
+    updateMyProfile: async (email: string, data: Partial<MentorDTO>) => {
+        const response = await api.patch<MentorDTO>(`/api/mentors/update/${encodeURIComponent(email)}`, data);
         return response.data;
     }
 };

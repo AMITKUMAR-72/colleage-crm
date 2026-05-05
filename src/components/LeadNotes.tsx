@@ -9,7 +9,7 @@ import { useAsyncMap } from '@/hooks/useAsync';
 import LoadingButton from '@/components/ui/LoadingButton';
 
 interface LeadNotesProps {
-    leadId: number;
+    leadId: string | number;
 }
 
 export default function LeadNotes({ leadId }: LeadNotesProps) {

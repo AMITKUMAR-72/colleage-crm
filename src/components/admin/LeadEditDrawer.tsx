@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { X, User, Mail, Phone, BookOpen, Building2, Calendar, Globe, Save, Loader2, ChevronDown } from 'lucide-react';
-import { LeadRequestDTO, LeadResponseDTO, DepartmentDTO, CourseDTO, LeadStatus, LeadScore, CampaignDTO } from '@/types/api';
+import { LeadRequestDTO, LeadResponseDTO, DepartmentDTO, CourseDTO, LeadStatus, CampaignDTO } from '@/types/api';
 import { LeadService } from '@/services/leadService';
 import { DepartmentService } from '@/services/departmentService';
 import { CourseService } from '@/services/courseService';
@@ -41,7 +41,6 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                 course: typeof lead.course === 'object' && lead.course ? (lead.course as any).course : (lead.course as string || ''),
                 intake: '2026',
                 status: lead.status as LeadStatus,
-                score: lead.score as LeadScore,
                 campaign: lead.campaign as any
             });
 
@@ -69,7 +68,7 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
 
                 setDepartments(deptData.status === 'fulfilled' && Array.isArray(deptData.value) ? deptData.value : []);
                 setCourses(courseData.status === 'fulfilled' && Array.isArray(courseData.value) ? courseData.value : []);
-                
+
                 const rawSources = sourceData.status === 'fulfilled' ? sourceData.value : [];
                 setSources(Array.isArray(rawSources) ? rawSources : (rawSources as any)?.data || []);
             } catch (error) {
@@ -238,21 +237,21 @@ export default function LeadEditDrawer({ isOpen, onClose, lead, onSuccess }: Lea
                                     </div>
                                 </div>
 
-                                    <div className="md:grid-cols-2 gap-6">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Enrolled Course</label>
-                                        <div className="relative group">
-                                            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
-                                            <input
-                                                type="text"
-                                                name="course"
-                                                value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, course: e.target.value.toUpperCase() }))}
-                                                className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-bold text-slate-800"
-                                                required
-                                                placeholder="e.g. B.TECH"
-                                            />
-                                        </div>
+                                <div className="md:grid-cols-2 gap-6">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Enrolled Course</label>
+                                    <div className="relative group">
+                                        <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-800 transition" />
+                                        <input
+                                            type="text"
+                                            name="course"
+                                            value={typeof formData.course === 'string' ? formData.course : (formData.course as any)?.course || ''}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, course: e.target.value.toUpperCase() }))}
+                                            className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-800 transition font-bold text-slate-800"
+                                            required
+                                            placeholder="e.g. B.TECH"
+                                        />
                                     </div>
+                                </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>

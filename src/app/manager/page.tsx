@@ -5,13 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ManagerLeadInbox from '@/components/manager/ManagerLeadInbox';
 import AssignedLeadsMonitor from '@/components/manager/AssignedLeadsMonitor';
-import ContactedLeadsMonitor from '@/components/manager/ContactedLeadsMonitor';
 
 function ManagerDashboardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT' | null : null;
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT'>(tabParam || 'OVERVIEW');
+    const tabParam = searchParams ? searchParams.get('tab') as 'OVERVIEW' | 'ASSIGNMENTS' | null : null;
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ASSIGNMENTS'>(tabParam || 'OVERVIEW');
 
     // Sync tab from URL param on load/navigation
     useEffect(() => {
@@ -21,7 +20,7 @@ function ManagerDashboardContent() {
     }, [tabParam, activeTab]);
 
     // Sync active tab to URL so reload preserves the correct tab
-    const handleTabChange = (tab: 'OVERVIEW' | 'ASSIGNMENTS' | 'ENGAGEMENT') => {
+    const handleTabChange = (tab: 'OVERVIEW' | 'ASSIGNMENTS') => {
         setActiveTab(tab);
         router.replace(`?tab=${tab}`, { scroll: false });
     };
@@ -47,13 +46,16 @@ function ManagerDashboardContent() {
             </header>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                <div
-                    onClick={() => window.location.href = '/timeout-leads'}
-                    className="w-full md:w-72 bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group"
-                >
-                    <div className="flex flex-col">
-                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-rose-600 transition-colors uppercase">REASSIGNMENT</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Timed-out Leads</p>
+                {/* Statistics / Links */}
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <div
+                        onClick={() => handleTabChange('ASSIGNMENTS')}
+                        className="w-full md:w-72 bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group"
+                    >
+                        <div className="flex flex-col">
+                            <h3 className="font-bold text-slate-800 text-sm group-hover:text-green-600 transition-colors uppercase">ASSIGNMENT LOGS</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Review Distribution</p>
+                        </div>
                     </div>
                 </div>
 
@@ -78,15 +80,6 @@ function ManagerDashboardContent() {
                         >
                             ASSIGNMENTS
                         </button>
-                        <button
-                            onClick={() => handleTabChange('ENGAGEMENT')}
-                            className={`flex-1 min-w-[120px] md:flex-none md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === 'ENGAGEMENT'
-                                ? 'bg-white text-indigo-600 shadow-lg shadow-indigo-900/5 translate-y-[-1px]'
-                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                                }`}
-                        >
-                            ENGAGEMENT
-                        </button>
                     </div>
                 </div>
             </div>
@@ -94,17 +87,6 @@ function ManagerDashboardContent() {
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {activeTab === 'OVERVIEW' && (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div onClick={() => handleTabChange('ASSIGNMENTS')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group text-left">
-                                <h3 className="font-black text-slate-800 text-sm group-hover:text-green-600 uppercase tracking-tight">Assignment Logs</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Review Distribution</p>
-                            </div>
-                            <div onClick={() => handleTabChange('ENGAGEMENT')} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer group text-left">
-                                <h3 className="font-black text-slate-800 text-sm group-hover:text-indigo-600 uppercase tracking-tight">Team Engagement</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Contact Metrics</p>
-                            </div>
-                        </div>
-
                         <div className="w-full">
                             <ManagerLeadInbox />
                         </div>
@@ -112,8 +94,8 @@ function ManagerDashboardContent() {
                 )}
 
                 {activeTab === 'ASSIGNMENTS' && <AssignedLeadsMonitor />}
-                {activeTab === 'ENGAGEMENT' && <ContactedLeadsMonitor />}
             </div>
+
         </DashboardLayout>
     );
 }

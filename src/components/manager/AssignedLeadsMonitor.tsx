@@ -11,13 +11,13 @@ import LoadingButton from '@/components/ui/LoadingButton';
 import api from '@/services/api';
 
 // ─── Bulk Reassign Dropdown ──────────────────────────────────────────────────
-function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: (string | number)[]; assignments: AssignedLeadDTO[]; onAssigned: () => void }) {
+// ─── Bulk Reassign Dropdown ──────────────────────────────────────────────────
+function BulkReassignButton({ leadIds, onAssigned }: { leadIds: (string | number)[]; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [assigning, setAssigning] = useState<string | null>(null);
     const ref = useRef<HTMLDivElement>(null);
-    const [isCourseNullState, setIsCourseNullState] = useState(true);
 
     useEffect(() => {
         if (!open) return;
@@ -30,58 +30,14 @@ function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: (st
 
     const handleOpen = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        const nowOpen = !open;
-        setOpen(nowOpen);
-        if (nowOpen && counselors.length === 0) {
+        setOpen(!open);
+        if (!open && counselors.length === 0) {
             setLoading(true);
             try {
                 const raw: any = await CounselorService.getAllCounselors();
-                let list: CounselorDTO[] = Array.isArray(raw)
+                const list: CounselorDTO[] = Array.isArray(raw)
                     ? raw
-                    : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
-                
-                let hasNullCourse = false;
-                let targetCourseName = '';
-
-                for (const a of assignments) {
-                    const leadId = a.lead?.id || (a as any).leadId;
-                    if (leadIds.includes(leadId)) {
-                        const lead = a.lead;
-                        if (!lead || !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course)) {
-                            hasNullCourse = true;
-                        } else if (!targetCourseName) {
-                            targetCourseName = typeof lead.course === 'object' ? (lead.course as any).course : String(lead.course);
-                        }
-                    }
-                }
-
-                setIsCourseNullState(hasNullCourse || !targetCourseName);
-
-                if (!hasNullCourse && targetCourseName) {
-                    try {
-                        const courseRes = await api.get(`/api/course/byCourse/${encodeURIComponent(targetCourseName)}`);
-                        const mappedDept = courseRes.data?.departmentName 
-                            || courseRes.data?.department?.name 
-                            || courseRes.data?.department 
-                            || String(courseRes.data);
-
-                        if (mappedDept && mappedDept !== 'undefined' && mappedDept !== '[object Object]') {
-                            list = list.filter(c => {
-                                if (!c.departments || c.departments.length === 0) return false;
-                                return c.departments.some((d: string) => 
-                                    d.toLowerCase() === mappedDept.toLowerCase() ||
-                                    mappedDept.toLowerCase().includes(d.toLowerCase())
-                                );
-                            });
-                        } else {
-                            list = []; // Invalid mapping
-                        }
-                    } catch (err) {
-                        console.error("Course mapping failed", err);
-                        list = [];
-                    }
-                }
-                
+                    : (raw?.counselors ?? raw?.data ?? raw?.content) || [];
                 setCounselors(list);
             } catch {
                 toast.error('Could not load counselors');
@@ -91,24 +47,19 @@ function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: (st
         }
     };
 
-    const handleBulkReassign = async (e: React.MouseEvent, counselorId: string | number, type: string) => {
+    const handleBulkReassign = async (e: React.MouseEvent, counselorId: string | number) => {
         e.stopPropagation();
-        if (leadIds.length === 0) {
-            toast.error('No leads selected');
-            return;
-        }
-        setAssigning(`${counselorId}-${type}`);
+        if (leadIds.length === 0) return;
+        
+        setAssigning(String(counselorId));
         try {
-            const res = await LeadService.bulkReassignLeads(counselorId, type, leadIds);
-            if (res && res.successCount !== undefined) {
-                toast.success(`Success: ${res.successCount}, Failed: ${res.failCount || 0}`);
-            } else {
-                toast.success(`Reassigned ${leadIds.length} leads successfully`);
-            }
+            // #22 - Bulk Assign (Using standard assign endpoint as requested)
+            await LeadService.bulkAssignLeads(counselorId, leadIds.map(String));
+            toast.success(`Successfully assigned ${leadIds.length} leads`);
             setOpen(false);
             onAssigned();
         } catch {
-            /* global toast shown by interceptor */
+            // Error managed by interceptor
         } finally {
             setAssigning(null);
         }
@@ -132,47 +83,131 @@ function BulkReassignButton({ leadIds, assignments, onAssigned }: { leadIds: (st
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[100] overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Counselor Type</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Target Counselor</p>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                         {loading ? (
-                            <div className="py-6 text-center text-xs font-bold text-slate-400 animate-pulse italic">fetching counselors…</div>
-                        ) : counselors.length === 0 ? (
-                            <div className="py-6 text-center text-xs font-bold text-slate-400 italic">
-                                {isCourseNullState ? "No counselors found" : "This department counselor not available"}
+                            <div className="py-10 text-center flex flex-col items-center">
+                                <div className="w-5 h-5 border-2 border-slate-200 border-t-[#4d0101] rounded-full animate-spin" />
+                                <p className="mt-2 text-[9px] font-black text-slate-300 uppercase tracking-widest">Fetching…</p>
                             </div>
+                        ) : counselors.length === 0 ? (
+                            <div className="p-10 text-center italic text-slate-300 text-xs">No available counselors</div>
                         ) : (
-                            counselors.map((c, idx) => (
-                                <div
-                                    key={c.counselorId ?? idx}
-                                    className="w-full px-5 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 flex flex-col gap-2"
+                            counselors.map((c) => (
+                                <button
+                                    key={c.counselorId}
+                                    onClick={(e) => handleBulkReassign(e, c.counselorId)}
+                                    disabled={!!assigning}
+                                    className="w-full px-5 py-3.5 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 flex items-center justify-between group"
                                 >
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-slate-800">{c.name}</span>
+                                    <div className="flex flex-col text-left">
+                                        <span className="text-xs font-bold text-slate-700 group-hover:text-[#4d0101] transition-colors">{c.name}</span>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{c.counselorId}</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {c.counselorTypes && c.counselorTypes.length > 0 ? (
-                                            c.counselorTypes.map((type: string) => (
-                                                <button
-                                                    key={type}
-                                                    onClick={e => handleBulkReassign(e, c.counselorId, type)}
-                                                    disabled={assigning === `${c.counselorId}-${type}`}
-                                                    className={`px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
-                                                        assigning === `${c.counselorId}-${type}` 
-                                                            ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
-                                                            : 'hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
-                                                    } disabled:cursor-not-allowed`}
-                                                >
-                                                    {assigning === `${c.counselorId}-${type}` ? 'saving…' : type}
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
-                                        )}
-                                    </div>
-                                </div>
+                                    {assigning === String(c.counselorId) ? (
+                                        <div className="w-4 h-4 border-2 border-slate-200 border-t-[#4d0101] rounded-full animate-spin" />
+                                    ) : (
+                                        <svg className="w-4 h-4 text-slate-200 group-hover:text-[#4d0101] transition-colors" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                        </svg>
+                                    )}
+                                </button>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Manual Assign Button (Single Row) ──────────────────────────────────
+function ManualAssignButton({ leadId, onAssigned }: { leadId: string | number; onAssigned: () => void }) {
+    const [open, setOpen] = useState(false);
+    const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [assigning, setAssigning] = useState<string | null>(null);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+
+    const handleOpen = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpen(!open);
+        if (!open && counselors.length === 0) {
+            setLoading(true);
+            try {
+                const raw: any = await CounselorService.getAllCounselors();
+                const list: CounselorDTO[] = Array.isArray(raw)
+                    ? raw
+                    : (raw?.counselors ?? raw?.data ?? raw?.content) || [];
+                setCounselors(list);
+            } catch {
+                toast.error('Could not load counselors');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleReassign = async (e: React.MouseEvent, counselorId: string | number) => {
+        e.stopPropagation();
+        setAssigning(String(counselorId));
+        try {
+            // #21 - Manual Assign (Using standard assign endpoint as requested)
+            await LeadService.assignLeadToCounselor(leadId, counselorId);
+            toast.success('Lead assigned successfully');
+            setOpen(false);
+            onAssigned();
+        } catch {
+            // Managed by interceptor
+        } finally {
+            setAssigning(null);
+        }
+    };
+
+    return (
+        <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
+                <button
+                    onClick={handleOpen}
+                    className="flex shadow-sm items-center gap-1.5 px-3 py-1.5 bg-[#4d0101] text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-[#600202] transition-all"
+                >
+                    Assign
+                </button>
+
+            {open && (
+                <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Select Counselor</span>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                        {loading ? (
+                            <div className="p-6 text-center italic text-slate-300 text-[10px] font-bold animate-pulse">loading…</div>
+                        ) : (
+                            counselors.map(c => (
+                                <button
+                                    key={c.counselorId}
+                                    onClick={e => handleReassign(e, c.counselorId)}
+                                    disabled={!!assigning}
+                                    className="w-full px-4 py-2.5 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 text-left flex items-center justify-between group"
+                                >
+                                    <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-900">{c.name}</span>
+                                    {assigning === String(c.counselorId) ? (
+                                        <div className="w-3 h-3 border-2 border-slate-200 border-t-[#4d0101] rounded-full animate-spin" />
+                                    ) : (
+                                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">{c.counselorId}</span>
+                                    )}
+                                </button>
                             ))
                         )}
                     </div>
@@ -417,7 +452,6 @@ export default function AssignedLeadsMonitor() {
             <div className="flex justify-end">
                 <BulkReassignButton
                     leadIds={selectedLeadIds}
-                    assignments={assignments}
                     onAssigned={() => {
                         setSelectedLeadIds([]);
                         loadAssignments();
@@ -533,9 +567,12 @@ export default function AssignedLeadsMonitor() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button className="text-[10px] font-black text-slate-300 hover:text-green-600 uppercase tracking-widest">
-                                                    VIEW
-                                                </button>
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <button className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors">
+                                                        VIEW
+                                                    </button>
+                                                    {leadId && <ManualAssignButton leadId={leadId} onAssigned={loadAssignments} />}
+                                                </div>
                                             </td>
                                         </tr>
                                     );

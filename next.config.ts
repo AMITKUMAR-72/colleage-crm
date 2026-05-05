@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/backend/:path*",
-        destination: "https://apis.rafunirp.com/:path*",
+        destination: "http://localhost:8085/:path*",
       },
     ];
   },

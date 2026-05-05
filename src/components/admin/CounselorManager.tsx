@@ -14,7 +14,6 @@ export default function CounselorManager() {
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [departments, setDepartments] = useState<DepartmentDTO[]>([]);
     const [loading, setLoading] = useState(true);
-    const [counselorTypesEnum, setCounselorTypesEnum] = useState<string[]>([]);
     const [counselorStatusesEnum, setCounselorStatusesEnum] = useState<string[]>([]);
     const [filterType, setFilterType] = useState('all');
     const [filterValue, setFilterValue] = useState('');
@@ -29,7 +28,6 @@ export default function CounselorManager() {
         phone: '',
         alternatePhone: '',
         departments: [] as string[],
-        counselorTypes: ['INTERNAL'] as CounselorType[],
         status: 'AVAILABLE' as CounselorStatus,
         priority: 'MEDIUM' as Priority,
         totalLeads: 0
@@ -57,8 +55,7 @@ export default function CounselorManager() {
 
     const loadEnums = async () => {
         try {
-            const types = await CounselorService.getCounselorTypes();
-            if (Array.isArray(types)) setCounselorTypesEnum(types);
+
             const statuses = await CounselorService.getCounselorStatuses();
             if (Array.isArray(statuses)) setCounselorStatusesEnum(statuses);
         } catch (error) {
@@ -100,7 +97,7 @@ export default function CounselorManager() {
     const handleSearch = async () => {
         setLoading(true);
         try {
-            if (filterType === 'all' || (!filterValue.trim() && !['type', 'status'].includes(filterType))) {
+            if (filterType === 'all' || (!filterValue.trim() && filterType !== 'status')) {
                 await loadCounselors();
                 return;
             }
@@ -121,12 +118,7 @@ export default function CounselorManager() {
                     result = await CounselorService.searchByName(filterValue.trim());
                     list = Array.isArray(result) ? result : (result?.data || result?.content || result?.counselors || []);
                     break;
-                case 'type':
-                    if (filterValue) {
-                        result = await CounselorService.searchByType(filterValue);
-                        list = Array.isArray(result) ? result : (result?.data || result?.content || result?.counselors || []);
-                    }
-                    break;
+
                 case 'status':
                     if (filterValue) {
                         result = await CounselorService.searchByStatus(filterValue as CounselorStatus);
@@ -169,7 +161,7 @@ export default function CounselorManager() {
             }
             setShowModal(false);
             setEditingCounselor(null);
-            setFormData({ name: '', email: '', password: '', phone: '', alternatePhone: '', departments: [], counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
+            setFormData({ name: '', email: '', password: '', phone: '', alternatePhone: '', departments: [], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
             loadCounselors();
         } catch (error) {
             const err = error as AxiosError<{ message: string }>;
@@ -196,7 +188,6 @@ export default function CounselorManager() {
             phone: Array.isArray(counselor.phone) ? (counselor.phone[0] || '') : (counselor.phone || ''),
             alternatePhone: Array.isArray(counselor.phone) ? (counselor.phone[1] || '') : '',
             departments: counselor.departments || [],
-            counselorTypes: counselor.counselorTypes || [],
             status: counselor.status,
             priority: counselor.priority,
             totalLeads: counselor.totalLeads || 0
@@ -223,22 +214,13 @@ export default function CounselorManager() {
                             <option value="name">By Name</option>
                             <option value="email">By Email</option>
                             <option value="phone">By Phone</option>
-                            <option value="type">By Type</option>
+
                             <option value="status">By Status</option>
                         </select>
                         
                         {filterType !== 'all' && (
                             <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
-                                {filterType === 'type' ? (
-                                    <select
-                                        value={filterValue}
-                                        onChange={(e) => setFilterValue(e.target.value)}
-                                        className="p-3 bg-white border border-black rounded-xl outline-none focus:ring-2 focus:ring-[#dbb212] text-sm w-full sm:max-w-xs shadow-sm"
-                                    >
-                                        <option value="">Select Type...</option>
-                                        {counselorTypesEnum.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
-                                ) : filterType === 'status' ? (
+                                {filterType === 'status' ? (
                                     <select
                                         value={filterValue}
                                         onChange={(e) => setFilterValue(e.target.value)}
@@ -271,7 +253,7 @@ export default function CounselorManager() {
                         <button
                             onClick={() => {
                                 setEditingCounselor(null);
-                                setFormData({ name: '', email: '', password: '', phone: '', alternatePhone: '', departments: [], counselorTypes: ['INTERNAL'], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
+                                setFormData({ name: '', email: '', password: '', phone: '', alternatePhone: '', departments: [], status: 'AVAILABLE', priority: 'MEDIUM', totalLeads: 0 });
                                 setShowModal(true);
                             }}
                             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4d0101] text-white px-6 py-3 rounded-2xl hover:bg-[#4d0101] hover:scale-[1.02] active:scale-[0.98] transition-all font-bold shadow-lg"
@@ -319,9 +301,7 @@ export default function CounselorManager() {
                                             </td>
                                             <td className="hidden sm:table-cell px-6 py-4">
                                                 <div className="font-medium text-slate-700">{c.departments?.length > 0 ? c.departments.join(', ') : 'General'}</div>
-                                                <div className="mt-1.5 w-fit px-2 py-0.5 text-[10px] font-bold rounded-full border bg-blue-50 text-blue-600 border-blue-100">
-                                                    {c.counselorTypes?.join(', ')}
-                                                </div>
+
                                             </td>
                                             <td className="px-4 sm:px-6 py-4">
                                                 <div className={`w-fit px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold tracking-widest uppercase border ${c.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
@@ -457,56 +437,7 @@ export default function CounselorManager() {
                                 </div>
                             </div>
 
-                            <div className="col-span-1 md:col-span-2">
-                                <label className="block text-xs font-black uppercase mb-3">Counselor Types (Select Multiple)</label>
-                                <div className="space-y-3">
-                                    <div className="relative">
-                                        <select
-                                            className="w-full px-4 py-3.5 bg-gray-50 rounded-2xl border border-black focus:ring-2 focus:ring-[#dbb212] outline-none font-bold text-gray-700 appearance-none cursor-pointer"
-                                            onChange={(e) => {
-                                                const val = e.target.value as CounselorType;
-                                                if (val && !formData.counselorTypes.includes(val)) {
-                                                    setFormData({ ...formData, counselorTypes: [...formData.counselorTypes, val] });
-                                                }
-                                                e.target.value = ""; // Reset select
-                                            }}
-                                            value=""
-                                        >
-                                            <option value="" disabled>Choose Types...</option>
-                                            {(['INTERNAL', 'TELECALLER', 'EXTERNAL'] as CounselorType[])
-                                                .filter(t => !formData.counselorTypes.includes(t))
-                                                .map((type) => (
-                                                    <option key={type} value={type}>
-                                                        {type === 'INTERNAL' ? 'Internal Staff' : 
-                                                         type === 'TELECALLER' ? 'Tele-Sales Expert' : 
-                                                         'External Partner'}
-                                                    </option>
-                                                ))
-                                            }
-                                        </select>
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                            <ChevronDown className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {formData.counselorTypes.map((type) => (
-                                            <div key={type} className="flex items-center gap-2 px-3 py-1.5 bg-[#4d0101]/5 border border-[#4d0101]/20 text-[#4d0101] rounded-xl text-xs font-bold animate-in zoom-in duration-200">
-                                                <span>{type}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, counselorTypes: formData.counselorTypes.filter(t => t !== type) })}
-                                                    className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-[#4d0101]/10 transition-colors"
-                                                >
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ))}
-                                        {formData.counselorTypes.length === 0 && (
-                                            <span className="text-xs text-gray-400 italic ml-1">No types selected</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+
                         </div>
 
                         <div className="flex gap-4 pt-4">
@@ -559,36 +490,7 @@ export default function CounselorManager() {
                                         </select>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="block text-[9px] font-bold uppercase text-gray-400">Update Counselor Type</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {(['INTERNAL', 'TELECALLER', 'EXTERNAL'] as CounselorType[]).map((type) => {
-                                                const isSelected = selectedCounselorDetails.counselorTypes?.includes(type);
-                                                return (
-                                                    <button
-                                                        key={type}
-                                                        onClick={async () => {
-                                                            const current = selectedCounselorDetails.counselorTypes || [];
-                                                            const next = isSelected ? current.filter(t => t !== type) : [...current, type];
-                                                            try {
-                                                                await CounselorService.updateTypes(selectedCounselorDetails.email, next);
-                                                                setSelectedCounselorDetails({ ...selectedCounselorDetails, counselorTypes: next });
-                                                                toast.success('Counselor types updated');
-                                                                loadCounselors();
-                                                            } catch {
-                                                                toast.error('Failed to update types');
-                                                            }
-                                                        }}
-                                                        className={`px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-all ${
-                                                            isSelected ? 'bg-[#4d0101] text-white border-[#4d0101]' : 'bg-white text-gray-500 border-gray-200 hover:border-[#4d0101]'
-                                                        }`}
-                                                    >
-                                                        {type}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
+
 
                                     <div className="space-y-2">
                                         <label className="block text-[9px] font-bold uppercase text-gray-400">Priority Overrides</label>

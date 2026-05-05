@@ -14,7 +14,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [campaigns, setCampaigns] = useState<CampaignDTO[]>([]);
     const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
-    const [availableScores, setAvailableScores] = useState<string[]>([]);
+
     
     const [filterType, setFilterType] = useState<string>('NAME');
     const [filterValue, setFilterValue] = useState<string>('');
@@ -24,16 +24,15 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [courseData, campaignData, statusData, scoreData] = await Promise.all([
+                const [courseData, campaignData, statusData] = await Promise.all([
                     CourseService.getAllCourses(),
                     CampaignService.getAllSources(),
-                    EnumService.getLeadStatuses(),
-                    EnumService.getScores()
+                    EnumService.getLeadStatuses()
                 ]);
                 setCourses(courseData);
                 setCampaigns(campaignData);
                 setAvailableStatuses(statusData);
-                setAvailableScores(scoreData);
+
             } catch (error) {
                 console.error("Failed to load filter data", error);
             }
@@ -42,7 +41,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     }, []);
 
     const handleApply = () => {
-        const payload: LeadFilters = { email: '', status: '', course: '', campaign: '', score: '' };
+        const payload: LeadFilters = { email: '', status: '', course: '', campaign: '' };
         if (filterType === 'DATE_RANGE') {
             if (startDate && endDate) {
                 payload.startDate = startDate;
@@ -51,7 +50,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
         } else if (filterValue) {
             if (filterType === 'EMAIL') payload.email = filterValue;
             if (filterType === 'STATUS') payload.status = filterValue;
-            if (filterType === 'PRIORITY') payload.score = filterValue;
+
             if (filterType === 'COURSE') payload.course = filterValue;
             if (filterType === 'CAMPAIGN') payload.campaign = filterValue;
             if (filterType === 'NAME') payload.name = filterValue;
@@ -65,7 +64,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
         setFilterValue('');
         setStartDate('');
         setEndDate('');
-        onFilterChange({ email: '', status: '', course: '', campaign: '', score: '', startDate: '', endDate: '' });
+        onFilterChange({ email: '', status: '', course: '', campaign: '', startDate: '', endDate: '' });
     };
 
     return (
@@ -88,7 +87,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         <option value="PHONE">Phone</option>
                         <option value="ID">Lead ID</option>
                         <option value="STATUS">Status</option>
-                        <option value="PRIORITY">Score</option>
+
                         <option value="COURSE">Course</option>
                         <option value="CAMPAIGN">Campaign</option>
                         <option value="DATE_RANGE">Date Range</option>
@@ -114,7 +113,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                         </div>
                     ) : ( 
                         <div className="relative group">
-                            {['STATUS', 'PRIORITY', 'COURSE', 'CAMPAIGN'].includes(filterType) ? (
+                            {['STATUS', 'COURSE', 'CAMPAIGN'].includes(filterType) ? (
                                 <select
                                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all"
                                     value={filterValue}
@@ -122,7 +121,7 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
                                 >
                                     <option value="">Select {filterType.toLowerCase()}...</option>
                                     {filterType === 'STATUS' && availableStatuses.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                                    {filterType === 'PRIORITY' && availableScores.map(s => <option key={s} value={s}>{s}</option>)}
+
                                     {filterType === 'COURSE' && courses.map(c => (
                                         <option key={c.id} value={c.course}>
                                             {c.department ? `${c.department} - ${c.course}` : c.course}

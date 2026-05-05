@@ -1,5 +1,5 @@
 import api from './api';
-import { LeadRequestDTO, LeadResponseDTO, NoteDTO, LeadStatus, LeadScore, PageResponse, CreateNoteRequestDTO } from '@/types/api';
+import { LeadRequestDTO, LeadResponseDTO, NoteDTO, LeadStatus, PageResponse, CreateNoteRequestDTO } from '@/types/api';
 
 const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'lead', 'list', 'rows'] as const;
 const WRAPPER_KEYS = ['data', 'result', 'response', 'responseObject', 'payload'] as const;
@@ -77,86 +77,222 @@ const toPageResponse = (raw: unknown): PageResponse<LeadResponseDTO> => {
 };
 
 export const LeadService = {
+    // #6 - Manual lead creation (Walk-in)
     async createLead(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/create', data);
         return response.data;
     },
 
-    getAllLeads: async () => {
-        const response = await api.get<LeadResponseDTO[]>('/api/leads');
-        return response.data;
-    },
-
+    // #7 - Get full lead details
     getLeadById: async (id: string | number) => {
         const response = await api.get<LeadResponseDTO>(`/api/leads/id/${id}`);
         return response.data;
     },
 
+    // #8 - Find lead by email
     getLeadByEmail: async (email: string) => {
         const response = await api.get<LeadResponseDTO>(`/api/leads/email/${email}`);
         return response.data;
     },
 
-    // Returns Spring Data Page (paginated)
+    // #9 - Find lead by phone
+    getLeadByPhone: async (phone: string) => {
+        const response = await api.get<LeadResponseDTO>(`/api/leads/phone/${phone}`);
+        return response.data;
+    },
+
+    // #10 - Update lead (Admin/Manager)
+    async updateLead(email: string, data: Partial<LeadRequestDTO>) {
+        const response = await api.patch<LeadResponseDTO>(`/api/leads/update/email/${email}`, data);
+        return response.data;
+    },
+
+    // #11 - Import leads via Excel (AUTO/MANUAL)
+    bulkUploadLeads: async (file: File, mode: string = 'AUTO', onProgress?: (percent: number) => void) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/api/leads/bulk-upload?mode=${mode}`, formData, {
+            headers: {
+                'Content-Type': undefined
+            } as any,
+            onUploadProgress: (progressEvent) => {
+                if (onProgress && progressEvent.total) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    onProgress(percentCompleted);
+                }
+            }
+        });
+        return response.data;
+    },
+
+    // #12 - Global recent lead feed
     getRecentLeads: async (page: number, size: number) => {
         const response = await api.get(`/api/leads/recent/page/${page}/size/${size}`);
         return toPageResponse(response.data);
     },
 
+    // #13 - List leads awaiting assignment
     getUnassignedRecentLeads: async (page: number = 0, size: number = 10) => {
         const response = await api.get(`/api/leads/unassigned/recent/page/${page}/size/${size}`);
         return toPageResponse(response.data);
     },
 
-    getCounselorRecentLeads: async (counselorId: number, page: number = 0, size: number = 10) => {
+    // #14 - Recent leads for specific counselor
+    getCounselorRecentLeads: async (counselorId: number | string, page: number = 0, size: number = 10) => {
         const response = await api.get(`/api/leads/counselor/${counselorId}/recent/page/${page}/size/${size}`);
         return toPageResponse(response.data);
     },
 
-    getTimedOutLeads: async () => {
-        const response = await api.get('/api/timeOutLeads');
+    // #15 - My assigned active leads
+    getMyLeads: async (page: number = 0, size: number = 10) => {
+        const response = await api.get(`/api/leads/my/page/${page}/size/${size}`);
+        return toPageResponse(response.data);
+    },
+
+    // #16 - My leads moved to discarded state
+    getMyDiscardedLeads: async (page: number = 0, size: number = 10) => {
+        const response = await api.get(`/api/leads/my/discarded/page/${page}/size/${size}`);
+        return toPageResponse(response.data);
+    },
+
+    // #17 - Move lead to Discarded state with reason
+    discardLead: async (id: number | string, reason?: string) => {
+        const response = await api.post<LeadResponseDTO>(`/api/leads/discard/${id}`, reason ? { reason } : {});
         return response.data;
     },
 
-    assignTimedOutLead: async (leadEmail: string, counselorId: number) => {
-        const response = await api.post<LeadResponseDTO>(`/api/timeOutLeads/${leadEmail}/assign/counselor/${counselorId}`);
+    // #18 - Update lead's course by Name
+    updateLeadCourse: async (id: number | string, name: string) => {
+        const response = await api.put<LeadResponseDTO>(`/api/leads/${id}/course/name/${encodeURIComponent(name)}`);
         return response.data;
     },
 
-    // Explicit Search Methods (Resolving LeadInbox.tsx errors & Matching API Audit)
-    getLeadsByStatus: async (status: LeadStatus) => {
-        const response = await api.get(`/api/leads/searchBy/status/${status}`);
+    // #19 - Update lead status (CONTACTED, FAKE, etc)
+    updateLeadStatus: async (id: string | number, status: LeadStatus) => {
+        const response = await api.patch<LeadResponseDTO>(`/api/leads/${id}/status`, null, { params: { status } });
+        return response.data;
+    },
+
+
+
+    // #21 - Manual assign lead to counselor
+    assignLeadToCounselor: async (leadId: number | string, counselorId: number | string) => {
+        const response = await api.post<LeadResponseDTO>(`/api/leads/assign/${leadId}?counselorId=${counselorId}`);
+        return response.data;
+    },
+
+    // #22 - Batch assign leads to a counselor
+    bulkAssignLeads: async (counselorId: number | string, leadIds?: string[]) => {
+        const response = await api.post(`/api/leads/bulk-assign/${counselorId}`, leadIds ? { leadIds } : {});
+        return response.data;
+    },
+
+    // #23 - Filter leads by creation date range
+    getLeadsByDateRange: async (startDate: string, endDate: string) => {
+        const start = startDate.includes('T') ? startDate : `${startDate}T00:00:00`;
+        const end = endDate.includes('T') ? endDate : `${endDate}T23:59:59`;
+        const response = await api.get(`/api/leads/date-range`, { params: { start, end } });
         return toPageResponse(response.data).content;
     },
 
+    // #24 - Filter leads by campaign source
+    getLeadsBySource: async (name: string) => {
+        const response = await api.get(`/api/leads/source/${encodeURIComponent(name)}`);
+        return toPageResponse(response.data).content;
+    },
+
+    // #25 - Filter leads by course interest
     getLeadsByCourse: async (course: string) => {
-        const response = await api.get(`/api/leads/searchBy/course/${encodeURIComponent(course)}`);
+        const response = await api.get(`/api/leads/course/${encodeURIComponent(course)}`);
         return toPageResponse(response.data).content;
     },
 
-    getLeadsByCampaign: async (campaign: string) => {
-        const response = await api.get(`/api/leads/searchBy/campaign/${encodeURIComponent(campaign)}`);
-        return toPageResponse(response.data).content;
-    },
-
-    getLeadsByScore: async (score: LeadScore) => {
-        const response = await api.get(`/api/leads/searchBy/score/${score}`);
-        return toPageResponse(response.data).content;
-    },
-
+    // #27 - Search leads by name
     getLeadsByName: async (name: string) => {
-        const response = await api.get(`/api/leads/searchBy/name/${encodeURIComponent(name)}`);
+        const response = await api.get(`/api/leads/search`, { params: { name } });
         return toPageResponse(response.data).content;
     },
 
-    // Search & Filter — each filter uses its own endpoint
+    // #28 - My dashboard statistics map
+    getMyCounts: async () => {
+        const response = await api.get('/api/leads/my/count');
+        return response.data;
+    },
+
+    // #29 - Lead counts for specific counselor
+    getCounselorLeadCount: async (counselorId: string | number) => {
+        const response = await api.get(`/api/leads/counselor/${counselorId}/count`);
+        return response.data;
+    },
+
+    // #30 - View active leads for a counselor
+    getCounselorLeads: async (counselorId: string | number) => {
+        const response = await api.get(`/api/leads/counselor/${counselorId}`);
+        return toPageResponse(response.data).content;
+    },
+
+    // #31 - Leads filtered by department
+    getLeadsByDepartment: async (dept: string, page: number = 0, size: number = 10) => {
+        const response = await api.get(`/api/leads/department/${encodeURIComponent(dept)}/page/${page}/size/${size}`);
+        return toPageResponse(response.data);
+    },
+
+    // #32 - Leads for counselor in department
+    getCounselorLeadsByDepartment: async (counselorId: string | number, dept: string, page: number = 0, size: number = 10) => {
+        const response = await api.get(`/api/leads/counselor/${counselorId}/department/${encodeURIComponent(dept)}/page/${page}/size/${size}`);
+        return toPageResponse(response.data);
+    },
+
+    // #33 - List leads marked as fake
+    getFakeLeads: async (page: number = 0, size: number = 10) => {
+        const response = await api.get(`/api/leads/status/FAKE/page/${page}/size/${size}`);
+        return toPageResponse(response.data);
+    },
+
+    // #34 - List leads with no activity (Timeout)
+    getTimedOutLeads: async () => {
+        const response = await api.get('/api/leads/timeout');
+        return response.data;
+    },
+
+    // ─── Lead Priority Stages (Section 14) ───
+    // #146 - HOT leads
+    getHotLeads: async () => {
+        const response = await api.get('/api/leads/stages/hot');
+        return toPageResponse(response.data).content;
+    },
+
+    // #147 - WARM leads
+    getWarmLeads: async () => {
+        const response = await api.get('/api/leads/stages/warm');
+        return toPageResponse(response.data).content;
+    },
+
+    // #148 - COLD leads
+    getColdLeads: async () => {
+        const response = await api.get('/api/leads/stages/cold');
+        return toPageResponse(response.data).content;
+    },
+
+    // #149 - INTERESTED leads
+    getInterestedLeads: async () => {
+        const response = await api.get('/api/leads/stages/interested');
+        return toPageResponse(response.data).content;
+    },
+
+    // #150 - DISCARDED leads
+    getDiscardedLeads: async () => {
+        const response = await api.get('/api/leads/stages/discarded');
+        return toPageResponse(response.data).content;
+    },
+
+    // ─── Unified Search ───
     searchLeads: async (params: {
         email?: string,
         name?: string,
         course?: string,
         status?: string,
         campaign?: string,
-        origin?: string,
         score?: string,
         startDate?: string,
         endDate?: string,
@@ -170,29 +306,19 @@ export const LeadService = {
             }
             if (params.name) return await LeadService.getLeadsByName(params.name);
             if (params.course) return await LeadService.getLeadsByCourse(params.course);
-            if (params.status) return await LeadService.getLeadsByStatus(params.status as LeadStatus);
-            if (params.campaign) return await LeadService.getLeadsByCampaign(params.campaign);
-            if (params.score) return await LeadService.getLeadsByScore(params.score as LeadScore);
-
-            const extractArray = (res: any) => toPageResponse(res.data).content;
+            if (params.campaign) return await LeadService.getLeadsBySource(params.campaign);
 
             if (params.startDate && params.endDate) {
-                const start = `${params.startDate}T00:00:00`;
-                const end = `${params.endDate}T23:59:59`;
-                const response = await api.get(`/api/leads/date-range/start/${start}/end/${end}`);
-                return toPageResponse(response.data).content;
+                return await LeadService.getLeadsByDateRange(params.startDate, params.endDate);
             }
-
             if (params.id) {
                 const lead = await LeadService.getLeadById(params.id);
                 return lead ? [lead] : [];
             }
-
             if (params.phone) {
-                const response = await api.get(`/api/leads/phone/${params.phone}`);
-                return extractArray(response);
+                const lead = await LeadService.getLeadByPhone(params.phone);
+                return lead ? [lead] : [];
             }
-
             return [];
         } catch (error: any) {
             console.error("Search API Error:", error.message || error);
@@ -200,145 +326,72 @@ export const LeadService = {
         }
     },
 
-    getSourceByCount: async (campaign: string) => {
-        const response = await api.get(`/api/leads/searchBy/sourceByCount/${campaign}`);
+    // ─── Assigned Lead Tracking (Section 4) ───
+    // #48 - Transfer lead ownership between staff
+    bulkReassignLeads: async (toId: string | number, leadIds: (string | number)[]) => {
+        const response = await api.post(`/api/assignedLeads/bulk-reassign/${toId}`, { leadIds });
         return response.data;
     },
 
-    updateLeadStatus: async (id: number, status: LeadStatus) => {
-        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${id}/status/${status}`);
-        return response.data;
-    },
-
-    updateLeadScore: async (id: number, score: LeadScore) => {
-        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${id}/score/${score}`);
-        return response.data;
-    },
-
-    assignLeadToCounselor: async (leadEmail: string, counselorId: number) => {
-        // Base assignment (Admin/Manager level)
-        const response = await api.post<LeadResponseDTO>(`/api/leads/${leadEmail}/assign/counselor/${counselorId}`);
-        return response.data;
-    },
-
-    bulkUploadLeads: async (file: File) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = await api.post('/api/leads/bulk-upload', formData, {
-            headers: {
-                'Content-Type': undefined
-            } as any
-        });
-        return response.data;
-    },
-
-    async updateLead(email: string, data: Partial<LeadRequestDTO>) {
-        const response = await api.put<LeadResponseDTO>(`/api/leads/update/email/${email}`, data);
-        return response.data;
-    },
-
-
-
-    // ─── Notes (uses /api/note endpoints) ───
-    // Backend extracts counselor from JWT Principal. Only send { note }.
-    async addNote(leadId: number, noteContent: string) {
+    // ─── Notes ───
+    async addNote(leadId: string | number, noteContent: string) {
         const payload: CreateNoteRequestDTO = { note: noteContent };
         const response = await api.post<NoteDTO>(`/api/note/${leadId}/notes`, payload);
         return response.data;
     },
 
-    async getNotes(leadId: number) {
+    async getNotes(leadId: string | number) {
         const response = await api.get<NoteDTO[]>(`/api/note/${leadId}/notes`);
         return response.data;
     },
 
-    async getNoteById(noteId: number) {
+    async getNoteById(noteId: string | number) {
         const response = await api.get<NoteDTO>(`/api/note/id/${noteId}`);
         return response.data;
     },
 
-    async deleteNote(noteId: number) {
+    async deleteNote(noteId: string | number) {
         const response = await api.delete(`/api/note/${noteId}`);
         return response.data;
     },
 
-    // ─── Integration Webhooks ───
+    // ─── Webhook Integrations (Section 3) ───
+    // #35 - Facebook
     async integrateFacebook(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/integration/Facebook', data);
         return response.data;
     },
 
+    // #36 - Instagram
     async integrateInstagram(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/integration/Instagram', data);
         return response.data;
     },
 
-    // Note: Backend highlighting typo "GoogelForm" — must match exactly
+    // #37 - Google Forms (typo in backend: GoogelForm — must match exactly)
     async integrateGoogleForm(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/integration/GoogelForm', data);
         return response.data;
     },
 
-    async integrateAffiliatePartner(data: LeadRequestDTO) {
-        const response = await api.post<LeadResponseDTO>('/api/leads/integration/AffiliatePartner', data);
-        return response.data;
-    },
-
-    async getAffiliateLeads() {
-        // The api interceptor already unwraps the outer 'data' field.
-        // The unwrapped data is { count: number, lead: LeadResponseDTO[] }
-        const response = await api.get<{ lead: LeadResponseDTO[] } | LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
-
-        const data = response.data as any;
-        if (Array.isArray(data)) return data;
-        return data?.lead || data?.content || [];
-    },
-
-    /** POST /api/leads/bulk-assign/{counselorId}/{counselorType} */
-    bulkAssignLeads: async (counselorId: number | string, type: string, leadIds: number[]) => {
-        const response = await api.post(`/api/leads/bulk-assign/${counselorId}/${type}`, { leadIds });
-        return response.data;
-    },
-
-    /** POST /api/assignedLeads/bulk-reassign/{counselorId}/{counselorType} */
-    bulkReassignLeads: async (counselorId: string | number, counselorType: string, leadIds: (string | number)[]) => {
-        const response = await api.post(`/api/assignedLeads/bulk-reassign/${counselorId}/${counselorType}`, { leadIds });
-        return response.data;
-    },
-
-    // 78. Website Lead Webhook
+    // #38 - Official Website
     async integrateWebsite(data: LeadRequestDTO) {
         const response = await api.post<LeadResponseDTO>('/api/leads/integration/Website', data);
         return response.data;
     },
 
-    // 87. Verify OTP for a lead
-    async verifyOtp(phone: string, otp: string) {
-        const response = await api.post(`/api/leads/verify-otp/${encodeURIComponent(phone)}/${encodeURIComponent(otp)}`);
+    // #39 - Affiliate Partner
+    async integrateAffiliatePartner(data: LeadRequestDTO) {
+        const response = await api.post<LeadResponseDTO>('/api/leads/integration/AffiliatePartner', data);
         return response.data;
     },
 
-    // 88. List all unverified leads
-    async getUnverifiedLeads() {
-        const response = await api.get<LeadResponseDTO[]>('/api/leads/unverified');
-        return response.data;
-    },
-
-    async updateLeadById(id: string | number, data: Partial<LeadRequestDTO>) {
-        const response = await api.put<LeadResponseDTO>(`/api/leads/update/${id}`, data);
-        return response.data;
-    },
-
-    // 188. Generate and get fake leads (Paginated — Testing)
-    getFakeLeads: async (page: number = 0, size: number = 10) => {
-        const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/${page}/${size}`);
-        return response.data;
-    },
-
-    // 189. Get fake leads by counselor ID (Testing)
-    getFakeLeadsByCounselor: async (counselorId: string | number, page: number = 0, size: number = 10) => {
-        const response = await api.get<{ count: number, fakeLeads: LeadResponseDTO[] }>(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
-        return response.data;
+    // ─── Affiliate Portal ───
+    // #111 - Leads referred by currently logged-in affiliate
+    async getAffiliateLeads() {
+        const response = await api.get<{ lead: LeadResponseDTO[] } | LeadResponseDTO[]>('/api/campaign/affiliate/my-leads');
+        const data = response.data as any;
+        if (Array.isArray(data)) return data;
+        return data?.lead || data?.content || [];
     },
 };
-

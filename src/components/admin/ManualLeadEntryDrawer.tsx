@@ -57,8 +57,8 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
                 const extractArray = (blob: any): any[] => {
                     if (Array.isArray(blob)) return blob;
                     if (blob && typeof blob === 'object') {
-                        return (blob.data && Array.isArray(blob.data)) ? blob.data : 
-                               (blob.content && Array.isArray(blob.content)) ? blob.content : [];
+                        return (blob.data && Array.isArray(blob.data)) ? blob.data :
+                            (blob.content && Array.isArray(blob.content)) ? blob.content : [];
                     }
                     return [];
                 };
@@ -68,16 +68,16 @@ export default function ManualLeadEntryDrawer({ isOpen, onClose, onSuccess }: Ma
 
                 dbSources.forEach((s: any, idx: number) => {
                     if (!s) return;
-                    
-                    const name = typeof s === 'string' ? s : 
-                                 (s.name || s.campaignName || s.sourceName || s.campaign || s.source || s.campaign_name || 'Unknown');
-                    
-                    const id = typeof s === 'object' ? 
-                               (s.id || s.campaignId || s.sourceId || idx + 100) : (idx + 100);
-                    
+
+                    const name = typeof s === 'string' ? s :
+                        (s.name || s.campaignName || s.sourceName || s.campaign || s.source || s.campaign_name || 'Unknown');
+
+                    const id = typeof s === 'object' ?
+                        (s.id || s.campaignId || s.sourceId || idx + 100) : (idx + 100);
+
                     const cleanName = String(name).trim();
                     const key = cleanName.toLowerCase().replace(/[\s_]/g, '');
-                    
+
                     if (cleanName && cleanName !== 'Unknown') {
                         sourceMap.set(key, { id: Number(id), name: cleanName });
                     }

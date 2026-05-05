@@ -46,9 +46,8 @@ export default function Sidebar() {
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },
         { label: 'API Integration', href: '/affiliate/integration', roles: ['AFFILIATE'], icon: ShieldCheck },
         { label: 'Sessions', href: '/sessions', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Calendar },
-        { label: 'Reminders', href: '/reminders', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Bell },
+        { label: 'Reminders', href: '/reminders', roles: ['COUNSELOR'], icon: Bell },
         { label: 'BULK-LEADS', href: '/bulk-leads', roles: ['ADMIN', 'MANAGER', 'AFFILIATE'], icon: Upload },
-        { label: 'Timed-Out Leads', href: '/timeout-leads', roles: ['ADMIN', 'MANAGER'], icon: Clock },
         { label: 'Monitor', href: '/admin?tab=MONITOR', roles: ['ADMIN'], icon: ShieldCheck },
         { label: 'Mentor Hub', href: '/mentor', roles: ['MENTOR', 'ADMIN'], icon: User },
     ];
@@ -87,7 +86,7 @@ export default function Sidebar() {
                             className={`flex items-center px-4 py-3 rounded-xl transition-all duration-300 group ${isActive
                                 ? 'bg-[#4d0101] text-white shadow-lg shadow-black/20'
                                 : 'text-slate-400 hover:bg-[#dbb212]/10 hover:text-[#dbb212]'
-                            }`}
+                                }`}
                         >
                             <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-[#dbb212]'}`} />
                             <span className="font-bold text-[10px] uppercase tracking-[0.2em]">{item.label}</span>

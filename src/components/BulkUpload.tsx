@@ -24,6 +24,33 @@ const BulkUpload = () => {
     } | null>(null);
     const [isValidating, setIsValidating] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [mode, setMode] = useState<'AUTO' | 'MANUAL' | null>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const startSimulatedProgress = (startValue: number, maxValue: number, speed: number) => {
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        
+        progressIntervalRef.current = setInterval(() => {
+            setUploadProgress(prev => {
+                if (prev >= maxValue) {
+                    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+                    return prev;
+                }
+                // Slower increments as we get closer to maxValue
+                const remaining = maxValue - prev;
+                const increment = Math.max(0.1, remaining / 20);
+                return Math.min(maxValue, prev + increment);
+            });
+        }, speed);
+    };
+
+    const stopSimulatedProgress = () => {
+        if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+        }
+    };
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,8 +167,10 @@ const BulkUpload = () => {
         });
     };
 
-    const handleUpload = async () => {
+    const handleUpload = async (uploadMode: 'AUTO' | 'MANUAL') => {
         if (!file) return;
+
+        setMode(uploadMode);
 
         // Final validation check just in case
         const { isValid, newFile } = await validateFile(file);
@@ -154,8 +183,21 @@ const BulkUpload = () => {
         const fileToUpload = newFile || file;
 
         setStatus('uploading');
+        setUploadProgress(0);
+        startSimulatedProgress(0, 90, 200); // Start moving immediately
+
         try {
-            const result = await LeadService.bulkUploadLeads(fileToUpload);
+            const result = await LeadService.bulkUploadLeads(
+                fileToUpload, 
+                uploadMode,
+                (p) => {
+                    // Only update if real progress is ahead of simulation
+                    setUploadProgress(prev => Math.max(prev, p * 0.9));
+                }
+            );
+
+            stopSimulatedProgress();
+            setUploadProgress(100);
 
             if (result.success_leads > 0 || (result.failed_leads && result.failed_leads.length > 0)) {
                 setStatus('success');
@@ -172,6 +214,7 @@ const BulkUpload = () => {
                 setMessage('No leads were imported. Please check your file format.');
             }
         } catch (err: any) {
+            stopSimulatedProgress();
             console.error("Upload failed", err);
             setStatus('error');
 
@@ -272,16 +315,31 @@ const BulkUpload = () => {
             </div>
 
             {status !== 'idle' && (
-                <div className={`w-full mt-6 p-5 rounded-xl flex items-start gap-4 transition-all shadow-sm ${
+                <div className={`w-full mt-6 p-5 rounded-xl flex flex-col gap-4 transition-all shadow-sm ${
                     status === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' :
                     status === 'error' ? 'bg-rose-50 text-rose-800 border border-rose-100' :
-                    'bg-slate-50 text-slate-700 border border-slate-200 shadow-inner'
+                    'bg-slate-50 text-slate-700 border border-slate-200'
                 }`}>
-                    {status === 'success' && <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600" />}
-                    {status === 'error' && <AlertCircle className="w-6 h-6 shrink-0 text-rose-600" />}
-                    {status === 'uploading' && <Upload className="w-6 h-6 shrink-0 animate-bounce text-slate-500" />}
-                    <div className="flex-1 text-sm font-bold flex flex-col justify-center min-h-[24px]">
-                        {status === 'uploading' ? 'Transmitting records to CRM...' : message}
+                    <div className="flex items-start gap-4">
+                        {status === 'success' && <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600" />}
+                        {status === 'error' && <AlertCircle className="w-6 h-6 shrink-0 text-rose-600" />}
+                        {status === 'uploading' && <Upload className="w-6 h-6 shrink-0 animate-bounce text-slate-500" />}
+                        <div className="flex-1 text-sm font-bold flex flex-col justify-center min-h-[24px]">
+                            {status === 'uploading' ? (
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-slate-900">Transmitting records to CRM...</span>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <div className="flex-1 bg-slate-200 h-2.5 rounded-full overflow-hidden shadow-inner border border-slate-300/50">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-[#4d0101] to-[#800000] transition-all duration-500 ease-out rounded-full shadow-[0_0_10px_rgba(77,1,1,0.3)]"
+                                                style={{ width: `${uploadProgress}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs font-black text-[#4d0101] min-w-[45px] text-right tabular-nums">{Math.floor(uploadProgress)}%</span>
+                                    </div>
+                                </div>
+                            ) : message}
+                        </div>
                     </div>
                 </div>
             )}
@@ -333,18 +391,58 @@ const BulkUpload = () => {
                 </div>
             )}
 
-            <button
-                disabled={!file || status === 'uploading' || !!validationError || isValidating}
-                onClick={handleUpload}
-                className="w-full mt-8 bg-[#4d0101] text-white font-bold py-4 rounded-xl hover:bg-[#600202] transition-colors active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed shadow-xl shadow-rose-900/10 flex items-center justify-center gap-2 uppercase tracking-widest text-sm"
-            >
-                {status === 'uploading' ? (
-                    <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Processing...
-                    </>
-                ) : 'Execute Import'}
-            </button>
+            {!validationError && file && !isValidating && status === 'idle' && (
+                <div className="w-full mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Select Distribution Strategy</p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button
+                            disabled={status === 'uploading'}
+                            onClick={() => handleUpload('AUTO')}
+                            className="group relative bg-[#4d0101] text-white p-5 rounded-2xl transition-all hover:bg-[#600202] hover:shadow-xl hover:shadow-rose-900/20 active:scale-[0.98] disabled:opacity-50 overflow-hidden"
+                        >
+                            <div className="relative z-10">
+                                <p className="text-sm font-black uppercase tracking-widest mb-1">Auto Assignment</p>
+                                <p className="text-[10px] text-rose-100/70 font-medium leading-relaxed">System automatically distributes leads to available counselors</p>
+                            </div>
+                            {status === 'uploading' && mode === 'AUTO' && (
+                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center backdrop-blur-[1px]">
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                </div>
+                            )}
+                        </button>
+
+                        <button
+                            disabled={status === 'uploading'}
+                            onClick={() => handleUpload('MANUAL')}
+                            className="group relative bg-white border-2 border-slate-200 text-slate-800 p-5 rounded-2xl transition-all hover:border-[#4d0101]/30 hover:bg-slate-50 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 overflow-hidden"
+                        >
+                            <div className="relative z-10">
+                                <p className="text-sm font-black uppercase tracking-widest mb-1 text-slate-800 group-hover:text-[#4d0101]">Manual (Hold)</p>
+                                <p className="text-[10px] text-slate-400 font-medium leading-relaxed group-hover:text-slate-500">Leads stay in unassigned pool for manual distribution later</p>
+                            </div>
+                            {status === 'uploading' && mode === 'MANUAL' && (
+                                <div className="absolute inset-0 bg-white/60 flex items-center justify-center backdrop-blur-[1px]">
+                                    <div className="w-5 h-5 border-2 border-[#4d0101]/30 border-t-[#4d0101] rounded-full animate-spin" />
+                                </div>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {status === 'success' && (
+                <button
+                    onClick={() => {
+                        setFile(null);
+                        setStatus('idle');
+                        setUploadSummary(null);
+                        setMode(null);
+                    }}
+                    className="w-full mt-8 bg-slate-100 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-sm"
+                >
+                    Upload Another File
+                </button>
+            )}
 
             <div className="w-full mt-10 pt-10 border-t border-slate-100">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">Documentation: Excel Schematic</h3>

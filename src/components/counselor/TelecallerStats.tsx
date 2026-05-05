@@ -11,26 +11,26 @@ export default function TelecallerStats({ leads }: Props) {
     const totalLeads = leads.length;
     const contacted = leads.filter(l => l.status === 'CONTACTED' || l.status === 'QUALIFIED' || l.status === 'ADMISSION_IN_PROCESS').length;
     const qualified = leads.filter(l => l.status === 'QUALIFIED' || l.status === 'ADMISSION_IN_PROCESS' || l.status === 'ADMISSION_DONE').length;
-    
+
     // Simplistic conversion rate for display
     const conversionRate = totalLeads > 0 ? Math.round((qualified / totalLeads) * 100) : 0;
 
     const stats = [
-        { 
-            label: 'Total Leads', 
-            value: totalLeads, 
+        {
+            label: 'Total Leads',
+            value: totalLeads,
         },
-        { 
-            label: 'Contacted', 
-            value: contacted, 
+        {
+            label: 'Contacted',
+            value: contacted,
         },
-        { 
-            label: 'Qualified', 
-            value: qualified, 
+        {
+            label: 'Qualified',
+            value: qualified,
         },
-        { 
-            label: 'Conversion', 
-            value: `${conversionRate}%`, 
+        {
+            label: 'Conversion',
+            value: `${conversionRate}%`,
         },
     ];
 
@@ -43,8 +43,8 @@ export default function TelecallerStats({ leads }: Props) {
         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {stats.map((stat, idx) => (
-                    <div 
-                        key={idx} 
+                    <div
+                        key={idx}
                         className="p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200/60 bg-white/50 backdrop-blur-md flex flex-col justify-between h-28 md:h-32 hover:border-slate-300 transition-colors shadow-sm"
                     >
                         <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export default function TelecallerStats({ leads }: Props) {
                                     <span>{Math.round((item.count / (totalLeads || 1)) * 100)}%</span>
                                 </div>
                                 <div className="h-3 md:h-4 w-full bg-slate-100/50 rounded-lg overflow-hidden border border-slate-200/60">
-                                    <div 
+                                    <div
                                         className={`h-full ${item.color}`}
                                         style={{ width: `${(item.count / (totalLeads || 1)) * 100}%` }}
                                     />
@@ -91,9 +91,9 @@ export default function TelecallerStats({ leads }: Props) {
                     <div className="flex-1 flex items-end gap-2 md:gap-3 h-32 px-1">
                         {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
                             <div key={i} className="flex-1 group relative">
-                                <div 
-                                    className="w-full bg-[#4d0101] rounded-t-md md:rounded-t-lg opacity-30 group-hover:opacity-80 transition-opacity" 
-                                    style={{ height: `${h}%` }} 
+                                <div
+                                    className="w-full bg-[#4d0101] rounded-t-md md:rounded-t-lg opacity-30 group-hover:opacity-80 transition-opacity"
+                                    style={{ height: `${h}%` }}
                                 />
                                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-900 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {h}%

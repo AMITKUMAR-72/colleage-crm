@@ -11,7 +11,7 @@ export default function AffiliateApiPanel({ affiliateId }: Props) {
     const [copied, setCopied] = useState(false);
 
     // Use the PUBLIC URL for external integrations, not the internal proxy path
-    const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://apis.rafunirp.com';
+    const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8085';
     // const PUBLIC_API_URL = 'https://api.rafunirp.com';
     const webhookUrl = `${PUBLIC_API_URL}/api/leads/integration/AffiliatePartner`;
 

@@ -12,25 +12,25 @@ export default function ExternalCounselorStats({ leads }: Props) {
     const externalAssigned = leads.filter(l => l.status === 'EXTERNAL_ASSIGNED').length;
     const qualifiedByPartner = leads.filter(l => l.status === 'QUALIFIED' || l.status === 'ADMISSION_IN_PROCESS').length;
     const admissionDone = leads.filter(l => l.status === 'ADMISSION_DONE').length;
-    
+
     const performanceRate = totalLeads > 0 ? Math.round(((qualifiedByPartner + admissionDone) / totalLeads) * 100) : 0;
 
     const stats = [
-        { 
-            label: 'Partner Leads', 
-            value: totalLeads, 
+        {
+            label: 'Partner Leads',
+            value: totalLeads,
         },
-        { 
-            label: 'External Assigned', 
-            value: externalAssigned, 
+        {
+            label: 'External Assigned',
+            value: externalAssigned,
         },
-        { 
-            label: 'Success Count', 
-            value: qualifiedByPartner + admissionDone, 
+        {
+            label: 'Success Count',
+            value: qualifiedByPartner + admissionDone,
         },
-        { 
-            label: 'Quality Factor', 
-            value: `${performanceRate}%`, 
+        {
+            label: 'Quality Factor',
+            value: `${performanceRate}%`,
         },
     ];
 
@@ -41,8 +41,8 @@ export default function ExternalCounselorStats({ leads }: Props) {
         <div className="space-y-6 mb-8">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {stats.map((stat, idx) => (
-                    <div 
-                        key={idx} 
+                    <div
+                        key={idx}
                         className="p-6 rounded-3xl border border-indigo-100 bg-white/50 backdrop-blur-md flex flex-col justify-between h-32 hover:border-indigo-200 transition-colors shadow-sm"
                     >
                         <div className="flex items-center gap-3">
@@ -70,7 +70,7 @@ export default function ExternalCounselorStats({ leads }: Props) {
                                     <span>{Math.round((item.count / (totalLeads || 1)) * 100)}%</span>
                                 </div>
                                 <div className="h-4 w-full bg-slate-100/50 rounded-lg overflow-hidden border border-slate-200/60">
-                                    <div 
+                                    <div
                                         className={`h-full ${item.color}`}
                                         style={{ width: `${(item.count / (totalLeads || 1)) * 100}%` }}
                                     />
@@ -88,9 +88,9 @@ export default function ExternalCounselorStats({ leads }: Props) {
                     <div className="flex-1 flex items-end gap-3 h-32 px-2">
                         {[35, 55, 40, 65, 50, 85, 90].map((h, i) => (
                             <div key={i} className="flex-1 group relative">
-                                <div 
-                                    className="w-full bg-[#1e293b] rounded-t-md opacity-20 group-hover:opacity-60 transition-opacity" 
-                                    style={{ height: `${h}%` }} 
+                                <div
+                                    className="w-full bg-[#1e293b] rounded-t-md opacity-20 group-hover:opacity-60 transition-opacity"
+                                    style={{ height: `${h}%` }}
                                 />
                                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-black text-slate-900 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {h}%

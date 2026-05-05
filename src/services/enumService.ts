@@ -31,11 +31,7 @@ export const EnumService = {
         return response.data;
     },
 
-    // 176. Get all lead score values
-    getScores: async () => {
-        const response = await api.get<string[]>('/api/enum/scores');
-        return response.data;
-    },
+
 
     // 177. Get all priority values
     getPriorities: async () => {

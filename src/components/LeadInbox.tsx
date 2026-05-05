@@ -7,8 +7,7 @@ import { LeadService } from '@/services/leadService';
 import api from '@/services/api';
 import LeadSearchFilters from './LeadSearchFilters';
 import LeadEditDrawer from './admin/LeadEditDrawer';
-import CounselorQueueSidebar from './CounselorQueueSidebar';
-import UnverifiedLeadsSidebar from './UnverifiedLeadsSidebar';
+// Sidebar components removed per request
 import CounselorProfileHeader from './CounselorProfileHeader';
 import { useAuth } from '@/context/AuthContext';
 import { UserService } from '@/services/userService';
@@ -33,11 +32,7 @@ const STATUS_COLORS: Record<string, string> = {
     IN_A_SESSION: 'bg-violet-100 text-violet-700 border-violet-200',
 };
 
-const SCORE_COLORS: Record<string, string> = {
-    HOT: 'bg-red-100 text-red-700',
-    WARM: 'bg-orange-100 text-orange-700',
-    COLD: 'bg-sky-100 text-sky-700',
-};
+
 
 // ─── Assign Dropdown ─────────────────────────────────────────────────────────
 function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned: () => void }) {
@@ -107,12 +102,12 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
         }
     };
 
-    const handleAssign = async (e: React.MouseEvent, counselorId: string | number, type: string) => {
+    const handleAssign = async (e: React.MouseEvent, counselorId: string | number) => {
         e.stopPropagation();
-        setAssigning(`${counselorId}-${type}`);
+        setAssigning(String(counselorId));
         try {
-            await api.post(`/api/counselors/manual-assign/lead/${leadId}/counselor/${counselorId}/type/${type}`);
-            console.log('Lead assigned successfully');
+            // #21 POST /api/leads/assign/{id}?counselorId={cId}
+            await LeadService.assignLeadToCounselor(leadId, counselorId);
             toast.success('Lead assigned successfully');
             setOpen(false);
             onAssigned();
@@ -157,36 +152,22 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
                             counselors.map((c, idx) => (
                                 <div
                                     key={c.counselorId ?? idx}
-                                    className="w-full px-4 py-3 hover:bg-[#4d0101]/5 transition border-b border-slate-50 last:border-0 flex flex-col gap-2"
+                                    className="w-full px-4 py-3 hover:bg-[#4d0101]/5 transition border-b border-slate-50 last:border-0 flex items-center justify-between gap-3"
                                 >
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-slate-800">{c.name || String(c)}</span>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-bold text-slate-800 truncate">{c.name || String(c)}</span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{c.email}</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {c.counselorTypes && c.counselorTypes.length > 0 ? (
-                                            c.counselorTypes
-                                                .map(type => {
-                                                    const isDisabled = type === 'INTERNAL' || type === 'EXTERNAL';
-                                                    return (
-                                                        <button
-                                                            key={type}
-                                                            onClick={e => !isDisabled && handleAssign(e, c.counselorId, type)}
-                                                            disabled={isDisabled || assigning === `${c.counselorId}-${type}`}
-                                                            className={`px-2 py-1 border rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${assigning === `${c.counselorId}-${type}`
-                                                                    ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
-                                                                    : isDisabled
-                                                                        ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                                                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
-                                                                }`}
-                                                        >
-                                                            {assigning === `${c.counselorId}-${type}` ? 'Assigning…' : type}
-                                                        </button>
-                                                    );
-                                                })
-                                        ) : (
-                                            <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
-                                        )}
-                                    </div>
+                                    <button
+                                        onClick={e => handleAssign(e, c.counselorId)}
+                                        disabled={assigning === String(c.counselorId)}
+                                        className={`shrink-0 px-2.5 py-1 border rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${assigning === String(c.counselorId)
+                                                ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                            }`}
+                                    >
+                                        {assigning === String(c.counselorId) ? 'Assigning…' : 'Assign'}
+                                    </button>
                                 </div>
                             ))
                         )}
@@ -204,7 +185,7 @@ export default function LeadInbox() {
     const [loading, setLoading] = useState(true);
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
     const [page, setPage] = useState(0);
-    const [filters, setFilters] = useState<LeadFilters>({ email: '', status: '', course: '', campaign: '', score: '' });
+    const [filters, setFilters] = useState<LeadFilters>({ email: '', status: '', course: '', campaign: '' });
 
     // Notes state
     const [notes, setNotes] = useState<NoteDTO[]>([]);
@@ -264,7 +245,7 @@ export default function LeadInbox() {
     }, [fetchLeads]);
 
     // ── Open lead + fetch notes ───────────────────────────────────────────────
-    const handleViewLead = async (id: number) => {
+    const handleViewLead = async (id: string) => {
         const lead = allLeads.find(l => l.id === id);
         if (!lead) return;
         setSelectedLead(lead);
@@ -379,7 +360,7 @@ export default function LeadInbox() {
                         ) : pagedLeads.length === 0 ? (
                             <div className="py-20 text-center bg-slate-50/30">
                                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200">
-                                    <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 </div>
                                 <h3 className="text-sm font-black text-slate-900 uppercase">No Leads Found</h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Refine your search criteria</p>
@@ -417,12 +398,7 @@ export default function LeadInbox() {
                                                     <p className="font-black text-slate-400 uppercase tracking-tighter shrink-0">Campaign</p>
                                                     <p className="font-bold text-slate-700 truncate">{getCampaignDisplay(lead)}</p>
                                                 </div>
-                                                <div className="space-y-0.5">
-                                                    <p className="font-black text-slate-400 uppercase tracking-tighter shrink-0">Score</p>
-                                                    <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${SCORE_COLORS[lead.score] || 'bg-slate-100 text-slate-500'}`}>
-                                                        {lead.score || '—'}
-                                                    </span>
-                                                </div>
+
                                             </div>
                                             <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-50">
                                                 <div className="flex gap-2">
@@ -454,7 +430,7 @@ export default function LeadInbox() {
                                             <th className="px-5 py-3 font-black">Course</th>
                                             <th className="px-5 py-3 font-black">Campaign</th>
                                             <th className="px-5 py-3 font-black">Status</th>
-                                            <th className="px-5 py-3 font-black">Score</th>
+
                                             <th className="px-5 py-3 font-black text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -494,11 +470,7 @@ export default function LeadInbox() {
                                                         {String(lead.status || '').replace(/_/g, ' ') || 'UNKNOWN'}
                                                     </span>
                                                 </td>
-                                                <td className="px-5 py-3">
-                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${SCORE_COLORS[lead.score] || 'bg-slate-100 text-slate-500'}`}>
-                                                        {lead.score || '—'}
-                                                    </span>
-                                                </td>
+
                                                 <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
@@ -554,11 +526,7 @@ export default function LeadInbox() {
                     )}
                 </div>
 
-                {/* ── Info Sidebars ── */}
-                <div className="space-y-8">
-                    <CounselorQueueSidebar />
-                    <UnverifiedLeadsSidebar />
-                </div>
+                {/* ── Info Sidebars REMOVED ── */}
             </div>
 
             {/* ── Lead Details Slide-over ───────────────────────────────────── */}
@@ -587,34 +555,28 @@ export default function LeadInbox() {
 
                         <div className="space-y-4">
                             {/* Identity */}
-                            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex items-center gap-4">
-                                <div className="w-14 h-14 bg-[#4d0101] text-white flex items-center justify-center rounded-2xl text-2xl font-black shadow-lg">
-                                    {selectedLead.name?.charAt(0) || '?'}
+                            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 bg-[#4d0101] text-white flex items-center justify-center rounded-2xl text-2xl font-black shadow-lg">
+                                        {selectedLead.name?.charAt(0) || '?'}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-black text-xl text-slate-900 truncate tracking-tight">{selectedLead.name || 'Unknown'}</h3>
+                                        <div className="text-slate-500 text-xs font-medium space-y-0.5 mt-0.5">
+                                            <p className="truncate opacity-80">{selectedLead.email}</p>
+                                            <p className="text-[#4d0101] font-bold">{selectedLead.phone}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <h3 className="font-black text-xl text-slate-900 truncate tracking-tight">{selectedLead.name || 'Unknown'}</h3>
-                                    <div className="text-slate-500 text-xs font-medium space-y-0.5 mt-0.5">
-                                        <p className="truncate opacity-80">{selectedLead.email}</p>
-                                        <p className="text-[#4d0101] font-bold">{selectedLead.phone}</p>
+                                <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100">
+                                    <label className="text-xs text-gray-400 uppercase font-black tracking-widest">Current Status</label>
+                                    <div className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${STATUS_COLORS[String(selectedLead.status)] || 'bg-gray-100'}`}>
+                                        {String(selectedLead.status || '').replace(/_/g, ' ')}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Status + Score */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="p-3 border rounded-xl">
-                                    <label className="text-xs text-gray-400 uppercase font-black tracking-widest">Status</label>
-                                    <div className={`mt-1.5 inline-block px-2 py-1 rounded text-xs font-black ${STATUS_COLORS[String(selectedLead.status)] || 'bg-gray-100'}`}>
-                                        {String(selectedLead.status || '').replace(/_/g, ' ')}
-                                    </div>
-                                </div>
-                                <div className="p-3 border rounded-xl">
-                                    <label className="text-xs text-gray-400 uppercase font-black tracking-widest">Score</label>
-                                    <div className={`mt-1.5 inline-block px-2 py-1 rounded text-xs font-black ${SCORE_COLORS[selectedLead.score] || 'bg-slate-100 text-slate-600'}`}>
-                                        {selectedLead.score}
-                                    </div>
-                                </div>
-                            </div>
+
 
                             {/* Details */}
                             <div className="p-4 border rounded-xl space-y-2">

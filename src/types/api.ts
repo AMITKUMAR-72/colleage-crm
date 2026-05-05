@@ -3,7 +3,6 @@ export type Role = 'ADMIN' | 'MANAGER' | 'COUNSELOR' | 'AFFILIATE' | 'USER' | 'M
 
 // ─── Lead Enums (matches backend Status.java exactly) ───
 export type LeadStatus =
-    | 
     | 'TELECALLER_ASSIGNED'
     | 'QUALIFIED'
     | 'COUNSELOR_ASSIGNED'
@@ -19,9 +18,10 @@ export type LeadStatus =
     | 'IN_A_SESSION'
     | 'QUEUED'
     | 'FAKE';
+    
+export type LeadScore = 'HOT' | 'WARM' | 'COLD' | 'INTERESTED' | 'DISCARDED';
 
-// matches backend Scores.java
-export type LeadScore = 'HOT' | 'WARM' | 'COLD';
+
 
 // ─── Counselor Enums (matches backend exactly) ───
 export type CounselorStatus = 'AVAILABLE' | 'ON_LEAVE' | 'UNAVAILABLE' | 'SUSPENDED' | 'BUSY' | 'SESSION_ASSIGNED';
@@ -64,8 +64,7 @@ export interface CounselorDTO {
 
 // Matches backend Lead_Response_DTO.java
 export interface LeadResponseDTO {
-    id: number;
-    leadId?: number;
+    id: string;
     name: string;
     email: string;
     address: string;
@@ -75,8 +74,9 @@ export interface LeadResponseDTO {
     intake?: string;
     status: LeadStatus;
     campaign?: { id: number; name: string };   // backend returns Campaigns entity
-    score: LeadScore;
+
     timedOutAt?: string;
+    score?: LeadScore;
     createdAt?: string;
 }
 
@@ -90,7 +90,7 @@ export interface LeadRequestDTO {
     course?: string;
     intake?: string;
     status?: LeadStatus;
-    score?: LeadScore;
+
     campaign?: { id?: number; name: string };
 }
 
@@ -219,16 +219,6 @@ export interface AssignedLeadDTO {
     status: string;
 }
 
-export interface ContactedLeadDTO {
-    id: number;
-    leadId: number;
-    leadName: string;
-    assignedByEmail: string;
-    assignedToEmail: string;
-    status: string;
-    assignedAt: string;
-    notes?: string;
-}
 
 // ─── System Config ───
 
@@ -256,7 +246,7 @@ export interface LeadFilters {
     status: string;
     course: string;
     campaign: string;
-    score: string;
+
     id?: string;
     phone?: string;
     name?: string;

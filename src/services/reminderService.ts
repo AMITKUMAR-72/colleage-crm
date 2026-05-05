@@ -5,12 +5,12 @@ import api from './api';
 export type ReminderStatus = 'PENDING' | 'DUE' | 'SEEN' | 'MISSED' | 'CANCELLED';
 
 export interface ReminderResponseDTO {
-    id: number;
-    leadId: number;
+    id: string | number;
+    leadId: string | number;
     leadName?: string;
     counselorId?: string | number;
     counselorName?: string;
-    reminderTime: string;
+    reminderAt: string;
     note?: string;
     status: ReminderStatus;
     seen: boolean;
@@ -20,12 +20,12 @@ export interface ReminderResponseDTO {
 }
 
 export interface SetReminderRequestDTO {
-    reminderTime: string;   // ISO datetime e.g. "2026-04-30T10:00:00"
+    reminderAt: string;   // ISO datetime e.g. "2026-04-30T10:00:00"
     note?: string;
 }
 
 export interface UpdateReminderRequestDTO {
-    reminderTime?: string;
+    reminderAt?: string;
     note?: string;
 }
 
@@ -43,7 +43,7 @@ export interface PagedReminders {
 
 export const ReminderService = {
     /** Create a new reminder for a lead */
-    setReminder: async (leadId: number, body: SetReminderRequestDTO) => {
+    setReminder: async (leadId: string | number, body: SetReminderRequestDTO) => {
         const response = await api.post<ReminderResponseDTO>(`/api/reminders/lead/${leadId}`, body);
         return response.data;
     },
@@ -79,19 +79,19 @@ export const ReminderService = {
     },
 
     /** Mark a reminder as seen */
-    markAsSeen: async (reminderId: number) => {
+    markAsSeen: async (reminderId: string | number) => {
         const response = await api.put<ReminderResponseDTO>(`/api/reminders/${reminderId}/seen`);
         return response.data;
     },
 
     /** Update a reminder (reschedule or change note) */
-    updateReminder: async (reminderId: number, body: UpdateReminderRequestDTO) => {
+    updateReminder: async (reminderId: string | number, body: UpdateReminderRequestDTO) => {
         const response = await api.put<ReminderResponseDTO>(`/api/reminders/${reminderId}`, body);
         return response.data;
     },
 
     /** Cancel a reminder */
-    cancelReminder: async (reminderId: number) => {
+    cancelReminder: async (reminderId: string | number) => {
         const response = await api.delete<ReminderResponseDTO>(`/api/reminders/${reminderId}`);
         return response.data;
     },

@@ -11,7 +11,6 @@ interface ReminderModalProps {
     onClose: () => void;
     leadId: number;
     leadName: string;
-    leadScore: string;
     existingReminder?: ReminderResponseDTO;   // For edit mode
     onSuccess: () => void;                    // Refresh parent after create/edit
 }
@@ -21,11 +20,10 @@ export default function ReminderModal({
     onClose,
     leadId,
     leadName,
-    leadScore,
     existingReminder,
     onSuccess
 }: ReminderModalProps) {
-    const [reminderTime, setReminderTime] = useState('');
+    const [reminderAt, setReminderAt] = useState('');
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -36,7 +34,7 @@ export default function ReminderModal({
         if (isOpen) {
             if (existingReminder) {
                 // Edit mode: pre-fill with existing data
-                setReminderTime(existingReminder.reminderTime?.slice(0, 16) || '');
+                setReminderAt(existingReminder.reminderAt?.slice(0, 16) || '');
                 setNote(existingReminder.note || '');
             } else {
                 // Create mode: default to tomorrow at 10:00 AM
@@ -44,14 +42,14 @@ export default function ReminderModal({
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 tomorrow.setHours(10, 0, 0, 0);
                 const iso = tomorrow.toISOString().slice(0, 16);
-                setReminderTime(iso);
+                setReminderAt(iso);
                 setNote('');
             }
         }
     }, [isOpen, existingReminder]);
 
     const handleSubmit = async () => {
-        if (!reminderTime) {
+        if (!reminderAt) {
             toast.error('Please select a date & time');
             return;
         }
@@ -60,13 +58,13 @@ export default function ReminderModal({
         try {
             if (isEditMode && existingReminder) {
                 const body: UpdateReminderRequestDTO = {
-                    reminderTime,
+                    reminderAt,
                     note: note.trim() || undefined,
                 };
                 await ReminderService.updateReminder(existingReminder.id, body);
             } else {
                 const body: SetReminderRequestDTO = {
-                    reminderTime,
+                    reminderAt,
                     note: note.trim() || undefined,
                 };
                 await ReminderService.setReminder(leadId, body);
@@ -83,11 +81,7 @@ export default function ReminderModal({
 
     if (!isOpen) return null;
 
-    const SCORE_BADGE: Record<string, string> = {
-        HOT: 'bg-rose-50 text-rose-600 border-rose-200',
-        WARM: 'bg-amber-50 text-amber-600 border-amber-200',
-        COLD: 'bg-sky-50 text-sky-600 border-sky-200',
-    };
+    // Removed SCORE_BADGE per request
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -120,14 +114,11 @@ export default function ReminderModal({
                 {/* Body */}
                 <div className="px-8 py-6 space-y-6">
                     {/* Lead Info */}
-                    <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                         <div className="min-w-0">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead</p>
                             <p className="text-sm font-black text-slate-900 uppercase tracking-tight truncate mt-0.5">{leadName}</p>
                         </div>
-                        <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shrink-0 ${SCORE_BADGE[leadScore] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                            {leadScore || 'N/A'}
-                        </span>
                     </div>
 
                     {/* Date/Time Picker */}
@@ -138,8 +129,8 @@ export default function ReminderModal({
                         </label>
                         <input
                             type="datetime-local"
-                            value={reminderTime}
-                            onChange={(e) => setReminderTime(e.target.value)}
+                            value={reminderAt}
+                            onChange={(e) => setReminderAt(e.target.value)}
                             min={new Date().toISOString().slice(0, 16)}
                             className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-0 focus:border-[#4d0101]/30 outline-none transition-all cursor-pointer"
                         />

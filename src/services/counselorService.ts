@@ -1,5 +1,5 @@
 import api from './api';
-import { CounselorDTO, CounselorStatus, CounselorType, Priority, LeadResponseDTO, LeadScore, PageResponse } from '@/types/api';
+import { CounselorDTO, CounselorStatus, Priority, LeadResponseDTO, PageResponse, LeadScore } from '@/types/api';
 
 export const CounselorService = {
     createCounselor: async (data: Partial<CounselorDTO>) => {
@@ -27,8 +27,10 @@ export const CounselorService = {
         return response.data;
     },
 
-    updatePriority: async (email: string, priority: Priority) => {
-        const response = await api.post<CounselorDTO>(`/api/counselors/updatePriority/email/${email}/priority/${priority}`);
+    // #57 - Set assignment priority level (1-5)
+    updatePriority: async (emailOrId: string, priority: Priority | string | number) => {
+        // Support both email-based legacy and new id-based endpoint
+        const response = await api.post<CounselorDTO>(`/api/counselors/updatePriority/email/${emailOrId}/priority/${priority}`);
         return response.data;
     },
 
@@ -37,12 +39,7 @@ export const CounselorService = {
         return response.data;
     },
 
-    updateTypes: async (email: string, types: CounselorType[]) => {
-        const response = await api.patch<CounselorDTO>(`/api/counselors/updateTypes/email/${email}`, {
-            counselorTypes: types
-        });
-        return response.data;
-    },
+
 
     searchByStatus: async (status: CounselorStatus) => {
         const response = await api.get<CounselorDTO[]>(`/api/counselors/searchBy/status/${status}`);
@@ -54,21 +51,14 @@ export const CounselorService = {
         return response.data;
     },
 
-    searchByType: async (type: string) => {
-        const response = await api.get<CounselorDTO[]>(`/api/counselors/searchBy/type/${type}`);
-        return response.data;
-    },
+
 
     getCounselorByPhone: async (phone: string) => {
         const response = await api.get<CounselorDTO>(`/api/counselors/phone/${phone}`);
         return response.data;
     },
 
-    getCounselorTypes: async () => {
-        const response = await api.get<string[]>('/api/enum/counselor-type');
-        const data = response.data as any;
-        return data?.data || data || [];
-    },
+
 
     getCounselorStatuses: async () => {
         const response = await api.get<string[]>('/api/enum/counselor-status');
@@ -78,7 +68,7 @@ export const CounselorService = {
 
     // ─── Counselor Lead Management ───
     getAssignedLeads: async (page: number, size: number) => {
-        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/counselor/leads/all/${page}/${size}`);
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/my/page/${page}/size/${size}`);
         return response.data;
     },
 
@@ -98,12 +88,6 @@ export const CounselorService = {
         const response = await api.get(`/api/counselor/leads/search/source/${encodeURIComponent(source)}`);
         const data = response.data as any;
         return data?.data?.content || data?.data || data?.content || (Array.isArray(data) ? data : []);
-    },
-
-    searchLeadsByScore: async (score: string) => {
-        const response = await api.get(`/api/counselor/leads/search/score/${encodeURIComponent(score.toUpperCase())}`);
-        const data = response.data as any;
-        return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
     searchLeadsByCourse: async (course: string) => {
@@ -130,10 +114,7 @@ export const CounselorService = {
         return data?.lead || data?.content || data?.data?.lead || data?.data?.content || data?.data || (Array.isArray(data) ? data : []);
     },
 
-    updateLeadScore: async (leadId: number, score: LeadScore) => {
-        const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${leadId}/score/${score}`);
-        return response.data;
-    },
+
 
     updateLeadStatus: async (leadId: number, status: string) => {
         const response = await api.post<LeadResponseDTO>(`/api/counselor/lead/${leadId}/status/${status}`);
@@ -158,6 +139,11 @@ export const CounselorService = {
 
     getCombinedLeadCounts: async (counselorId: string | number) => {
         const response = await api.get(`/api/counselor/leads/counselor/${counselorId}/count/combined`);
+        return response.data;
+    },
+
+    updateLeadScore: async (leadId: string | number, score: LeadScore) => {
+        const response = await api.patch<LeadResponseDTO>(`/api/leads/${leadId}/score?score=${score}`);
         return response.data;
     },
 };

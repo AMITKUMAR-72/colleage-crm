@@ -3,13 +3,13 @@ import { NoteDTO, CreateNoteRequestDTO } from '@/types/api';
 
 export const NoteService = {
     // Backend extracts counselor from JWT Principal — only send { note }
-    createNote: async (leadId: number, noteContent: string) => {
+    createNote: async (leadId: string | number, noteContent: string) => {
         const payload: CreateNoteRequestDTO = { note: noteContent };
         const response = await api.post<NoteDTO>(`/api/note/${leadId}/notes`, payload);
         return response.data;
     },
 
-    getLeadNotes: async (leadId: number) => {
+    getLeadNotes: async (leadId: string | number) => {
         const response = await api.get<NoteDTO[]>(`/api/note/${leadId}/notes`);
         return response.data;
     },

@@ -25,18 +25,14 @@ const STATUS_COLORS: Record<string, string> = {
     REASSIGNED: 'bg-pink-100 text-pink-700 border-pink-200',
 };
 
-const SCORE_COLORS: Record<string, string> = {
-    HOT: 'bg-red-100 text-red-700',
-    WARM: 'bg-orange-100 text-orange-700',
-    COLD: 'bg-sky-100 text-sky-700',
-};
+
 
 // ─── Bulk Assign Dropdown ──────────────────────────────────────────────────
-function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]; allLeads: LeadResponseDTO[]; onAssigned: () => void }) {
+function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: string[]; allLeads: LeadResponseDTO[]; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
     const [loading, setLoading] = useState(false);
-    const [assigning, setAssigning] = useState<number | null>(null);
+    const [assigning, setAssigning] = useState<string | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -69,15 +65,16 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]
         }
     };
 
-    const handleBulkAssign = async (e: React.MouseEvent, counselorId: number, type: string) => {
+    const handleBulkAssign = async (e: React.MouseEvent, counselorId: string | number) => {
         e.stopPropagation();
         if (leadIds.length === 0) {
             toast.error('No leads selected');
             return;
         }
-        setAssigning(counselorId);
+        setAssigning(String(counselorId));
         try {
-            const res = await LeadService.bulkAssignLeads(counselorId, type, leadIds);
+            // #22 POST /api/leads/bulk-assign/{counselorId}
+            const res = await LeadService.bulkAssignLeads(counselorId, leadIds);
             if (res && res.successCount !== undefined) {
                 toast.success(`Success: ${res.successCount}, Failed: ${res.failCount || 0}`);
             } else {
@@ -123,36 +120,131 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: number[]
                             counselors.map((c, idx) => (
                                 <div
                                     key={c.counselorId ?? idx}
-                                    className="w-full px-5 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 flex flex-col gap-2"
+                                    className="w-full px-5 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 flex items-center justify-between gap-3"
                                 >
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-slate-800">{c.name}</span>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-bold text-slate-800 truncate">{c.name}</span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{c.email}</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {c.counselorTypes && c.counselorTypes.length > 0 ? (
-                                            c.counselorTypes.map(type => {
-                                                const isDisabled = type === 'INTERNAL' || type === 'EXTERNAL';
-                                                return (
-                                                    <button
-                                                        key={type}
-                                                        onClick={e => !isDisabled && handleBulkAssign(e, c.counselorId, type)}
-                                                        disabled={isDisabled || assigning === c.counselorId}
-                                                        className={`px-2 py-1 border rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
-                                                            isDisabled
-                                                                ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                                                                : assigning === c.counselorId
-                                                                    ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
-                                                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
-                                                        }`}
-                                                    >
-                                                        {isDisabled ? `${type} (Restricted)` : assigning === c.counselorId ? 'saving…' : type}
-                                                    </button>
-                                                );
-                                            })
-                                        ) : (
-                                            <span className="text-[9px] text-slate-400 font-bold italic">No types mapped</span>
-                                        )}
+                                    <button
+                                        onClick={e => handleBulkAssign(e, c.counselorId)}
+                                        disabled={assigning === String(c.counselorId)}
+                                        className={`shrink-0 px-3 py-1.5 border rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                                            assigning === String(c.counselorId)
+                                                ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                        }`}
+                                    >
+                                        {assigning === String(c.counselorId) ? 'Assigning…' : 'Assign'}
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+// ─── Single Assign Dropdown ───────────────────────────────────────────────────
+function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned: () => void }) {
+    const [open, setOpen] = useState(false);
+    const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [assigning, setAssigning] = useState<string | null>(null);
+    const ref = useRef<HTMLDivElement>(null);
+    const leadId = lead.id;
+
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+
+    const handleOpen = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const nowOpen = !open;
+        setOpen(nowOpen);
+        if (nowOpen && counselors.length === 0) {
+            setLoading(true);
+            try {
+                const raw: any = await CounselorService.getAllCounselors();
+                let list: CounselorDTO[] = Array.isArray(raw)
+                    ? raw
+                    : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
+                
+                setCounselors(list);
+            } catch {
+                toast.error('Could not load counselors');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleAssign = async (e: React.MouseEvent, counselorId: string | number) => {
+        e.stopPropagation();
+        setAssigning(String(counselorId));
+        try {
+            // #21 POST /api/leads/assign/{id}?counselorId={cId}
+            await LeadService.assignLeadToCounselor(leadId, counselorId);
+            toast.success('Lead assigned successfully');
+            setOpen(false);
+            onAssigned();
+        } catch {
+            /* Handled by interceptor */
+        } finally {
+            setAssigning(null);
+        }
+    };
+
+    return (
+        <div ref={ref} className="relative inline-block" onClick={e => e.stopPropagation()}>
+            <button
+                onClick={handleOpen}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4d0101] text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-[#600202] transition-all duration-200 shadow-sm"
+            >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                    <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+                </svg>
+                Assign
+            </button>
+
+            {open && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[110] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Counselor</p>
+                    </div>
+                    <div className="max-h-56 overflow-y-auto">
+                        {loading ? (
+                            <div className="py-4 text-center text-xs font-bold text-slate-400 animate-pulse italic">Loading Counselors…</div>
+                        ) : counselors.length === 0 ? (
+                            <div className="py-4 text-center text-xs font-bold text-slate-400 italic">No counselors available</div>
+                        ) : (
+                            counselors.map((c, idx) => (
+                                <div
+                                    key={c.counselorId ?? idx}
+                                    className="w-full px-4 py-3 hover:bg-[#4d0101]/5 transition border-b border-slate-50 last:border-0 flex items-center justify-between gap-3"
+                                >
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-bold text-slate-800 truncate">{c.name}</span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{c.email}</span>
                                     </div>
+                                    <button
+                                        onClick={e => handleAssign(e, c.counselorId)}
+                                        disabled={assigning === String(c.counselorId)}
+                                        className={`shrink-0 px-2.5 py-1 border rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                                            assigning === String(c.counselorId)
+                                                ? 'bg-[#4d0101] text-white border-[#4d0101] animate-pulse opacity-80'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:bg-[#4d0101] hover:text-white hover:border-[#4d0101]'
+                                        }`}
+                                    >
+                                        {assigning === String(c.counselorId) ? 'Applying…' : 'Assign'}
+                                    </button>
                                 </div>
                             ))
                         )}
@@ -169,7 +261,7 @@ export default function ManagerLeadInbox() {
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
-    const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
+    const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
 
     // Notes state (for slide-over if we keep it)
@@ -198,7 +290,7 @@ export default function ManagerLeadInbox() {
 
     const totalPages = Math.ceil(totalElements / PAGE_SIZE);
 
-    const toggleLeadSelection = (id: number) => {
+    const toggleLeadSelection = (id: string) => {
         setSelectedLeadIds(prev =>
             prev.includes(id) ? prev.filter(lid => lid !== id) : [...prev, id]
         );
@@ -212,7 +304,7 @@ export default function ManagerLeadInbox() {
         }
     };
 
-    const handleViewLead = async (id: number) => {
+    const handleViewLead = async (id: string) => {
         const lead = leads.find(l => l.id === id);
         if (!lead) return;
         setSelectedLead(lead);
@@ -360,7 +452,15 @@ export default function ManagerLeadInbox() {
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-right">
-                                            <button className="text-[10px] font-black text-[#4d0101] uppercase tracking-widest hover:underline">Details</button>
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button 
+                                                    onClick={() => handleViewLead(lead.id)}
+                                                    className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition"
+                                                >
+                                                    Details
+                                                </button>
+                                                <AssignButton lead={lead} onAssigned={fetchLeads} />
+                                            </div>
                                         </td>
 
                                     </tr>
@@ -412,7 +512,10 @@ export default function ManagerLeadInbox() {
                                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Lead Info</h2>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ref: #{selectedLead.id}</p>
                             </div>
-                            <button onClick={() => setSelectedLead(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">✕</button>
+                            <div className="flex items-center gap-3">
+                                <AssignButton lead={selectedLead} onAssigned={() => { setSelectedLead(null); fetchLeads(); }} />
+                                <button onClick={() => setSelectedLead(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">✕</button>
+                            </div>
                         </div>
 
                         <div className="space-y-6">
@@ -422,20 +525,12 @@ export default function ManagerLeadInbox() {
                                 <p className="text-slate-500 font-medium text-sm">{selectedLead.phone}</p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-white border border-slate-100 rounded-2xl">
+                                <div className="p-4 bg-white border border-slate-100 rounded-2xl col-span-2">
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead Status</label>
                                     <div className={`mt-2 inline-block px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${STATUS_COLORS[String(selectedLead.status)]}`}>
                                         {String(selectedLead.status || '').replace(/_/g, ' ')}
                                     </div>
                                 </div>
-                                <div className="p-4 bg-white border border-slate-100 rounded-2xl">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead Score</label>
-                                    <div className={`mt-2 inline-block px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${SCORE_COLORS[selectedLead.score]}`}>
-                                        {selectedLead.score}
-                                    </div>
-                                </div>
-                            </div>
 
                             <div className="p-5 bg-white border border-slate-100 rounded-2xl space-y-3">
                                 <InfoRow label="Course" value={getCourseDisplay(selectedLead)} />

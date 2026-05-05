@@ -245,18 +245,16 @@ export default function ReminderDashboard() {
                         <button
                             key={tab}
                             onClick={() => { setActiveTab(tab); setScoreFilter('ALL'); }}
-                            className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${
-                                isActive
+                            className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${isActive
                                     ? 'bg-white text-slate-900 shadow-sm border border-slate-100'
                                     : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                            }`}
+                                }`}
                         >
                             <span className={isActive ? cfg.color : ''}>{cfg.icon}</span>
                             {cfg.label}
                             {count !== null && count > 0 && (
-                                <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[8px] font-black ${
-                                    isActive ? cfg.activeColor : 'bg-slate-200/60 text-slate-400'
-                                }`}>
+                                <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[8px] font-black ${isActive ? cfg.activeColor : 'bg-slate-200/60 text-slate-400'
+                                    }`}>
                                     {count}
                                 </span>
                             )}
@@ -272,11 +270,10 @@ export default function ReminderDashboard() {
                     <button
                         key={score}
                         onClick={() => setScoreFilter(score)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
-                            scoreFilter === score
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${scoreFilter === score
                                 ? (score === 'ALL' ? 'bg-slate-900 text-white border-slate-900' : (SCORE_COLORS[score] || 'bg-slate-100 text-slate-600 border-slate-200'))
                                 : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'
-                        }`}
+                            }`}
                     >
                         {SCORE_ICONS[score] && <span>{SCORE_ICONS[score]}</span>}
                         {score}
@@ -315,9 +312,9 @@ export default function ReminderDashboard() {
                         <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">No Reminders</h3>
                         <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em]">
                             {activeTab === 'DUE' ? 'No due follow-ups right now' :
-                             activeTab === 'MISSED' ? 'Great — nothing missed!' :
-                             activeTab === 'PENDING' ? 'No upcoming reminders scheduled' :
-                             'Your reminder history is empty'}
+                                activeTab === 'MISSED' ? 'Great — nothing missed!' :
+                                    activeTab === 'PENDING' ? 'No upcoming reminders scheduled' :
+                                        'Your reminder history is empty'}
                         </p>
                     </div>
                 ) : (
@@ -333,11 +330,10 @@ export default function ReminderDashboard() {
                                 <div key={reminder.id} className="group transition-all hover:bg-slate-50/50">
                                     <div className="px-6 md:px-8 py-5 flex flex-col sm:flex-row sm:items-center gap-4 relative">
                                         {/* Left accent */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 ${
-                                            reminder.status === 'MISSED' ? 'bg-red-400' :
-                                            reminder.status === 'DUE' ? 'bg-rose-400' :
-                                            'bg-transparent group-hover:bg-[#4d0101]'
-                                        }`} />
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 ${reminder.status === 'MISSED' ? 'bg-red-400' :
+                                                reminder.status === 'DUE' ? 'bg-rose-400' :
+                                                    'bg-transparent group-hover:bg-[#4d0101]'
+                                            }`} />
 
                                         {/* Score Icon */}
                                         <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${SCORE_COLORS[score] || 'bg-slate-50 text-slate-400 border-slate-200'}`}>
@@ -360,7 +356,7 @@ export default function ReminderDashboard() {
                                                 </p>
                                             )}
                                             <p className="text-[10px] font-bold text-slate-400 mt-1">
-                                                {formatDateTime(reminder.reminderTime)}
+                                                {formatDateTime(reminder.reminderAt)}
                                             </p>
                                         </div>
 
@@ -467,7 +463,6 @@ export default function ReminderDashboard() {
                     onClose={() => { setEditModalOpen(false); setEditingReminder(null); }}
                     leadId={editingReminder.leadId}
                     leadName={editingReminder.leadName || `Lead #${editingReminder.leadId}`}
-                    leadScore={editingReminder.score || 'N/A'}
                     existingReminder={editingReminder}
                     onSuccess={handleEditSuccess}
                 />
