@@ -329,24 +329,6 @@ export default function LeadInbox() {
                                 Refresh
                             </button>
 
-                            {showPagination && (
-                                <>
-                                    <button
-                                        onClick={() => setPage(p => Math.max(0, p - 1))}
-                                        disabled={page === 0}
-                                        className="px-3 py-1.5 text-[10px] border rounded-lg hover:bg-gray-50 disabled:opacity-40 transition font-black uppercase tracking-widest"
-                                    >
-                                        ← Prev
-                                    </button>
-                                    <button
-                                        onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                                        disabled={page >= totalPages - 1}
-                                        className="px-3 py-1.5 text-[10px] border rounded-lg hover:bg-gray-50 disabled:opacity-40 transition font-black uppercase tracking-widest"
-                                    >
-                                        Next →
-                                    </button>
-                                </>
-                            )}
                         </div>
                     </div>
 
@@ -625,11 +607,19 @@ export default function LeadInbox() {
                                         notes.map((n, i) => (
                                             <div key={n.noteId || i} className="px-4 py-3">
                                                 <p className="text-xs text-slate-700 font-medium leading-relaxed">{n.note}</p>
-                                                {n.createdAt && (
-                                                    <p className="text-[10px] text-slate-400 font-bold mt-1">
-                                                        {new Date(n.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                                                    </p>
-                                                )}
+                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1">
+                                                    {n.authorName && (
+                                                        <span className="font-bold text-slate-500">
+                                                            {n.authorName} {n.authorRole ? `(${n.authorRole})` : ''}
+                                                        </span>
+                                                    )}
+                                                    {n.authorName && <span>•</span>}
+                                                    {n.createdAt && (
+                                                        <span className="font-bold">
+                                                            {new Date(n.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))
                                     )}

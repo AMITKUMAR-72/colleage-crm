@@ -20,7 +20,7 @@ export interface CityStat { city: string; leadCount: number; }
 export const DashboardService = {
     /** GET /api/admin/dashboard/stats — Admin snapshot */
     getAdminStats: async (): Promise<AdminDashboardStatsDTO> => {
-        const response = await api.get<AdminDashboardStatsDTO>('/api/admin/dashboard/stats');
+        const response = await api.get<AdminDashboardStatsDTO>('/api/dashboard/admin/stats');
         const raw = response.data as any;
         return (raw?.data ?? raw) as AdminDashboardStatsDTO;
     },

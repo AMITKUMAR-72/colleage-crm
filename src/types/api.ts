@@ -134,11 +134,12 @@ export interface RoleDTO {
     role: string;
 }
 
-// Matches backend Note_DTO.java exactly
 export interface NoteDTO {
     noteId: number;
     note: string;
     createdAt: string;
+    authorName?: string;
+    authorRole?: string;
 }
 
 // Matches backend CreateNote_Request_DTO.java

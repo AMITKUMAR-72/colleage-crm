@@ -78,37 +78,36 @@ export default function LeadNotes({ leadId }: LeadNotesProps) {
                 ) : (
                     notes.map((n) => (
                         <div key={n.noteId} className="bg-white p-3 rounded-lg shadow-sm text-sm relative group">
-                            <p className="text-gray-800 mb-1">{n.note}</p>
-                            <div className="flex justify-end text-xs text-gray-400">
+                            <p className="text-gray-800 mb-2">{n.note}</p>
+                            <div className="flex justify-end items-center gap-1.5 text-[10px] text-gray-400">
+                                {n.authorName && (
+                                    <span className="font-semibold text-gray-500">
+                                        {n.authorName} {n.authorRole ? `(${n.authorRole})` : ''}
+                                    </span>
+                                )}
+                                {n.authorName && <span>•</span>}
                                 <span>{n.createdAt && !isNaN(new Date(n.createdAt).getTime()) ? format(new Date(n.createdAt), 'MMM d, h:mm a') : '—'}</span>
                             </div>
-                            <LoadingButton
-                                loading={isDeletingNote(n.noteId)}
-                                onClick={() => handleDelete(n.noteId)}
-                                className="absolute top-1 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
-                            >
-                                ×
-                            </LoadingButton>
                         </div>
                     ))
                 )}
             </div>
 
-            <form onSubmit={handleAddNote} className="relative">
+            <form onSubmit={handleAddNote} className="flex w-full items-stretch gap-2">
                 <textarea
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
                     placeholder="Add a note..."
-                    className="w-full p-3 pr-10 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-[#dbb212] outline-none"
+                    className="w-[80%] p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-[#dbb212] outline-none"
                     rows={2}
                 />
                 <LoadingButton
                     type="submit"
                     loading={loading}
                     disabled={!noteText.trim()}
-                    className="absolute bottom-2 right-2 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                    className="w-[20%] flex items-center justify-center bg-blue-50 border border-blue-100 rounded-lg text-blue-600 hover:bg-blue-100 hover:text-blue-800 disabled:opacity-50 transition-colors shadow-sm"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                     </svg>
                 </LoadingButton>

@@ -78,6 +78,12 @@ export const ReminderService = {
         return response.data;
     },
 
+    /** Get reminders for a specific date */
+    getRemindersByDate: async (date: string) => {
+        const response = await api.get<PagedReminders | ReminderResponseDTO[]>(`/api/reminders/me/date`, { params: { date } });
+        return response.data;
+    },
+
     /** Mark a reminder as seen */
     markAsSeen: async (reminderId: string | number) => {
         const response = await api.put<ReminderResponseDTO>(`/api/reminders/${reminderId}/seen`);

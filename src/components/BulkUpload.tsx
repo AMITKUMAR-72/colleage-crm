@@ -7,8 +7,11 @@ import {
     Upload,
     CheckCircle2,
     AlertCircle,
-    FileUp
+    FileUp,
+    User
 } from 'lucide-react';
+import { CounselorService } from '../services/counselorService';
+import { CounselorDTO } from '@/types/api';
 
 const REQUIRED_HEADERS = ['Campaign'];
 
@@ -27,6 +30,10 @@ const BulkUpload = () => {
     const [mode, setMode] = useState<'AUTO' | 'MANUAL' | null>(null);
     const [uploadProgress, setUploadProgress] = useState(0);
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const [showAssignPrompt, setShowAssignPrompt] = useState(false);
+    const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
+    const [selectedCounselorIds, setSelectedCounselorIds] = useState<number[]>([]);
 
     const startSimulatedProgress = (startValue: number, maxValue: number, speed: number) => {
         if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
@@ -167,7 +174,7 @@ const BulkUpload = () => {
         });
     };
 
-    const handleUpload = async (uploadMode: 'AUTO' | 'MANUAL') => {
+    const handleUpload = async (uploadMode: 'AUTO' | 'MANUAL', counselorIds: number[] = []) => {
         if (!file) return;
 
         setMode(uploadMode);
@@ -190,6 +197,7 @@ const BulkUpload = () => {
             const result = await LeadService.bulkUploadLeads(
                 fileToUpload, 
                 uploadMode,
+                counselorIds,
                 (p) => {
                     // Only update if real progress is ahead of simulation
                     setUploadProgress(prev => Math.max(prev, p * 0.9));
@@ -227,6 +235,8 @@ const BulkUpload = () => {
             }
         }
     };
+
+
 
     const simplifyReason = (rawReason: string) => {
         if (!rawReason) return "Unknown error";
@@ -413,12 +423,28 @@ const BulkUpload = () => {
 
                         <button
                             disabled={status === 'uploading'}
-                            onClick={() => handleUpload('MANUAL')}
+                            onClick={() => {
+                                CounselorService.getAllCounselors().then(raw => {
+                                    let list: CounselorDTO[] = [];
+                                    if (Array.isArray(raw)) {
+                                        list = raw;
+                                    } else if (raw && typeof raw === 'object') {
+                                        const obj = raw as any;
+                                        const arr = obj.data ?? obj.counselors ?? obj.content ?? obj.items ?? [];
+                                        list = Array.isArray(arr) ? arr : [];
+                                    }
+                                    setCounselors(list);
+                                    setShowAssignPrompt(true);
+                                }).catch(err => {
+                                    console.error('Failed to load counselors', err);
+                                    toast.error("Failed to load counselors. Please try again.");
+                                });
+                            }}
                             className="group relative bg-white border-2 border-slate-200 text-slate-800 p-5 rounded-2xl transition-all hover:border-[#4d0101]/30 hover:bg-slate-50 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 overflow-hidden"
                         >
                             <div className="relative z-10">
-                                <p className="text-sm font-black uppercase tracking-widest mb-1 text-slate-800 group-hover:text-[#4d0101]">Manual (Hold)</p>
-                                <p className="text-[10px] text-slate-400 font-medium leading-relaxed group-hover:text-slate-500">Leads stay in unassigned pool for manual distribution later</p>
+                                <p className="text-sm font-black uppercase tracking-widest mb-1 text-slate-800 group-hover:text-[#4d0101]">Manual Assignment</p>
+                                <p className="text-[10px] text-slate-400 font-medium leading-relaxed group-hover:text-slate-500">Select specific counselors to handle this sheet</p>
                             </div>
                             {status === 'uploading' && mode === 'MANUAL' && (
                                 <div className="absolute inset-0 bg-white/60 flex items-center justify-center backdrop-blur-[1px]">
@@ -494,6 +520,74 @@ const BulkUpload = () => {
                     </p>
                 </div>
             </div>
+
+            {showAssignPrompt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full text-center border border-slate-100">
+                        <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <User className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-lg font-black text-slate-900 leading-tight">Assign Counselors</h3>
+                        <p className="text-xs text-slate-500 mt-2 font-medium">Please select the counselors who will handle these leads.</p>
+                        
+                        <div className="mt-4 text-left max-h-48 overflow-y-auto border border-slate-200 rounded-xl p-2 bg-slate-50 custom-scrollbar">
+                            <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider px-2 pt-1">Select Counselors</label>
+                            
+                            {selectedCounselorIds.length === 0 && (
+                                <p className="text-[10px] font-bold text-amber-600 bg-amber-50 p-2 rounded-lg mb-2 flex items-center gap-1 border border-amber-100 mx-2">
+                                    <AlertCircle className="w-3 h-3" />
+                                    Manual upload requires at least one counselor.
+                                </p>
+                            )}
+
+                            {counselors.map(c => {
+                                const isSelected = selectedCounselorIds.includes(Number(c.id));
+                                return (
+                                    <label key={c.id} className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedCounselorIds(prev => [...prev, Number(c.id)]);
+                                                } else {
+                                                    setSelectedCounselorIds(prev => prev.filter(id => id !== Number(c.id)));
+                                                }
+                                            }}
+                                            className="w-4 h-4 text-[#4d0101] border-slate-300 rounded focus:ring-[#4d0101] cursor-pointer"
+                                        />
+                                        <span className="text-sm font-bold text-slate-700 select-none">{c.name}</span>
+                                    </label>
+                                );
+                            })}
+                            {counselors.length === 0 && (
+                                <p className="text-xs text-slate-500 text-center py-4">No counselors found.</p>
+                            )}
+                        </div>
+
+                        <div className="mt-6 flex flex-col gap-3">
+                            <button 
+                                onClick={() => {
+                                    if (selectedCounselorIds.length > 0) {
+                                        setShowAssignPrompt(false);
+                                        handleUpload('MANUAL', selectedCounselorIds);
+                                    }
+                                }} 
+                                disabled={selectedCounselorIds.length === 0}
+                                className="w-full py-2.5 text-sm font-bold bg-[#4d0101] text-white hover:bg-[#600202] rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                            >
+                                Upload and Assign to Selected
+                            </button>
+                            <button 
+                                onClick={() => setShowAssignPrompt(false)} 
+                                className="text-xs font-medium text-slate-400 hover:text-slate-600 mt-2 underline"
+                            >
+                                Cancel Upload
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

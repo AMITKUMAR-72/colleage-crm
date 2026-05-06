@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Bell, Eye, Pencil, Trash2, AlertTriangle, Clock, CheckCircle2, RotateCcw, ChevronDown, Flame, Sun, Snowflake } from 'lucide-react';
+import { Bell, Eye, Pencil, Trash2, AlertTriangle, Clock, CheckCircle2, RotateCcw, ChevronDown, Flame, Sun, Snowflake, X } from 'lucide-react';
 import { ReminderService, ReminderResponseDTO, PagedReminders } from '@/services/reminderService';
 import ReminderModal from './ReminderModal';
 import LoadingButton from '@/components/ui/LoadingButton';
@@ -56,6 +56,7 @@ const PAGE_SIZE = 10;
 export default function ReminderDashboard() {
     const [activeTab, setActiveTab] = useState<TabType>('DUE');
     const [scoreFilter, setScoreFilter] = useState<ScoreFilter>('ALL');
+    const [dateFilter, setDateFilter] = useState<string>('');
     const [reminders, setReminders] = useState<ReminderResponseDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
@@ -99,7 +100,9 @@ export default function ReminderDashboard() {
         try {
             let raw: any;
 
-            if (scoreFilter !== 'ALL') {
+            if (dateFilter) {
+                raw = await ReminderService.getRemindersByDate(dateFilter);
+            } else if (scoreFilter !== 'ALL') {
                 raw = await ReminderService.getRemindersByScore(scoreFilter, page, PAGE_SIZE);
             } else {
                 switch (activeTab) {
@@ -130,7 +133,7 @@ export default function ReminderDashboard() {
         } finally {
             setLoading(false);
         }
-    }, [activeTab, scoreFilter, page]);
+    }, [activeTab, scoreFilter, dateFilter, page]);
 
     useEffect(() => {
         fetchCounts();
@@ -143,7 +146,7 @@ export default function ReminderDashboard() {
     // Reset page when tab or filter changes
     useEffect(() => {
         setPage(0);
-    }, [activeTab, scoreFilter]);
+    }, [activeTab, scoreFilter, dateFilter]);
 
     // ─── Actions ──────────────────────────────────────────────────────────────
 
@@ -264,21 +267,41 @@ export default function ReminderDashboard() {
             </div>
 
             {/* Score Filter Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">Score:</span>
-                {(['ALL', 'HOT', 'WARM', 'COLD'] as ScoreFilter[]).map(score => (
-                    <button
-                        key={score}
-                        onClick={() => setScoreFilter(score)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${scoreFilter === score
-                                ? (score === 'ALL' ? 'bg-slate-900 text-white border-slate-900' : (SCORE_COLORS[score] || 'bg-slate-100 text-slate-600 border-slate-200'))
-                                : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'
-                            }`}
-                    >
-                        {SCORE_ICONS[score] && <span>{SCORE_ICONS[score]}</span>}
-                        {score}
-                    </button>
-                ))}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">Score:</span>
+                    {(['ALL', 'HOT', 'WARM', 'COLD'] as ScoreFilter[]).map(score => (
+                        <button
+                            key={score}
+                            onClick={() => { setScoreFilter(score); setDateFilter(''); }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${scoreFilter === score && !dateFilter
+                                    ? (score === 'ALL' ? 'bg-slate-900 text-white border-slate-900' : (SCORE_COLORS[score] || 'bg-slate-100 text-slate-600 border-slate-200'))
+                                    : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'
+                                }`}
+                        >
+                            {SCORE_ICONS[score] && <span>{SCORE_ICONS[score]}</span>}
+                            {score}
+                        </button>
+                    ))}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Date:</span>
+                    <input
+                        type="date"
+                        value={dateFilter}
+                        onChange={(e) => {
+                            setDateFilter(e.target.value);
+                            if (e.target.value) setScoreFilter('ALL');
+                        }}
+                        className="px-3 py-1.5 rounded-xl text-[10px] font-black border border-slate-200 text-slate-600 uppercase tracking-widest focus:outline-none focus:border-slate-400 transition-all bg-white"
+                    />
+                    {dateFilter && (
+                        <button onClick={() => setDateFilter('')} className="p-1.5 text-slate-400 hover:text-slate-600">
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Reminders List */}

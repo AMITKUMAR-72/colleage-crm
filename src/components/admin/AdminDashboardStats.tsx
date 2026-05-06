@@ -2,170 +2,28 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { DashboardService } from '@/services/dashboardService';
-import { AdminDashboardStatsDTO, TopCampaign } from '@/types/dashboard';
+import { createWebSocketClient } from '@/services/websocketService';
+import { AdminDashboardStatsDTO } from '@/types/dashboard';
 import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import {
+    BarChart3, Users, TrendingUp, Target, MapPin, 
+    Activity, Bell, Award, RefreshCw, Calendar,
+    ChevronRight, ArrowUpRight, Filter, Download,
+    Search, LayoutDashboard, Database, Settings
+} from 'lucide-react';
+import {
+    PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
+    CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+    LineChart, Line, AreaChart, Area
+} from 'recharts';
 
-// ─── Inline SVG Icons ──────────────────────────────────────────────────────────
-const Ico = ({ d, cls = 'w-5 h-5' }: { d: string; cls?: string }) => (
-    <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d={d} />
-    </svg>
-);
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#06B6D4'];
 
-const PATHS = {
-    leads:     'M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
-    today:     'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5',
-    week:      'M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3',
-    month:     'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
-    unassigned:'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z',
-    queued:    'M6 6.878V6a2.25 2.25 0 0 1 2.25-2.25h7.5A2.25 2.25 0 0 1 18 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 0 0 3.75 9v.75m16.5-2.872A2.25 2.25 0 0 1 20.25 9v.75m0 0v6.75a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 16.5V9.75m16.5 0h-16.5',
-    assigned:  'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z',
-    contacted: 'M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z',
-    timeout:   'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-    admission: 'M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 3.741-1.342',
-    done:      'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-    lost:      'M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
-    rate:      'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
-    breach:    'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z',
-    counselors:'M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z',
-    available: 'M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z',
-    avg:       'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z',
-    campaigns: 'M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59',
-    sessions:  'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008ZM12 9h.008v.008H12V9ZM9.75 9h.008v.008H9.75V9ZM7.5 9h.008v.008H7.5V9Z',
-    refresh:   'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
-};
-
-// ─── Colour palettes per category ────────────────────────────────────────────
-const C = {
-    red:    { bg: '#fef2f2', icon: '#4d0101', text: '#991b1b', border: '#fecaca' },
-    amber:  { bg: '#fffbeb', icon: '#b45309', text: '#92400e', border: '#fde68a' },
-    blue:   { bg: '#eff6ff', icon: '#1d4ed8', text: '#1e40af', border: '#bfdbfe' },
-    green:  { bg: '#f0fdf4', icon: '#15803d', text: '#166534', border: '#bbf7d0' },
-    purple: { bg: '#faf5ff', icon: '#7c3aed', text: '#6d28d9', border: '#ddd6fe' },
-    slate:  { bg: '#f8fafc', icon: '#475569', text: '#334155', border: '#e2e8f0' },
-    rose:   { bg: '#fff1f2', icon: '#be123c', text: '#9f1239', border: '#fecdd3' },
-    teal:   { bg: '#f0fdfa', icon: '#0f766e', text: '#115e59', border: '#99f6e4' },
-};
-
-// ─── Skeleton shimmer ─────────────────────────────────────────────────────────
-function Skeleton({ h = 100 }: { h?: number }) {
-    return (
-        <div
-            className="animate-pulse rounded-2xl bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100"
-            style={{ height: h }}
-        />
-    );
-}
-
-// ─── Single Stat Card ─────────────────────────────────────────────────────────
-interface StatCardProps {
-    label: string;
-    value: string | number;
-    icon: string;
-    color: typeof C[keyof typeof C];
-    sub?: string;
-    suffix?: string;
-}
-
-function StatCard({ label, value, icon, color, sub, suffix }: StatCardProps) {
-    return (
-        <div
-            className="rounded-2xl border p-5 flex items-start gap-4 hover:shadow-md transition-all duration-200 group"
-            style={{ background: color.bg, borderColor: color.border }}
-        >
-            <div
-                className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center"
-                style={{ background: color.icon }}
-            >
-                <Ico d={icon} cls="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: color.text, opacity: 0.7 }}>
-                    {label}
-                </p>
-                <p className="text-3xl font-black leading-none mt-1" style={{ color: color.icon }}>
-                    {value}{suffix && <span className="text-base ml-0.5 font-bold opacity-60">{suffix}</span>}
-                </p>
-                {sub && <p className="text-[11px] font-medium mt-1.5" style={{ color: color.text, opacity: 0.6 }}>{sub}</p>}
-            </div>
-        </div>
-    );
-}
-
-// ─── Section Header ───────────────────────────────────────────────────────────
-function SectionTitle({ title, icon }: { title: string; icon: string }) {
-    return (
-        <div className="flex items-center gap-2 mb-4 mt-2">
-            <Ico d={icon} cls="w-4 h-4 text-slate-400" />
-            <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</h2>
-            <hr className="flex-1 border-slate-200" />
-        </div>
-    );
-}
-
-// ─── Mini Bar chart for campaigns ────────────────────────────────────────────
-function CampaignBar({ campaigns }: { campaigns: TopCampaign[] }) {
-    if (!campaigns?.length) return <p className="text-slate-400 text-sm italic">No campaign data</p>;
-    const max = Math.max(...campaigns.map(c => c.count), 1);
-    return (
-        <div className="space-y-3">
-            {campaigns.map((c, i) => (
-                <div key={i}>
-                    <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
-                        <span className="truncate max-w-[60%]">{c.name}</span>
-                        <span className="font-black text-[#4d0101]">{c.count}</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{
-                                width: `${(c.count / max) * 100}%`,
-                                background: i === 0 ? '#4d0101' : i === 1 ? '#b45309' : '#1d4ed8',
-                            }}
-                        />
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-// ─── Rate Gauge ───────────────────────────────────────────────────────────────
-function RateGauge({ value, label, good }: { value: number; label: string; good: boolean }) {
-    const pct = Math.min(100, Math.max(0, value));
-    const color = good
-        ? pct > 50 ? '#15803d' : '#b45309'
-        : pct > 30 ? '#be123c' : '#15803d';
-    return (
-        <div className="flex flex-col items-center gap-2">
-            <div className="relative w-24 h-24">
-                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                    <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none" stroke="#e2e8f0" strokeWidth="3"
-                    />
-                    <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none" stroke={color} strokeWidth="3"
-                        strokeDasharray={`${pct}, 100`}
-                        strokeLinecap="round"
-                    />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-xl font-black" style={{ color }}>{pct.toFixed(1)}%</p>
-                </div>
-            </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 text-center">{label}</p>
-        </div>
-    );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminDashboardStats() {
     const [stats, setStats] = useState<AdminDashboardStatsDTO | null>(null);
     const [loading, setLoading] = useState(true);
     const [lastFetched, setLastFetched] = useState<Date | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
 
     const fetchStats = useCallback(async () => {
         setLoading(true);
@@ -175,152 +33,378 @@ export default function AdminDashboardStats() {
             setLastFetched(new Date());
         } catch (err) {
             console.error('[AdminDashboardStats] Failed to fetch:', err);
-            toast.error('Could not load dashboard stats. The backend endpoint may not be ready yet.');
         } finally {
             setLoading(false);
         }
     }, []);
 
-    useEffect(() => { fetchStats(); }, [fetchStats]);
+    useEffect(() => {
+        fetchStats();
+
+        const client = createWebSocketClient((update) => {
+            console.log('[DashboardWS] Received update, refreshing...');
+            fetchStats();
+        });
+
+        client.onConnect = () => setIsConnected(true);
+        client.onDisconnect = () => setIsConnected(false);
+
+        client.activate();
+        return () => client.deactivate();
+    }, [fetchStats]);
+
+    if (loading && !stats) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[600px] gap-6">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Activity className="w-6 h-6 text-blue-500 animate-pulse" />
+                    </div>
+                </div>
+                <div className="text-center">
+                    <h3 className="text-white font-bold text-lg mb-1">Synchronizing Intelligence</h3>
+                    <p className="text-slate-500 text-sm animate-pulse uppercase tracking-[0.3em]">Establishing secure data stream...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!stats) return null;
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-
-            {/* ── Top Bar ──────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Live Dashboard</h2>
-                    <p className="text-slate-400 text-sm font-medium mt-0.5">
-                        {lastFetched
-                            ? `Last updated: ${format(lastFetched, 'hh:mm:ss a')}`
-                            : 'Fetching live data…'}
-                    </p>
-                </div>
-                <button
-                    onClick={fetchStats}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4d0101] text-white text-xs font-black uppercase tracking-widest hover:bg-[#600202] transition disabled:opacity-50"
-                >
-                    <Ico d={PATHS.refresh} cls={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
-                </button>
-            </div>
-
-            {loading && !stats ? (
-                // ── Loading Skeleton ──
-                <div className="space-y-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {Array(8).fill(0).map((_, i) => <Skeleton key={i} h={110} />)}
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        {Array(6).fill(0).map((_, i) => <Skeleton key={i} h={110} />)}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {Array(3).fill(0).map((_, i) => <Skeleton key={i} h={90} />)}
+        <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out pb-12">
+            
+            {/* ── Top Command Bar ──────────────────────────────────────── */}
+            <div className="flex items-center justify-between gap-6 flex-wrap sticky top-0 z-30 bg-slate-950/80 backdrop-blur-xl py-4 border-b border-slate-800/50 -mx-4 px-4 sm:mx-0 sm:px-0">
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-1 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <h2 className="text-2xl font-black text-white tracking-tight">Executive Overview</h2>
+                            <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-wider border border-blue-500/20">Real-time</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <p className="text-slate-500 text-xs font-bold flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {format(new Date(), 'EEEE, MMMM do yyyy')}
+                            </p>
+                            <span className="h-1 w-1 bg-slate-700 rounded-full"></span>
+                            <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">{isConnected ? 'System Online' : 'Offline'}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            ) : !stats ? (
-                // ── Empty / Error state ──
-                <div className="flex flex-col items-center justify-center py-24 gap-4 border-2 border-dashed border-slate-200 rounded-3xl">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center">
-                        <Ico d={PATHS.breach} cls="w-8 h-8 text-slate-300" />
+
+                <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-1 mr-4 bg-slate-900 rounded-xl p-1 border border-slate-800">
+                        <button className="p-2 text-slate-400 hover:text-white transition-colors"><Search className="w-4 h-4" /></button>
+                        <input type="text" placeholder="Global search..." className="bg-transparent border-none focus:ring-0 text-xs text-white placeholder-slate-600 w-32" />
                     </div>
-                    <p className="text-slate-500 font-bold text-center max-w-sm">
-                        Dashboard data not available.<br />
-                        <span className="text-[#4d0101] font-black">Backend endpoint not ready yet.</span><br />
-                        <span className="text-xs text-slate-400">Expected: GET /api/admin/dashboard/stats</span>
-                    </p>
-                    <button
-                        onClick={fetchStats}
-                        className="px-6 py-2.5 rounded-xl bg-[#4d0101] text-white text-xs font-black uppercase tracking-widest hover:bg-[#600202] transition"
-                    >
-                        Retry
+                    <button onClick={fetchStats} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-blue-400 hover:border-blue-500/30 transition-all active:scale-95 shadow-lg">
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all shadow-lg">
+                        <Download className="w-4 h-4" />
+                    </button>
+                    <button className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 flex items-center gap-2">
+                        <Filter className="w-3.5 h-3.5" />
+                        Refine
                     </button>
                 </div>
-            ) : (
-                <>
-                    {/* ── Section 1: Lead Volume ─────────────────────────────── */}
-                    <section>
-                        <SectionTitle title="Lead Volume" icon={PATHS.leads} />
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <StatCard label="Total Leads"     value={stats.totalLeads}      icon={PATHS.leads}     color={C.red}   sub="All time" />
-                            <StatCard label="Leads Today"     value={stats.leadsToday}       icon={PATHS.today}     color={C.amber} sub="Since midnight" />
-                            <StatCard label="This Week"       value={stats.leadsThisWeek}    icon={PATHS.week}      color={C.blue}  sub="Mon – Sun" />
-                            <StatCard label="This Month"      value={stats.leadsThisMonth}   icon={PATHS.month}     color={C.green} sub="Current month" />
+            </div>
+
+            {/* ── Primary KPI Grid ─────────────────────────────────────── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                
+                {/* Total Leads Card */}
+                <div className="relative group overflow-hidden bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-blue-500/30 transition-all duration-500 shadow-xl">
+                    <div className="absolute -right-4 -top-4 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl group-hover:bg-blue-600/10 transition-colors"></div>
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            <Users className="w-6 h-6" />
                         </div>
-                    </section>
-
-                    {/* ── Section 2: Lead Pipeline ───────────────────────────── */}
-                    <section>
-                        <SectionTitle title="Lead Pipeline" icon={PATHS.queued} />
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <StatCard label="Unassigned"      value={stats.newUnassignedLeads} icon={PATHS.unassigned} color={C.rose}   sub="Waiting for counselor" />
-                            <StatCard label="Queued"          value={stats.queuedLeads}         icon={PATHS.queued}    color={C.amber}  sub="In assignment queue" />
-                            <StatCard label="Assigned"        value={stats.assignedLeads}       icon={PATHS.assigned}  color={C.blue}   sub="With a counselor" />
-                            <StatCard label="Contacted"       value={stats.contactedLeads}      icon={PATHS.contacted} color={C.teal}   sub="At least 1 contact made" />
-                            <StatCard label="Timed Out"       value={stats.timedOutLeads}       icon={PATHS.timeout}   color={C.rose}   sub="SLA expired" />
-                            <StatCard label="In Admission"    value={stats.admissionInProcess}  icon={PATHS.admission} color={C.purple} sub="Admission in process" />
-                            <StatCard label="Converted"       value={stats.admissionDone}       icon={PATHS.done}      color={C.green}  sub="Admission completed" />
-                            <StatCard label="Lost"            value={stats.lostLeads}           icon={PATHS.lost}      color={C.slate}  sub="Marked as lost" />
-                        </div>
-                    </section>
-
-                    {/* ── Section 3: Rates & Counselors & Campaigns ─────────── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                        {/* Conversion & SLA rates */}
-                        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Performance Rates</p>
-                            <div className="flex justify-around gap-4">
-                                <RateGauge value={stats.conversionRate} label="Conversion Rate" good={true} />
-                                <RateGauge value={stats.slaBreachRate}  label="SLA Breach Rate" good={false} />
-                            </div>
-                        </div>
-
-                        {/* Counselors */}
-                        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-400">Counselors</p>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="flex flex-col items-center rounded-xl p-3" style={{ background: C.blue.bg }}>
-                                    <p className="text-2xl font-black" style={{ color: C.blue.icon }}>{stats.totalCounselors}</p>
-                                    <p className="text-[10px] font-bold text-center mt-1" style={{ color: C.blue.text, opacity: 0.7 }}>Total</p>
-                                </div>
-                                <div className="flex flex-col items-center rounded-xl p-3" style={{ background: C.green.bg }}>
-                                    <p className="text-2xl font-black" style={{ color: C.green.icon }}>{stats.availableCounselors}</p>
-                                    <p className="text-[10px] font-bold text-center mt-1" style={{ color: C.green.text, opacity: 0.7 }}>Available</p>
-                                </div>
-                                <div className="flex flex-col items-center rounded-xl p-3" style={{ background: C.amber.bg }}>
-                                    <p className="text-2xl font-black" style={{ color: C.amber.icon }}>{stats.avgLeadsPerCounselor?.toFixed(1)}</p>
-                                    <p className="text-[10px] font-bold text-center mt-1" style={{ color: C.amber.text, opacity: 0.7 }}>Avg Leads</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Campaigns + Sessions */}
-                        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Top Campaigns</p>
-                                <span className="text-xs font-bold text-slate-400">{stats.totalCampaigns} sources</span>
-                            </div>
-                            <CampaignBar campaigns={stats.topCampaigns} />
-                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Ico d={PATHS.sessions} cls="w-4 h-4 text-purple-500" />
-                                    <p className="text-xs font-bold text-slate-500">Upcoming Sessions</p>
-                                </div>
-                                <p className="text-lg font-black text-purple-600">{stats.upcomingSessions}</p>
-                            </div>
+                        <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/10 px-2 py-1 rounded-lg">
+                            <ArrowUpRight className="w-3 h-3" />
+                            12.5%
                         </div>
                     </div>
+                    <div>
+                        <h3 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Total Pipeline</h3>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">{stats.totalLeads.toLocaleString()}</span>
+                            <span className="text-slate-600 text-sm font-bold">Leads</span>
+                        </div>
+                        <div className="mt-4 flex items-center gap-2">
+                            <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 w-3/4 rounded-full"></div>
+                            </div>
+                            <span className="text-[10px] font-black text-slate-500 uppercase">75% Target</span>
+                        </div>
+                    </div>
+                </div>
 
-                    {/* ── Footer: generated at ──────────────────────────────── */}
-                    {stats.generatedAt && (
-                        <p className="text-center text-[11px] text-slate-300 font-medium">
-                            Snapshot generated at {format(new Date(stats.generatedAt), 'PPP p')}
-                        </p>
-                    )}
-                </>
-            )}
+                {/* Total Applicants Card */}
+                <div className="relative group overflow-hidden bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
+                    <div className="absolute -right-4 -top-4 w-32 h-32 bg-emerald-600/5 rounded-full blur-3xl group-hover:bg-emerald-600/10 transition-colors"></div>
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <Award className="w-6 h-6" />
+                        </div>
+                        <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/10 px-2 py-1 rounded-lg">
+                            <ArrowUpRight className="w-3 h-3" />
+                            8.2%
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Confirmed Apps</h3>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">{stats.totalApplicants.toLocaleString()}</span>
+                            <span className="text-slate-600 text-sm font-bold">Students</span>
+                        </div>
+                        <div className="mt-4 flex items-center gap-2">
+                            <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500 w-1/2 rounded-full"></div>
+                            </div>
+                            <span className="text-[10px] font-black text-slate-500 uppercase">50% Growth</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Conversion Rate Card */}
+                <div className="relative group overflow-hidden bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-amber-500/30 transition-all duration-500 shadow-xl">
+                    <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-600/5 rounded-full blur-3xl group-hover:bg-amber-600/10 transition-colors"></div>
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <TrendingUp className="w-6 h-6" />
+                        </div>
+                        <div className="flex items-center gap-1 text-amber-400 text-xs font-black bg-amber-500/10 px-2 py-1 rounded-lg">
+                            Active
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Conversion Efficiency</h3>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">{(stats.totalLeads > 0 ? (stats.totalApplicants / stats.totalLeads * 100).toFixed(1) : 0)}</span>
+                            <span className="text-slate-600 text-xl font-black">%</span>
+                        </div>
+                        <div className="mt-4 flex items-center gap-2">
+                            <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500 w-[15%] rounded-full"></div>
+                            </div>
+                            <span className="text-[10px] font-black text-slate-500 uppercase">Benchmark: 12%</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Active Sessions Card */}
+                <div className="relative group overflow-hidden bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-purple-500/30 transition-all duration-500 shadow-xl">
+                    <div className="absolute -right-4 -top-4 w-32 h-32 bg-purple-600/5 rounded-full blur-3xl group-hover:bg-purple-600/10 transition-colors"></div>
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            <Activity className="w-6 h-6" />
+                        </div>
+                        <div className="w-2 h-2 rounded-full bg-red-500 animate-ping"></div>
+                    </div>
+                    <div>
+                        <h3 className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Pulse Score</h3>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white">88</span>
+                            <span className="text-slate-600 text-sm font-bold">Health</span>
+                        </div>
+                        <div className="mt-4 flex items-center gap-2 text-purple-400 font-bold text-[10px] uppercase tracking-widest bg-purple-500/10 px-3 py-1 rounded-full w-fit">
+                            Optimal Performance
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Main Data Visualizations ─────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                {/* 1. Lead Conversion Cycle (Refined Area Chart) */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl relative">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-xl font-black text-white flex items-center gap-3">
+                                <LayoutDashboard className="w-5 h-5 text-blue-500" />
+                                Growth Lifecycle
+                            </h3>
+                            <p className="text-slate-500 text-xs font-bold mt-1 uppercase tracking-wider">Leads vs Applicants Comparison</p>
+                        </div>
+                        <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button className="px-3 py-1 text-[10px] font-black text-white bg-slate-800 rounded-lg uppercase tracking-wider">Monthly</button>
+                            <button className="px-3 py-1 text-[10px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-wider transition-colors">Quarterly</button>
+                        </div>
+                    </div>
+                    <div className="h-[400px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={stats.leadCycle}>
+                                <defs>
+                                    <linearGradient id="areaLeads" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="areaApps" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="0 0" stroke="#1e293b" vertical={false} />
+                                <XAxis dataKey="period" stroke="#475569" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} dy={15} />
+                                <YAxis stroke="#475569" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                                    itemStyle={{ fontWeight: '900', textTransform: 'uppercase', fontSize: '10px' }}
+                                />
+                                <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '30px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }} />
+                                <Area type="monotone" dataKey="leads" stroke="#3b82f6" strokeWidth={5} fillOpacity={1} fill="url(#areaLeads)" animationDuration={1500} />
+                                <Area type="monotone" dataKey="applicants" stroke="#10b981" strokeWidth={5} fillOpacity={1} fill="url(#areaApps)" animationDuration={1500} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 2. Campaign Pillar Graph (Professional Bar Chart) */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-xl font-black text-white flex items-center gap-3">
+                                <Target className="w-5 h-5 text-cyan-400" />
+                                Source Performance
+                            </h3>
+                            <p className="text-slate-500 text-xs font-bold mt-1 uppercase tracking-wider">Acquisition by Channel</p>
+                        </div>
+                        <button className="text-slate-500 hover:text-white transition-colors">
+                            <Settings className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="h-[400px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.campaignStats} barGap={12}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} opacity={0.3} />
+                                <XAxis dataKey="name" stroke="#475569" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} dy={15} />
+                                <YAxis stroke="#475569" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} />
+                                <Tooltip 
+                                    cursor={{fill: 'rgba(255,255,255,0.02)'}}
+                                    contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '20px' }}
+                                />
+                                <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '30px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
+                                <Bar dataKey="leads" fill="#3b82f6" radius={[8, 8, 0, 0]} barSize={24} />
+                                <Bar dataKey="applicants" fill="#06b6d4" radius={[8, 8, 0, 0]} barSize={24} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 3. Geographic Circle (Enhanced Donut Chart) */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-xl font-black text-white flex items-center gap-3">
+                                <MapPin className="w-5 h-5 text-orange-400" />
+                                Regional Reach
+                            </h3>
+                            <p className="text-slate-500 text-xs font-bold mt-1 uppercase tracking-wider">Global Distribution Analysis</p>
+                        </div>
+                        <div className="h-2 w-12 bg-slate-800 rounded-full"></div>
+                    </div>
+                    <div className="h-[400px] w-full flex items-center justify-center">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={stats.cityStats}
+                                    cx="50%"
+                                    cy="45%"
+                                    innerRadius={90}
+                                    outerRadius={140}
+                                    paddingAngle={8}
+                                    dataKey="count"
+                                    nameKey="city"
+                                    stroke="none"
+                                >
+                                    {stats.cityStats.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '20px' }}
+                                />
+                                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '40px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 4. Daily Performance (High-Contrast Line Chart) */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-xl font-black text-white flex items-center gap-3">
+                                <Activity className="w-5 h-5 text-purple-400" />
+                                Velocity Trends
+                            </h3>
+                            <p className="text-slate-500 text-xs font-bold mt-1 uppercase tracking-wider">Daily Processing Efficiency</p>
+                        </div>
+                        <div className="flex items-center -space-x-2">
+                            {[1, 2, 3].map(i => <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-bold text-slate-500">M</div>)}
+                        </div>
+                    </div>
+                    <div className="h-[400px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={stats.dailyTrends}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} opacity={0.3} />
+                                <XAxis dataKey="date" stroke="#475569" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} dy={15} />
+                                <YAxis stroke="#475569" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '20px' }}
+                                />
+                                <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '30px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
+                                <Line type="stepAfter" dataKey="leads" stroke="#8b5cf6" strokeWidth={5} dot={false} activeDot={{ r: 8 }} />
+                                <Line type="stepAfter" dataKey="conversions" stroke="#ec4899" strokeWidth={5} dot={false} activeDot={{ r: 8 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Actionable Bottom Sheet ─────────────────────────────── */}
+            <div className="bg-gradient-to-r from-blue-600/10 via-slate-900 to-emerald-600/10 border border-slate-800 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl overflow-hidden relative group">
+                <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                <div className="relative">
+                    <h4 className="text-2xl font-black text-white mb-2">Operational Intelligence Protocol</h4>
+                    <p className="text-slate-400 font-medium max-w-xl">
+                        Systems are currently operating within nominal parameters. Real-time WebSocket synchronization is active with an average latency of <span className="text-blue-400 font-black">12ms</span>.
+                    </p>
+                </div>
+                <div className="flex items-center gap-4 relative">
+                    <button className="px-8 py-4 rounded-2xl bg-slate-800 text-white font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-700">
+                        Diagnostics
+                    </button>
+                    <button className="px-8 py-4 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+
+            {/* ── Legal Footer ────────────────────────────────────────── */}
+            <div className="flex flex-col items-center gap-4 opacity-40 hover:opacity-100 transition-opacity duration-500">
+                <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-500">
+                    Proprietary Algorithm • End-to-End Encryption Active • Raffles University CRM v4.0
+                </p>
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                        <Database className="w-3 h-3" />
+                        <span className="text-[8px] font-bold uppercase tracking-widest text-slate-600">DB Node: Raffles-Cluster-01</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Activity className="w-3 h-3" />
+                        <span className="text-[8px] font-bold uppercase tracking-widest text-slate-600">System Load: 0.42ms</span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

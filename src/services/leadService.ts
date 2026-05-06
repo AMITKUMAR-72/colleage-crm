@@ -108,9 +108,12 @@ export const LeadService = {
     },
 
     // #11 - Import leads via Excel (AUTO/MANUAL)
-    bulkUploadLeads: async (file: File, mode: string = 'AUTO', onProgress?: (percent: number) => void) => {
+    bulkUploadLeads: async (file: File, mode: string = 'AUTO', counselorIds: number[] = [], onProgress?: (percent: number) => void) => {
         const formData = new FormData();
         formData.append('file', file);
+        if (counselorIds && counselorIds.length > 0) {
+            counselorIds.forEach(id => formData.append('counselorIds', id.toString()));
+        }
         const response = await api.post(`/api/leads/bulk-upload?mode=${mode}`, formData, {
             headers: {
                 'Content-Type': undefined
@@ -170,6 +173,12 @@ export const LeadService = {
     // #19 - Update lead status (CONTACTED, FAKE, etc)
     updateLeadStatus: async (id: string | number, status: LeadStatus) => {
         const response = await api.patch<LeadResponseDTO>(`/api/leads/${id}/status`, null, { params: { status } });
+        return response.data;
+    },
+
+    // Mark as fake via dedicated endpoint
+    markAsFake: async (id: string | number) => {
+        const response = await api.patch(`/api/leads/${id}/FAKE`);
         return response.data;
     },
 

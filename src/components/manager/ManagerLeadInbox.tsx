@@ -559,7 +559,15 @@ export default function ManagerLeadInbox() {
                                         notes.map((n, i) => (
                                             <div key={i} className="space-y-1">
                                                 <p className="text-xs text-slate-700 leading-relaxed font-medium">{n.note}</p>
-                                                {n.createdAt && <p className="text-[9px] font-bold text-slate-400">{new Date(n.createdAt).toLocaleString()}</p>}
+                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                                    {n.authorName && (
+                                                        <span className="font-bold text-slate-500">
+                                                            {n.authorName} {n.authorRole ? `(${n.authorRole})` : ''}
+                                                        </span>
+                                                    )}
+                                                    {n.authorName && <span>•</span>}
+                                                    {n.createdAt && <span className="font-bold">{new Date(n.createdAt).toLocaleString()}</span>}
+                                                </div>
                                             </div>
                                         ))
                                     )}

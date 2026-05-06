@@ -4,11 +4,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CounselorService } from '@/services/counselorService';
 import { CourseService } from '@/services/courseService';
 import { DepartmentService } from '@/services/departmentService';
-import { LeadResponseDTO, LeadStatus, CourseDTO, DepartmentDTO, LeadScore } from '@/types/api';
+import { LeadResponseDTO, LeadStatus, CourseDTO, DepartmentDTO, LeadScore, CampaignDTO } from '@/types/api';
 import { LeadService } from '@/services/leadService';
+import { CampaignService } from '@/services/campaignService';
+import { ReminderService, ReminderResponseDTO } from '@/services/reminderService';
+import { EnumService } from '@/services/enumService';
 import {
     Search, RotateCcw, Mail, Globe, BookOpen, ChevronDown, GraduationCap, Phone, MapPin,
-    Flame, Sun, Snowflake, Bell, Trash2, X
+    Flame, Sun, Snowflake, Bell, Trash2, X, Clock, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import LeadNotes from '../LeadNotes';
@@ -51,13 +54,6 @@ const STATUS_COLORS: Record<string, string> = {
     'FAKE': 'bg-rose-100 text-rose-700 border-rose-200',
 };
 
-const ALL_STATUSES: LeadStatus[] = [
-    'FAKE',
-    'CONTACTED',
-    'REASSIGNED',
-    'INTERESTED'
-];
-
 const ALL_SCORES: LeadScore[] = ['HOT', 'WARM', 'COLD', 'INTERESTED', 'DISCARDED'];
 
 interface MyLeadsFeedProps {
@@ -71,10 +67,18 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const { user, role } = useAuth();
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [scoreFilter, setScoreFilter] = useState<LeadScore | 'ALL' | 'CONTACTED' | 'DISCARDED_TAB'>('ALL');
+    const [filterType, setFilterType] = useState<'ALL' | 'SOURCE' | 'COURSE' | 'DEPARTMENT' | 'NAME' | 'FAKE'>('ALL');
+    const [filterInput, setFilterInput] = useState('');
+    const [filterValue, setFilterValue] = useState('');
     const [discardedCount, setDiscardedCount] = useState(0);
     const [courses, setCourses] = useState<CourseDTO[]>([]);
+    const [campaigns, setCampaigns] = useState<CampaignDTO[]>([]);
+    const [departments, setDepartments] = useState<DepartmentDTO[]>([]);
+    const [todayReminders, setTodayReminders] = useState<ReminderResponseDTO[]>([]);
+    const [expandedReminderSection, setExpandedReminderSection] = useState<'TRIGGERED' | 'MISSED' | null>(null);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
+    const [uiPage, setUiPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
     const [updateProcessing, setUpdateProcessing] = useState(false);
@@ -110,7 +114,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         // Enrich/Normalize items
         return data.map((item: any) => ({
             ...item,
-            id: item.id || item.leadId,
+            id: item.id || item.leadId || item.originalLeadId,
             phone: item.phone || (item.phones && item.phones.length > 0 ? item.phones[0] : '')
         }));
     }, []);
@@ -125,6 +129,21 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
 
             if (scoreFilter === 'DISCARDED_TAB') {
                 const res = await api.get(`/api/leads/my/discarded/page/${page}/size/${PAGE_SIZE}`);
+                raw = res.data;
+            } else if (filterType === 'SOURCE' && filterValue.trim()) {
+                const res = await api.get(`/api/leads/source/${encodeURIComponent(filterValue.trim())}`);
+                raw = res.data;
+            } else if (filterType === 'COURSE' && filterValue.trim()) {
+                const res = await api.get(`/api/leads/course/${encodeURIComponent(filterValue.trim())}`);
+                raw = res.data;
+            } else if (filterType === 'DEPARTMENT' && filterValue.trim()) {
+                const res = await api.get(`/api/leads/department/${encodeURIComponent(filterValue.trim())}/page/${page}/size/${PAGE_SIZE}`);
+                raw = res.data;
+            } else if (filterType === 'NAME' && filterValue.trim()) {
+                const res = await api.get(`/api/leads/search?name=${encodeURIComponent(filterValue.trim())}`);
+                raw = res.data;
+            } else if (filterType === 'FAKE') {
+                const res = await api.get(`/api/leads/status/FAKE/page/${page}/size/${PAGE_SIZE}`);
                 raw = res.data;
             } else {
                 raw = await CounselorService.getAssignedLeads(page, PAGE_SIZE);
@@ -151,7 +170,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         } finally {
             setLoading(false);
         }
-    }, [page, normalizeResults, scoreFilter]);
+    }, [page, normalizeResults, scoreFilter, filterType, filterValue]);
 
     const loadCourses = useCallback(async () => {
         try {
@@ -178,6 +197,48 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     useEffect(() => {
         loadCourses();
     }, [loadCourses]);
+
+    const loadFiltersData = useCallback(async () => {
+        try {
+            const [deptData, remData] = await Promise.all([
+                DepartmentService.getAllDepartments().catch(() => []),
+                ReminderService.getMyReminders(0, 100).catch(() => ({ content: [] }))
+            ]);
+            setDepartments(Array.isArray(deptData) ? deptData : (deptData as any).data || []);
+            
+            const remindersList = Array.isArray(remData) ? remData : (remData as any).content || [];
+            const filteredReminders = remindersList.filter((r: ReminderResponseDTO) => r.status === 'TRIGGERED' || r.status === 'MISSED');
+            setTodayReminders(filteredReminders);
+        } catch (err) {
+            console.error('Failed to load filter data', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadFiltersData();
+    }, [loadFiltersData]);
+
+    useEffect(() => {
+        if (filterType === 'SOURCE' && campaigns.length === 0) {
+            CampaignService.getAllSources().then(data => {
+                setCampaigns(Array.isArray(data) ? data : (data as any).data || []);
+            }).catch(console.error);
+        }
+    }, [filterType, campaigns.length]);
+
+    const handleReminderClick = async (leadId: number | string) => {
+        try {
+            let lead = leads.find(l => String(l.id) === String(leadId));
+            if (!lead) {
+                lead = await LeadService.getLeadById(Number(leadId));
+            }
+            if (lead) {
+                openDetails(lead);
+            }
+        } catch (err) {
+            toast.error("Could not load lead details");
+        }
+    };
 
     const openDetails = (lead: LeadResponseDTO) => {
         setSelectedLead(lead);
@@ -219,6 +280,24 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
             if (onActionComplete) onActionComplete();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to discard lead');
+        } finally {
+            setUpdateProcessing(false);
+            isSubmitting.current = false;
+        }
+    };
+
+    const handleFakeLead = async () => {
+        if (!selectedLead || isSubmitting.current) return;
+        isSubmitting.current = true;
+        setUpdateProcessing(true);
+        try {
+            await LeadService.markAsFake(selectedLead.id);
+            setLeads(prev => prev.filter(l => l.id !== selectedLead.id));
+            toast.success('Lead marked as Fake');
+            setSelectedLead(null);
+            if (onActionComplete) onActionComplete();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to mark lead as fake');
         } finally {
             setUpdateProcessing(false);
             isSubmitting.current = false;
@@ -305,6 +384,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             onClick={() => {
                                 setScoreFilter(isActive ? 'ALL' : metric.score as any);
                                 setPage(0); // Reset page when switching metrics
+                                setUiPage(0); // Reset UI pagination
                             }}
                             className={`
                                 cursor-pointer p-4 rounded-[2rem] border-2 transition-all duration-500 relative overflow-hidden group
@@ -334,10 +414,127 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
 
 
 
+            {/* ── Today Followup ─────────────────────────────────────────────── */}
+            <div className="mt-8">
+                <div className="flex items-center gap-4 mb-4 px-4">
+                    <div className="w-1.5 h-6 bg-rose-500 rounded-full"></div>
+                    <div>
+                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Today Follow-up</h3>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Reminders & Follow-ups due today</p>
+                    </div>
+                </div>
+
+                <div className="px-4">
+                    {/* Triggered Div */}
+                    <div 
+                        onClick={() => setExpandedReminderSection(expandedReminderSection === 'TRIGGERED' ? null : 'TRIGGERED')}
+                        className={`cursor-pointer bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border transition-all relative overflow-hidden group ${expandedReminderSection === 'TRIGGERED' ? 'border-indigo-400 scale-[1.02]' : 'border-slate-100 hover:border-slate-300'}`}
+                    >
+                        <div className="px-6 py-5 flex items-center justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:scale-110 transition-transform">
+                                    <Bell className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Triggered</h4>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Reminders ready to act</p>
+                                </div>
+                            </div>
+                            <div className="bg-rose-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-md shadow-rose-500/30">
+                                {todayReminders.filter(r => r.status === 'TRIGGERED').length}
+                            </div>
+                        </div>
+                        {expandedReminderSection === 'TRIGGERED' && (
+                            <div className="border-t border-slate-100 bg-slate-50/50 p-4 max-h-64 overflow-y-auto divide-y divide-slate-100/50">
+                                {todayReminders.filter(r => r.status === 'TRIGGERED').length === 0 ? (
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center py-4">No triggered reminders</p>
+                                ) : (
+                                    todayReminders.filter(r => r.status === 'TRIGGERED').map(r => (
+                                        <div key={r.id} onClick={(e) => { e.stopPropagation(); handleReminderClick(r.leadId); }} className="py-3 px-4 hover:bg-white rounded-xl transition-colors cursor-pointer flex flex-col gap-1">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate">{r.leadName || `Lead #${r.leadId}`}</span>
+                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{new Date(r.reminderAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                            </div>
+                                            {r.note && <p className="text-[10px] font-medium text-slate-500 truncate">{r.note}</p>}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+            </div>
+
+            {/* ── Filter Leads ─────────────────────────────────────────────── */}
+            <div className="mt-8">
+                <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 p-5 flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                    <div className="flex items-center gap-2 text-slate-400 shrink-0 px-2">
+                        <Search className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Filter Leads</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1">
+                        <select
+                            value={filterType}
+                            onChange={(e) => {
+                                setFilterType(e.target.value as any);
+                                setFilterInput('');
+                                setFilterValue('');
+                                setPage(0);
+                                setUiPage(0);
+                            }}
+                            className="w-full sm:w-auto px-5 py-3 bg-slate-50 text-slate-700 text-[10px] font-black rounded-xl border border-slate-200 uppercase tracking-widest shadow-sm focus:outline-none focus:border-indigo-300 focus:bg-white transition-all cursor-pointer"
+                        >
+                            <option value="ALL">All Assigned</option>
+                            <option value="SOURCE">By Campaign Source</option>
+                            <option value="COURSE">By Course</option>
+                            <option value="DEPARTMENT">By Department</option>
+                            <option value="NAME">Search by Name</option>
+                            <option value="FAKE">Fake Leads</option>
+                        </select>
+
+                        {filterType !== 'ALL' && filterType !== 'FAKE' && (
+                            <div className="flex w-full sm:w-auto flex-1 gap-2">
+                                {filterType === 'NAME' ? (
+                                    <input
+                                        type="text"
+                                        placeholder={`Enter ${filterType.toLowerCase()}...`}
+                                        value={filterInput}
+                                        onChange={(e) => setFilterInput(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { setFilterValue(filterInput); setPage(0); setUiPage(0); } }}
+                                        className="w-full px-5 py-3 bg-slate-50 text-slate-700 text-[10px] font-bold rounded-xl border border-slate-200 uppercase tracking-wider shadow-sm focus:outline-none focus:border-indigo-300 focus:bg-white transition-all"
+                                    />
+                                ) : (
+                                    <select
+                                        value={filterInput}
+                                        onChange={(e) => setFilterInput(e.target.value)}
+                                        className="w-full px-5 py-3 bg-slate-50 text-slate-700 text-[10px] font-bold rounded-xl border border-slate-200 uppercase tracking-wider shadow-sm focus:outline-none focus:border-indigo-300 focus:bg-white transition-all cursor-pointer"
+                                    >
+                                        <option value="" disabled>Select {filterType}</option>
+                                        {filterType === 'SOURCE' && campaigns.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                        {filterType === 'COURSE' && courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
+                                        {filterType === 'DEPARTMENT' && departments.map(d => <option key={d.id} value={d.department}>{d.department}</option>)}
+                                    </select>
+                                )}
+                                <button
+                                    onClick={() => { setFilterValue(filterInput); setPage(0); setUiPage(0); }}
+                                    disabled={loading || !filterInput}
+                                    className="px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50 text-[10px] font-black uppercase tracking-widest shrink-0"
+                                >
+                                    Search
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* ── Unified Lead List ────────────────────────────────────────── */}
             <div className="mt-8 pb-20">
                 <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                    {/* Header */}
+                    <div className="px-8 py-6 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-slate-50/30">
                         <div className="flex items-center gap-4">
                             <div className="w-1.5 h-10 bg-slate-900 rounded-full"></div>
                             <div>
@@ -346,11 +543,12 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                           <span className="px-4 py-1.5 bg-white text-slate-900 text-[10px] font-black rounded-xl border border-slate-200 uppercase shadow-sm">
+                           <span className="px-5 py-2.5 bg-white text-slate-900 text-[10px] font-black rounded-xl border border-slate-200 uppercase tracking-widest shadow-sm">
                                Total: {scoreFilter === 'DISCARDED_TAB' ? leads.length : leads.filter(l => (scoreFilter === 'ALL' || (scoreFilter === 'CONTACTED' ? l.status === 'CONTACTED' : l.score === scoreFilter))).length}
                            </span>
                         </div>
                     </div>
+
                     <div className="divide-y divide-slate-50">
                         {leads.length === 0 ? (
                             <div className="p-20 text-center">
@@ -364,7 +562,9 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             </div>
                         ) : (
                             // When in DISCARDED_TAB, the leads array IS the filtered list from the API
-                            (scoreFilter === 'DISCARDED_TAB' ? leads : leads.filter(l => (scoreFilter === 'ALL' || (scoreFilter === 'CONTACTED' ? l.status === 'CONTACTED' : l.score === scoreFilter)))).map((lead, idx) => (
+                            (scoreFilter === 'DISCARDED_TAB' ? leads : leads.filter(l => (scoreFilter === 'ALL' || (scoreFilter === 'CONTACTED' ? l.status === 'CONTACTED' : l.score === scoreFilter))))
+                                .slice(uiPage * 10, (uiPage + 1) * 10)
+                                .map((lead, idx) => (
                                 <div key={lead.id || lead.leadId || idx} className="group transition-all hover:bg-slate-50/10">
                                     <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
                                         <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-slate-900" />
@@ -384,9 +584,23 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                                 <span className="text-[10px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
                                                     <Mail className="w-3 h-3 p-[1px]" /> {lead.email}
                                                 </span>
-                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate flex items-center gap-1">
-                                                    <BookOpen className="w-3 h-3 p-[1px]" /> {getCourseName(lead.course)}
+                                                <span className="text-[10px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                                                    <Phone className="w-3 h-3 p-[1px]" /> {lead.phone}
                                                 </span>
+                                                {scoreFilter === 'DISCARDED_TAB' ? (
+                                                    <>
+                                                        <span className="text-[10px] font-bold text-slate-500 truncate flex items-center gap-1 max-w-[150px]" title={lead.reason}>
+                                                            <Trash2 className="w-3 h-3 p-[1px]" /> {lead.reason || 'No reason'}
+                                                        </span>
+                                                        <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                                            <Clock className="w-3 h-3 p-[1px]" /> {lead.discardedAt ? new Date(lead.discardedAt).toLocaleDateString() : 'N/A'}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate flex items-center gap-1">
+                                                        <BookOpen className="w-3 h-3 p-[1px]" /> {getCourseName(lead.course) || 'Unspecified'}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4 shrink-0">
@@ -402,6 +616,33 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             ))
                         )}
                     </div>
+                    {leads.length > 0 && (
+                        <div className="px-8 py-4 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                Page {uiPage + 1}
+                            </span>
+                            <div className="flex items-center gap-2">
+                               <button 
+                                   disabled={uiPage === 0} 
+                                   onClick={() => {
+                                       setUiPage(p => Math.max(0, p - 1));
+                                   }}
+                                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black rounded-xl uppercase shadow-sm disabled:opacity-50 transition-colors"
+                               >
+                                   Prev
+                               </button>
+                               <button 
+                                   disabled={(uiPage + 1) * 10 >= (scoreFilter === 'DISCARDED_TAB' ? leads : leads.filter(l => (scoreFilter === 'ALL' || (scoreFilter === 'CONTACTED' ? l.status === 'CONTACTED' : l.score === scoreFilter)))).length}
+                                   onClick={() => {
+                                       setUiPage(p => p + 1);
+                                   }}
+                                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black rounded-xl uppercase shadow-sm disabled:opacity-50 transition-colors"
+                               >
+                                   Next
+                               </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -445,8 +686,74 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setSelectedLead(null)} />
                     <div className="bg-white w-full max-w-[95vw] sm:max-w-4xl lg:max-w-6xl h-full sm:h-auto sm:max-h-[92vh] sm:rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden flex flex-col md:flex-row transform-gpu animate-in zoom-in-95 duration-500 border border-white/50">
 
-                        {/* Left Side: Information Canvas */}
-                        <div className="flex-1 overflow-y-auto p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100/50 bg-white">
+                        {scoreFilter === 'DISCARDED_TAB' ? (
+                            <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-white">
+                                <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 md:mb-12">
+                                    <div className="space-y-3 flex-1 min-w-0">
+                                        <div className="flex items-center gap-3">
+                                            <div className="px-3 py-1 bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg shadow-sm border border-rose-100">Discarded Lead</div>
+                                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{selectedLead?.id}</span>
+                                        </div>
+                                        <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter leading-tight break-words">{selectedLead?.name}</h2>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedLead(null)}
+                                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 md:hover:rotate-90 group"
+                                    >
+                                        <X className="w-5 h-5 group-hover:scale-110" />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Email</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.email || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Phone</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.phone || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Address</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.address || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Course</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{getCourseName(selectedLead.course) || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Intake</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.intake || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Campaign</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.campaign?.name || selectedLead.campaign || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Previous Score</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.previousStatus || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.status?.replace(/_/g, ' ') || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Assigned At</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.assignedAt && !isNaN(new Date(selectedLead.assignedAt).getTime()) ? new Date(selectedLead.assignedAt).toLocaleString() : 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Discard Reason</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.reason || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Discarded At</p>
+                                        <p className="text-sm font-bold text-slate-800 break-all">{selectedLead.discardedAt && !isNaN(new Date(selectedLead.discardedAt).getTime()) ? new Date(selectedLead.discardedAt).toLocaleString() : 'N/A'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Left Side: Information Canvas */}
+                                <div className="flex-1 overflow-y-auto p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100/50 bg-white">
                             <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 md:mb-12">
                                 <div className="space-y-3 flex-1 min-w-0">
                                     <div className="flex items-center gap-3">
@@ -524,30 +831,13 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                         </div>
                                     </div>
 
-                                    {/* Status Column (Now Buttons) */}
+                                    {/* Status Column */}
                                     <div className="space-y-3">
-                                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Status Workflow</label>
+                                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Current Status</label>
                                         <div className="flex flex-wrap gap-2">
-                                            {ALL_STATUSES.map(status => {
-                                                const isActive = selectedLead.status === status;
-                                                return (
-                                                    <button
-                                                        key={status}
-                                                        disabled={updateProcessing}
-                                                        onClick={() => handleStatusChange(selectedLead.id, status)}
-                                                        className={`
-                                                            px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300
-                                                            ${isActive
-                                                                ? 'bg-slate-900 text-white shadow-md'
-                                                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-100'
-                                                            }
-                                                            ${updateProcessing ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}
-                                                        `}
-                                                    >
-                                                        {status.replace(/_/g, ' ')}
-                                                    </button>
-                                                );
-                                            })}
+                                            <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm ${selectedLead?.status ? STATUS_COLORS[selectedLead.status] : 'bg-slate-100'}`}>
+                                                {selectedLead?.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -609,15 +899,26 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                         Set Follow-up Reminder
                                     </button>
 
-                                    {/* Discard Lead Action */}
+                                    {/* Discard & Fake Actions */}
                                     {!showDiscardReason ? (
-                                        <button
-                                            onClick={() => setShowDiscardReason(true)}
-                                            className="w-full sm:w-auto px-6 py-4 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-3 active:scale-95 group"
-                                        >
-                                            <Trash2 className="w-4 h-4 group-hover:scale-110" />
-                                            Discard Lead
-                                        </button>
+                                        <div className="flex w-full sm:w-auto gap-2">
+                                            <button
+                                                onClick={handleFakeLead}
+                                                disabled={updateProcessing}
+                                                className="flex-1 sm:flex-none px-4 py-4 bg-slate-50 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-2 active:scale-95 group disabled:opacity-50"
+                                                title="Mark as Fake"
+                                            >
+                                                <AlertTriangle className="w-4 h-4 group-hover:scale-110" />
+                                                <span className="hidden sm:inline">Fake</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setShowDiscardReason(true)}
+                                                className="flex-1 sm:flex-none px-6 py-4 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-3 active:scale-95 group"
+                                            >
+                                                <Trash2 className="w-4 h-4 group-hover:scale-110" />
+                                                Discard Lead
+                                            </button>
+                                        </div>
                                     ) : (
                                         <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
                                             <div className="relative">
@@ -685,7 +986,9 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             <div className="flex-1">
                                 <LeadNotes leadId={selectedLead.id} />
                             </div>
-                        </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

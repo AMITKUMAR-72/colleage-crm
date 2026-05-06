@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
+import ManualLeadEntryDrawer from '@/components/admin/ManualLeadEntryDrawer';
+import ReminderModal from '@/components/counselor/ReminderModal';
+import { LeadResponseDTO } from '@/types/api';
 import {
     Menu,
     X,
@@ -24,6 +27,9 @@ export default function Sidebar() {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [counselorTypes, setCounselorTypes] = useState<string[]>([]);
+    const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
+    const [reminderPromptLead, setReminderPromptLead] = useState<LeadResponseDTO | null>(null);
+    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
 
     useEffect(() => {
         if (role === 'COUNSELOR') {
@@ -37,10 +43,12 @@ export default function Sidebar() {
     }, [role]);
 
     const navItems = [
+        { label: 'Live Dashboard', href: '/admin/dashboard', roles: ['ADMIN', 'MANAGER'], icon: LayoutDashboard },
         { label: 'Admin Panel', href: '/admin/manage', roles: ['ADMIN'], icon: ShieldCheck },
         { label: 'Manager Hub', href: '/manager', roles: ['MANAGER', 'ADMIN'], icon: LayoutDashboard },
         { label: 'Counselor Leaves', href: '/admin/leaves', roles: ['ADMIN', 'MANAGER'], icon: Calendar },
         { label: 'Lead information', href: '/admin', roles: ['ADMIN', 'MANAGER'], icon: Users },
+        { label: 'Add Lead', action: () => setIsManualEntryOpen(true), roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: User },
         { label: 'My Lead', href: '/counselor/leads', roles: ['COUNSELOR'], icon: Users },
         { label: 'My Leave', href: '/counselor/leave', roles: ['COUNSELOR'], icon: Calendar },
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },
@@ -77,11 +85,28 @@ export default function Sidebar() {
 
             <nav className="flex-1 overflow-y-auto p-4 py-6 space-y-1.5 no-scrollbar">
                 {filteredItems.map((item) => {
-                    const isActive = pathname === item.href;
+                    const isActive = item.href ? pathname === item.href : false;
+                    
+                    if (item.action) {
+                        return (
+                            <button
+                                key={item.label}
+                                onClick={() => {
+                                    setMobileOpen(false);
+                                    item.action();
+                                }}
+                                className="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-300 group text-slate-400 hover:bg-[#dbb212]/10 hover:text-[#dbb212]"
+                            >
+                                <item.icon className="w-4 h-4 mr-3 text-slate-500 group-hover:text-[#dbb212]" />
+                                <span className="font-bold text-[10px] uppercase tracking-[0.2em]">{item.label}</span>
+                            </button>
+                        );
+                    }
+
                     return (
                         <Link
                             key={item.href}
-                            href={item.href}
+                            href={item.href as string}
                             onClick={() => setMobileOpen(false)}
                             className={`flex items-center px-4 py-3 rounded-xl transition-all duration-300 group ${isActive
                                 ? 'bg-[#4d0101] text-white shadow-lg shadow-black/20'
@@ -147,10 +172,57 @@ export default function Sidebar() {
                 {sidebarContent}
             </aside>
 
-            {/* Desktop Sidebar (Always Visible) */}
             <aside className="hidden md:flex w-64 glass-sidebar h-screen fixed left-0 top-0 text-slate-300 flex flex-col z-[50]">
                 {sidebarContent}
             </aside>
+
+            <ManualLeadEntryDrawer 
+                isOpen={isManualEntryOpen} 
+                onClose={() => setIsManualEntryOpen(false)} 
+                onSuccess={(newLead) => setReminderPromptLead(newLead)} 
+            />
+
+            {reminderPromptLead && !isReminderModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full text-center border border-slate-100">
+                        <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <User className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-lg font-black text-slate-900">Lead Added Successfully!</h3>
+                        <p className="text-sm text-slate-500 mt-2">Would you like to set a follow-up reminder for {reminderPromptLead.name || 'this lead'}?</p>
+                        <div className="mt-6 flex justify-center gap-3">
+                            <button 
+                                onClick={() => setReminderPromptLead(null)} 
+                                className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                            >
+                                No, later
+                            </button>
+                            <button 
+                                onClick={() => setIsReminderModalOpen(true)} 
+                                className="px-4 py-2 text-sm font-bold bg-[#4d0101] text-white hover:bg-[#600202] rounded-xl transition-colors shadow-lg shadow-[#4d0101]/20"
+                            >
+                                Yes, set reminder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {reminderPromptLead && isReminderModalOpen && (
+                <ReminderModal
+                    isOpen={isReminderModalOpen}
+                    onClose={() => {
+                        setIsReminderModalOpen(false);
+                        setReminderPromptLead(null);
+                    }}
+                    leadId={reminderPromptLead.id}
+                    leadName={reminderPromptLead.name}
+                    onSuccess={() => {
+                        setReminderPromptLead(null);
+                        setIsReminderModalOpen(false);
+                    }}
+                />
+            )}
         </>
     );
 }
