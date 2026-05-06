@@ -12,13 +12,35 @@ export interface CampaignSource {
 
 export interface CityStat {
     city: string;
-    count: number;
+    leads: number;
+    applicants: number;
 }
 
 export interface DailyTrend {
     date: string;
     leads: number;
     conversions: number;
+}
+
+export interface CourseStat {
+    course: string;
+    leads: number;
+    applicants: number;
+}
+
+export interface CounselorContact {
+    counselorName: string;
+    contactedToday: number;
+    totalAssigned: number;
+}
+
+export interface CounselorScore {
+    counselorName: string;
+    hot: number;
+    warm: number;
+    cold: number;
+    interested: number;
+    discarded: number;
 }
 
 export interface AdminDashboardStatsDTO {
@@ -28,5 +50,8 @@ export interface AdminDashboardStatsDTO {
     campaignStats: CampaignSource[];
     cityStats: CityStat[];
     dailyTrends: DailyTrend[];
+    courseStats: CourseStat[];
+    counselorContacts: CounselorContact[];
+    counselorScores: CounselorScore[];
     generatedAt: string;
 }
