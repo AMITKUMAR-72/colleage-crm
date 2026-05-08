@@ -4,7 +4,8 @@ import {
   BarChart3, Users, TrendingUp, AlertCircle, CheckCircle,
   Send, Database, Activity, LogOut, Settings, Bell, User,
   Phone, Mail, MapPin, GraduationCap, Globe, Calendar,
-  DollarSign, Target, Award, ShieldCheck, Clock, XCircle
+  DollarSign, Target, Award, ShieldCheck, Clock, XCircle,
+  BookOpen
 } from 'lucide-react'
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
@@ -12,6 +13,138 @@ import {
   LineChart, Line, AreaChart, Area
 } from 'recharts'
 
+
+function LeadFormSection({ leadForm, setLeadForm, onSubmit, leadSubmitted, submittedLead, onClearSubmission }) {
+  if (leadSubmitted && submittedLead) {
+    return (
+      <div className="glass-card rounded-2xl p-8 max-w-2xl mx-auto text-center animate-in fade-in zoom-in duration-300">
+        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-10 h-10 text-green-400" />
+        </div>
+        <h3 className="text-2xl font-bold text-white mb-2">Lead Captured Successfully</h3>
+        <p className="text-slate-400 mb-8">Lead ID: <span className="text-blue-400 font-mono">{submittedLead.id}</span> has been synchronized with the central database.</p>
+        
+        <div className="bg-slate-800/50 rounded-xl p-6 mb-8 text-left space-y-3">
+          <div className="flex justify-between border-b border-slate-700 pb-2">
+            <span className="text-slate-500 text-sm">Full Name</span>
+            <span className="text-white font-medium">{submittedLead.name}</span>
+          </div>
+          <div className="flex justify-between border-b border-slate-700 pb-2">
+            <span className="text-slate-500 text-sm">Phone</span>
+            <span className="text-white font-medium">{submittedLead.phone}</span>
+          </div>
+          <div className="flex justify-between border-b border-slate-700 pb-2">
+            <span className="text-slate-500 text-sm">Program</span>
+            <span className="text-white font-medium">{submittedLead.program}</span>
+          </div>
+        </div>
+
+        <button 
+          onClick={onClearSubmission}
+          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
+        >
+          Add Another Lead
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="glass-card rounded-2xl p-8 max-w-4xl mx-auto">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+          <Database className="w-6 h-6 text-blue-400" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-white">Capture New Lead</h3>
+          <p className="text-slate-400 text-sm">Enter lead details for real-time synchronization</p>
+        </div>
+      </div>
+
+      <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">Full Name *</label>
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input 
+              type="text"
+              required
+              placeholder="Student's name"
+              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+              value={leadForm.name}
+              onChange={(e) => setLeadForm({...leadForm, name: e.target.value})}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">Phone Number *</label>
+          <div className="relative">
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input 
+              type="tel"
+              required
+              placeholder="10-digit number"
+              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+              value={leadForm.phone}
+              onChange={(e) => setLeadForm({...leadForm, phone: e.target.value})}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">Academic Program *</label>
+          <div className="relative">
+            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <select 
+              required
+              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all appearance-none"
+              value={leadForm.program}
+              onChange={(e) => setLeadForm({...leadForm, program: e.target.value})}
+            >
+              <option value="" disabled>Select Program</option>
+              <option value="B.Tech CS">B.Tech CS</option>
+              <option value="MBA">MBA</option>
+              <option value="BBA">BBA</option>
+              <option value="Law">Law</option>
+              <option value="Design">Design</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">Lead Source *</label>
+          <div className="relative">
+            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <select 
+              required
+              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all appearance-none"
+              value={leadForm.source}
+              onChange={(e) => setLeadForm({...leadForm, source: e.target.value})}
+            >
+              <option value="" disabled>Select Source</option>
+              <option value="Website">Website</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Direct Visit">Direct Visit</option>
+              <option value="Referral">Referral</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="md:col-span-2 pt-4">
+          <button 
+            type="submit"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+          >
+            <Send className="w-5 h-5" />
+            Initialize Real-time Synchronization
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
 
 function Dashboard({ user, onLogout }) {
   const [activeSection, setActiveSection] = useState('lead-form')
