@@ -55,8 +55,7 @@ function AdminDashboardContent() {
 
                 // Fetch Fake Leads Count
                 const fakeLeadsData = await LeadService.getFakeLeads(0, 1);
-                const f = fakeLeadsData as any;
-                setFakeLeadsCount(f?.count ?? 0);
+                setFakeLeadsCount(fakeLeadsData.totalElements || 0);
 
             } catch (error) {
                 console.error("[AdminDashboard] Failed to fetch stats:", error);

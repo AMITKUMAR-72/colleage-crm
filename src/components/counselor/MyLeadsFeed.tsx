@@ -70,7 +70,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const [filterType, setFilterType] = useState<'ALL' | 'SOURCE' | 'COURSE' | 'DEPARTMENT' | 'NAME' | 'FAKE'>('ALL');
     const [filterInput, setFilterInput] = useState('');
     const [filterValue, setFilterValue] = useState('');
-    const [discardedCount, setDiscardedCount] = useState(0);
+    const [counts, setCounts] = useState<Record<string, number>>({});
     const [courses, setCourses] = useState<CourseDTO[]>([]);
     const [campaigns, setCampaigns] = useState<CampaignDTO[]>([]);
     const [departments, setDepartments] = useState<DepartmentDTO[]>([]);
@@ -94,6 +94,10 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     const [showDiscardReason, setShowDiscardReason] = useState(false);
     const [discardReason, setDiscardReason] = useState('');
 
+    // Fake state
+    const [showFakeReason, setShowFakeReason] = useState(false);
+    const [fakeReason, setFakeReason] = useState('');
+
 
 
     // Normalize any backend response shape into a flat LeadResponseDTO[]
@@ -108,6 +112,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         else if (Array.isArray(raw.lead)) data = raw.lead;
         else if (Array.isArray(raw.content)) data = raw.content;
         else if (Array.isArray(raw.leads)) data = raw.leads;
+        else if (Array.isArray(raw.fakeLeadsList)) data = raw.fakeLeadsList;
         else if (Array.isArray(raw.results)) data = raw.results;
         else if (typeof raw === 'object' && (raw.id != null || raw.leadId != null)) data = [raw];
 
@@ -130,20 +135,29 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
             if (scoreFilter === 'DISCARDED_TAB') {
                 const res = await api.get(`/api/leads/my/discarded/page/${page}/size/${PAGE_SIZE}`);
                 raw = res.data;
+            } else if (scoreFilter === 'CONTACTED') {
+                const res = await api.get(`/api/leads/my/status/CONTACTED/page/${page}/size/${PAGE_SIZE}`);
+                raw = res.data;
+            } else if (scoreFilter !== 'ALL') {
+                const res = await api.get(`/api/leads/my/score/${scoreFilter}/page/${page}/size/${PAGE_SIZE}`);
+                raw = res.data;
             } else if (filterType === 'SOURCE' && filterValue.trim()) {
-                const res = await api.get(`/api/leads/source/${encodeURIComponent(filterValue.trim())}`);
+                const res = await api.get(`/api/leads/source/${encodeURIComponent(filterValue.trim())}/page/${page}/size/${PAGE_SIZE}`);
                 raw = res.data;
             } else if (filterType === 'COURSE' && filterValue.trim()) {
-                const res = await api.get(`/api/leads/course/${encodeURIComponent(filterValue.trim())}`);
+                const res = await api.get(`/api/leads/course/${encodeURIComponent(filterValue.trim())}/page/${page}/size/${PAGE_SIZE}`);
                 raw = res.data;
             } else if (filterType === 'DEPARTMENT' && filterValue.trim()) {
                 const res = await api.get(`/api/leads/department/${encodeURIComponent(filterValue.trim())}/page/${page}/size/${PAGE_SIZE}`);
+                raw = res.data;
+            } else if (filterType === 'STATUS' && filterValue.trim()) {
+                const res = await api.get(`/api/leads/my/status/${filterValue.trim()}/page/${page}/size/${PAGE_SIZE}`);
                 raw = res.data;
             } else if (filterType === 'NAME' && filterValue.trim()) {
                 const res = await api.get(`/api/leads/search?name=${encodeURIComponent(filterValue.trim())}`);
                 raw = res.data;
             } else if (filterType === 'FAKE') {
-                const res = await api.get(`/api/leads/status/FAKE/page/${page}/size/${PAGE_SIZE}`);
+                const res = await api.get(`/api/leads/fake/${page}/${PAGE_SIZE}`);
                 raw = res.data;
             } else {
                 raw = await CounselorService.getAssignedLeads(page, PAGE_SIZE);
@@ -153,16 +167,14 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
             setLeads(results);
 
             if (raw && typeof raw === 'object') {
-                const tp = raw.totalPages ?? (raw as any).data?.totalPages ?? (results.length === PAGE_SIZE ? page + 2 : page + 1);
+                const totalElements = raw.totalElements ?? (raw as any).data?.totalElements;
+                const tp = raw.totalPages ?? (raw as any).data?.totalPages ?? (totalElements ? Math.ceil(totalElements / PAGE_SIZE) : (results.length === PAGE_SIZE ? page + 2 : page + 1));
                 setTotalPages(tp);
             }
 
-            // Also fetch discarded count if not in discarded tab (to keep the card updated)
-            if (scoreFilter !== 'DISCARDED_TAB') {
-                const discRes = await api.get(`/api/leads/my/discarded/page/0/size/1`);
-                const dtp = discRes.data?.totalElements ?? discRes.data?.data?.totalElements ?? 0;
-                setDiscardedCount(dtp);
-            }
+            // Fetch accurate counts
+            const countRes = await api.get('/api/leads/my/count');
+            setCounts(countRes.data || {});
         } catch (error) {
             console.error('Failed to fetch leads', error);
             toast.error('Could not load leads');
@@ -205,7 +217,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 ReminderService.getMyReminders(0, 100).catch(() => ({ content: [] }))
             ]);
             setDepartments(Array.isArray(deptData) ? deptData : (deptData as any).data || []);
-            
+
             const remindersList = Array.isArray(remData) ? remData : (remData as any).content || [];
             const filteredReminders = remindersList.filter((r: ReminderResponseDTO) => r.status === 'TRIGGERED' || r.status === 'MISSED');
             setTodayReminders(filteredReminders);
@@ -244,6 +256,8 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         setSelectedLead(lead);
         setShowDiscardReason(false);
         setDiscardReason('');
+        setShowFakeReason(false);
+        setFakeReason('');
     };
 
     const handleScoreChange = async (leadId: string | number, newScore: LeadScore) => {
@@ -287,14 +301,16 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
     };
 
     const handleFakeLead = async () => {
-        if (!selectedLead || isSubmitting.current) return;
+        if (!selectedLead || !fakeReason.trim() || isSubmitting.current) return;
         isSubmitting.current = true;
         setUpdateProcessing(true);
         try {
-            await LeadService.markAsFake(selectedLead.id);
+            await LeadService.markAsFake(selectedLead.id, fakeReason.trim());
             setLeads(prev => prev.filter(l => l.id !== selectedLead.id));
             toast.success('Lead marked as Fake');
             setSelectedLead(null);
+            setShowFakeReason(false);
+            setFakeReason('');
             if (onActionComplete) onActionComplete();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to mark lead as fake');
@@ -368,21 +384,17 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 ].map((metric) => {
                     const isActive = scoreFilter === metric.score;
                     const isAnySelected = scoreFilter !== 'ALL';
-                    
-                    let count = 0;
-                    if (metric.score === 'CONTACTED') {
-                        count = leads.filter(l => l.status === 'CONTACTED').length;
-                    } else if (metric.score === 'DISCARDED_TAB') {
-                        count = discardedCount;
-                    } else {
-                        count = leads.filter(l => l.score === metric.score).length;
-                    }
+
+                    const count = counts[metric.score === 'DISCARDED_TAB' ? 'DISCARDED' : metric.score] || 0;
 
                     return (
                         <div
                             key={metric.score}
                             onClick={() => {
                                 setScoreFilter(isActive ? 'ALL' : metric.score as any);
+                                setFilterType('ALL');
+                                setFilterInput('');
+                                setFilterValue('');
                                 setPage(0); // Reset page when switching metrics
                                 setUiPage(0); // Reset UI pagination
                             }}
@@ -426,7 +438,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
 
                 <div className="px-4">
                     {/* Triggered Div */}
-                    <div 
+                    <div
                         onClick={() => setExpandedReminderSection(expandedReminderSection === 'TRIGGERED' ? null : 'TRIGGERED')}
                         className={`cursor-pointer bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border transition-all relative overflow-hidden group ${expandedReminderSection === 'TRIGGERED' ? 'border-indigo-400 scale-[1.02]' : 'border-slate-100 hover:border-slate-300'}`}
                     >
@@ -453,7 +465,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                         <div key={r.id} onClick={(e) => { e.stopPropagation(); handleReminderClick(r.leadId); }} className="py-3 px-4 hover:bg-white rounded-xl transition-colors cursor-pointer flex flex-col gap-1">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate">{r.leadName || `Lead #${r.leadId}`}</span>
-                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{new Date(r.reminderAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{new Date(r.reminderAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                             </div>
                                             {r.note && <p className="text-[10px] font-medium text-slate-500 truncate">{r.note}</p>}
                                         </div>
@@ -473,12 +485,13 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                         <Search className="w-4 h-4" />
                         <span className="text-[10px] font-black uppercase tracking-widest">Filter Leads</span>
                     </div>
-                    
+
                     <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1">
                         <select
                             value={filterType}
                             onChange={(e) => {
                                 setFilterType(e.target.value as any);
+                                setScoreFilter('ALL');
                                 setFilterInput('');
                                 setFilterValue('');
                                 setPage(0);
@@ -490,6 +503,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             <option value="SOURCE">By Campaign Source</option>
                             <option value="COURSE">By Course</option>
                             <option value="DEPARTMENT">By Department</option>
+                            <option value="STATUS">By Status</option>
                             <option value="NAME">Search by Name</option>
                             <option value="FAKE">Fake Leads</option>
                         </select>
@@ -515,6 +529,15 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                         {filterType === 'SOURCE' && campaigns.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                         {filterType === 'COURSE' && courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
                                         {filterType === 'DEPARTMENT' && departments.map(d => <option key={d.id} value={d.department}>{d.department}</option>)}
+                                        {filterType === 'STATUS' && (
+                                            <>
+                                                <option value="UNASSIGNED">Unassigned</option>
+                                                <option value="ASSIGNED">Assigned</option>
+                                                <option value="CONTACTED">Contacted</option>
+                                                <option value="APPLICANT">Applicant</option>
+                                                <option value="FAKE">Fake</option>
+                                            </>
+                                        )}
                                     </select>
                                 )}
                                 <button
@@ -543,9 +566,9 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                           <span className="px-5 py-2.5 bg-white text-slate-900 text-[10px] font-black rounded-xl border border-slate-200 uppercase tracking-widest shadow-sm">
-                               Total: {scoreFilter === 'DISCARDED_TAB' ? leads.length : leads.filter(l => (scoreFilter === 'ALL' || (scoreFilter === 'CONTACTED' ? l.status === 'CONTACTED' : l.score === scoreFilter))).length}
-                           </span>
+                            <span className="px-5 py-2.5 bg-white text-slate-900 text-[10px] font-black rounded-xl border border-slate-200 uppercase tracking-widest shadow-sm">
+                                Total: {scoreFilter === 'DISCARDED_TAB' ? (counts['DISCARDED'] || 0) : scoreFilter !== 'ALL' ? (counts[scoreFilter] || 0) : (counts['TOTAL'] || 0)}
+                            </span>
                         </div>
                     </div>
 
@@ -561,59 +584,66 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                 </p>
                             </div>
                         ) : (
-                            // When in DISCARDED_TAB, the leads array IS the filtered list from the API
-                            (scoreFilter === 'DISCARDED_TAB' ? leads : leads.filter(l => (scoreFilter === 'ALL' || (scoreFilter === 'CONTACTED' ? l.status === 'CONTACTED' : l.score === scoreFilter))))
+                            leads
                                 .slice(uiPage * 10, (uiPage + 1) * 10)
                                 .map((lead, idx) => (
-                                <div key={lead.id || lead.leadId || idx} className="group transition-all hover:bg-slate-50/10">
-                                    <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-slate-900" />
-                                        <div className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
-                                            {(lead.name || 'U').charAt(0).toUpperCase()}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3">
-                                                <p className="text-sm font-black text-slate-900 truncate uppercase">{lead.name}</p>
-                                                {lead.score && (
-                                                    <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter border ${SCORE_COLORS[lead.score]}`}>
-                                                        {lead.score}
-                                                    </span>
-                                                )}
+                                    <div key={lead.id || lead.leadId || idx} className="group transition-all hover:bg-slate-50/10">
+                                        <div className="px-8 py-5 flex items-center gap-6 cursor-pointer relative" onClick={() => openDetails(lead)}>
+                                            <div className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 bg-transparent group-hover:bg-slate-900" />
+                                            <div className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm flex items-center justify-center text-slate-900 font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
+                                                {(lead.name || 'U').charAt(0).toUpperCase()}
                                             </div>
-                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 opacity-70">
-                                                <span className="text-[10px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
-                                                    <Mail className="w-3 h-3 p-[1px]" /> {lead.email}
-                                                </span>
-                                                <span className="text-[10px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
-                                                    <Phone className="w-3 h-3 p-[1px]" /> {lead.phone}
-                                                </span>
-                                                {scoreFilter === 'DISCARDED_TAB' ? (
-                                                    <>
-                                                        <span className="text-[10px] font-bold text-slate-500 truncate flex items-center gap-1 max-w-[150px]" title={lead.reason}>
-                                                            <Trash2 className="w-3 h-3 p-[1px]" /> {lead.reason || 'No reason'}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-3">
+                                                    {filterType === 'FAKE' ? (
+                                                        <p className="text-sm font-black text-slate-900 truncate uppercase">Fake By: {lead.archivedByEmail}</p>
+                                                    ) : (
+                                                        <p className="text-sm font-black text-slate-900 truncate uppercase">{lead.name}</p>
+                                                    )}
+                                                    {lead.score && filterType !== 'FAKE' && (
+                                                        <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter border ${SCORE_COLORS[lead.score]}`}>
+                                                            {lead.score}
                                                         </span>
-                                                        <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                                                            <Clock className="w-3 h-3 p-[1px]" /> {lead.discardedAt ? new Date(lead.discardedAt).toLocaleDateString() : 'N/A'}
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate flex items-center gap-1">
-                                                        <BookOpen className="w-3 h-3 p-[1px]" /> {getCourseName(lead.course) || 'Unspecified'}
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 opacity-70">
+                                                    <span className="text-[10px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                                                        <Mail className="w-3 h-3 p-[1px]" /> {lead.email}
                                                     </span>
-                                                )}
+                                                    <span className="text-[10px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                                                        <Phone className="w-3 h-3 p-[1px]" /> {lead.phone}
+                                                    </span>
+                                                    {scoreFilter === 'DISCARDED_TAB' ? (
+                                                        <>
+                                                            <span className="text-[10px] font-bold text-slate-500 truncate flex items-center gap-1 max-w-[150px]" title={lead.reason}>
+                                                                <Trash2 className="w-3 h-3 p-[1px]" /> {lead.reason || 'No reason'}
+                                                            </span>
+                                                            <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                                                <Clock className="w-3 h-3 p-[1px]" /> {lead.discardedAt ? new Date(lead.discardedAt).toLocaleDateString() : 'N/A'}
+                                                            </span>
+                                                        </>
+                                                    ) : filterType === 'FAKE' ? (
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                                            <Clock className="w-3 h-3 p-[1px]" /> {lead.archivedAt ? new Date(lead.archivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate flex items-center gap-1">
+                                                            <BookOpen className="w-3 h-3 p-[1px]" /> {getCourseName(lead.course) || 'Unspecified'}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 shrink-0">
-                                            <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
-                                                {lead.status?.replace(/_/g, ' ')}
-                                            </span>
-                                            <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-slate-900 group-hover:bg-slate-100 transition-all">
-                                                <ChevronDown className="w-4 h-4 -rotate-90" />
+                                            <div className="flex items-center gap-4 shrink-0">
+                                                <span className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border ${STATUS_COLORS[lead.status] || 'bg-white text-slate-400 border-slate-100'}`}>
+                                                    {lead.status?.replace(/_/g, ' ')}
+                                                </span>
+                                                <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-slate-900 group-hover:bg-slate-100 transition-all">
+                                                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
+                                ))
                         )}
                     </div>
                     {leads.length > 0 && (
@@ -622,24 +652,24 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                 Page {uiPage + 1}
                             </span>
                             <div className="flex items-center gap-2">
-                               <button 
-                                   disabled={uiPage === 0} 
-                                   onClick={() => {
-                                       setUiPage(p => Math.max(0, p - 1));
-                                   }}
-                                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black rounded-xl uppercase shadow-sm disabled:opacity-50 transition-colors"
-                               >
-                                   Prev
-                               </button>
-                               <button 
-                                   disabled={(uiPage + 1) * 10 >= (scoreFilter === 'DISCARDED_TAB' ? leads : leads.filter(l => (scoreFilter === 'ALL' || (scoreFilter === 'CONTACTED' ? l.status === 'CONTACTED' : l.score === scoreFilter)))).length}
-                                   onClick={() => {
-                                       setUiPage(p => p + 1);
-                                   }}
-                                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black rounded-xl uppercase shadow-sm disabled:opacity-50 transition-colors"
-                               >
-                                   Next
-                               </button>
+                                <button
+                                    disabled={uiPage === 0}
+                                    onClick={() => {
+                                        setUiPage(p => Math.max(0, p - 1));
+                                    }}
+                                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black rounded-xl uppercase shadow-sm disabled:opacity-50 transition-colors"
+                                >
+                                    Prev
+                                </button>
+                                <button
+                                    disabled={(uiPage + 1) * 10 >= leads.length}
+                                    onClick={() => {
+                                        setUiPage(p => p + 1);
+                                    }}
+                                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black rounded-xl uppercase shadow-sm disabled:opacity-50 transition-colors"
+                                >
+                                    Next
+                                </button>
                             </div>
                         </div>
                     )}
@@ -754,238 +784,266 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                             <>
                                 {/* Left Side: Information Canvas */}
                                 <div className="flex-1 overflow-y-auto p-6 md:p-10 border-b md:border-b-0 md:border-r border-slate-100/50 bg-white">
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 md:mb-12">
-                                <div className="space-y-3 flex-1 min-w-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg shadow-slate-900/20">Lead Card</div>
-                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{selectedLead?.id}</span>
-                                    </div>
-                                    <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter leading-tight break-words">{selectedLead?.name}</h2>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
-                                            <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
-                                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Intake: {selectedLead?.intake || 'N/A'}</span>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 md:mb-12">
+                                        <div className="space-y-3 flex-1 min-w-0">
+                                            <div className="flex items-center gap-3">
+                                                <div className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg shadow-slate-900/20">Lead Card</div>
+                                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{selectedLead?.id}</span>
+                                            </div>
+                                            <h2 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter leading-tight break-words">{selectedLead?.name}</h2>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
+                                                    <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
+                                                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Intake: {selectedLead?.intake || 'N/A'}</span>
+                                                </div>
+                                                <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border shadow-sm ${selectedLead?.status ? STATUS_COLORS[selectedLead.status] : 'bg-slate-100'}`}>
+                                                    {selectedLead?.status?.replace(/_/g, ' ')}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest uppercase border shadow-sm ${selectedLead?.status ? STATUS_COLORS[selectedLead.status] : 'bg-slate-100'}`}>
-                                            {selectedLead?.status?.replace(/_/g, ' ')}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start w-full sm:w-auto gap-4">
-                                    <button
-                                        onClick={() => setSelectedLead(null)}
-                                        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 md:hover:rotate-90 group"
-                                    >
-                                        <RotateCcw className="w-5 h-5 group-hover:scale-110" />
-                                    </button>
-                                    <div className="text-right">
-                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Registered</p>
-                                        <p className="text-[9px] md:text-[10px] font-extrabold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 inline-block font-mono">
-                                            {selectedLead?.createdAt && !isNaN(new Date(selectedLead.createdAt).getTime()) ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Info Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 mb-8 md:mb-10">
-                                <div className="group p-4 md:p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100/50 transition-all">
-                                    <div className="flex items-center gap-3 mb-2 md:mb-3">
-                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400">
-                                            <MapPin className="w-4 h-4" />
-                                        </div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Residence</p>
-                                    </div>
-                                    <p className="text-xs md:text-sm font-extrabold text-slate-700 leading-relaxed pl-1">{selectedLead.address || 'Not provided'}</p>
-                                </div>
-                                <div className="group p-4 md:p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100/50 transition-all">
-                                    <div className="flex items-center gap-3 mb-2 md:mb-3">
-                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400">
-                                            <Globe className="w-4 h-4" />
-                                        </div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</p>
-                                    </div>
-                                    <p className="text-xs md:text-sm font-extrabold text-slate-700 truncate pl-1">{selectedLead.campaign?.name || 'Not available'}</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-6 md:space-y-8">
-                                {/* Status & Program Interaction */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                                    {/* Program Column */}
-                                    <div className="space-y-3">
-                                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Academic Program</label>
-                                        <div className="group relative">
-                                            <select
-                                                disabled={updateProcessing}
-                                                value={getCourseName(selectedLead.course) || ""}
-                                                onChange={(e) => selectedLead && handleCourseChange(selectedLead.id, e.target.value)}
-                                                className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
+                                        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start w-full sm:w-auto gap-4">
+                                            <button
+                                                onClick={() => setSelectedLead(null)}
+                                                className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 md:hover:rotate-90 group"
                                             >
-                                                <option value="" disabled>{getCourseName(selectedLead.course) || 'Not available'}</option>
-                                                {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
-                                            </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
-                                                <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />
+                                                <RotateCcw className="w-5 h-5 group-hover:scale-110" />
+                                            </button>
+                                            <div className="text-right">
+                                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Registered</p>
+                                                <p className="text-[9px] md:text-[10px] font-extrabold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 inline-block font-mono">
+                                                    {selectedLead?.createdAt && !isNaN(new Date(selectedLead.createdAt).getTime()) ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Status Column */}
-                                    <div className="space-y-3">
-                                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Current Status</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm ${selectedLead?.status ? STATUS_COLORS[selectedLead.status] : 'bg-slate-100'}`}>
-                                                {selectedLead?.status?.replace(/_/g, ' ') || 'UNKNOWN'}
-                                            </span>
+                                    {/* Info Grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 mb-8 md:mb-10">
+                                        <div className="group p-4 md:p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100/50 transition-all">
+                                            <div className="flex items-center gap-3 mb-2 md:mb-3">
+                                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400">
+                                                    <MapPin className="w-4 h-4" />
+                                                </div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Residence</p>
+                                            </div>
+                                            <p className="text-xs md:text-sm font-extrabold text-slate-700 leading-relaxed pl-1">{selectedLead.address || 'Not provided'}</p>
+                                        </div>
+                                        <div className="group p-4 md:p-5 bg-gradient-to-br from-slate-50/80 to-slate-100/30 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100/50 transition-all">
+                                            <div className="flex items-center gap-3 mb-2 md:mb-3">
+                                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400">
+                                                    <Globe className="w-4 h-4" />
+                                                </div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</p>
+                                            </div>
+                                            <p className="text-xs md:text-sm font-extrabold text-slate-700 truncate pl-1">{selectedLead.campaign?.name || 'Not available'}</p>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Premium Interest Level Selector */}
-                                <div className="space-y-4 pt-4 border-t border-slate-50">
-                                    <div className="flex items-center justify-between px-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Interest Level</label>
-                                        <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100/50">Prioritize Lead</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                        {(['HOT', 'WARM', 'COLD', 'INTERESTED'] as LeadScore[]).map((score) => {
-                                            const isActive = selectedLead.score === score;
-                                            const hasCourse = !!getCourseName(selectedLead.course);
-                                            const isDisabled = !hasCourse && score !== 'COLD';
+                                    <div className="space-y-6 md:space-y-8">
+                                        {/* Status & Program Interaction */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                            {/* Program Column */}
+                                            <div className="space-y-3">
+                                                <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Academic Program</label>
+                                                <div className="group relative">
+                                                    <select
+                                                        disabled={updateProcessing}
+                                                        value={getCourseName(selectedLead.course) || ""}
+                                                        onChange={(e) => selectedLead && handleCourseChange(selectedLead.id, e.target.value)}
+                                                        className="w-full text-xs font-black bg-slate-50/50 border-2 border-slate-100 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 focus:ring-0 focus:border-indigo-500/30 hover:border-indigo-100 outline-none transition-all duration-300 cursor-pointer text-slate-900 shadow-sm disabled:opacity-50 appearance-none"
+                                                    >
+                                                        <option value="" disabled>{getCourseName(selectedLead.course) || 'Not available'}</option>
+                                                        {courses.map(c => <option key={c.id} value={c.course}>{c.course}</option>)}
+                                                    </select>
+                                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                                        <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                            return (
-                                                <button
-                                                    key={score}
-                                                    disabled={updateProcessing || isDisabled}
-                                                    onClick={() => handleScoreChange(selectedLead.id, score)}
-                                                    title={isDisabled ? "Select an Academic Program first" : ""}
-                                                    className={`
+                                            {/* Status Column */}
+                                            <div className="space-y-3">
+                                                <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Current Status</label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm ${selectedLead?.status ? STATUS_COLORS[selectedLead.status] : 'bg-slate-100'}`}>
+                                                        {selectedLead?.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Premium Interest Level Selector */}
+                                        <div className="space-y-4 pt-4 border-t border-slate-50">
+                                            <div className="flex items-center justify-between px-2">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Interest Level</label>
+                                                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100/50">Prioritize Lead</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                {(['HOT', 'WARM', 'COLD', 'INTERESTED'] as LeadScore[]).map((score) => {
+                                                    const isActive = selectedLead.score === score;
+                                                    const hasCourse = !!getCourseName(selectedLead.course);
+                                                    const isDisabled = !hasCourse && score !== 'COLD';
+
+                                                    return (
+                                                        <button
+                                                            key={score}
+                                                            disabled={updateProcessing || isDisabled}
+                                                            onClick={() => handleScoreChange(selectedLead.id, score)}
+                                                            title={isDisabled ? "Select an Academic Program first" : ""}
+                                                            className={`
                                                         px-4 py-4 rounded-2xl border-2 font-black text-[10px] uppercase tracking-wider transition-all duration-300 flex flex-col items-center gap-2 group relative overflow-hidden
                                                         ${isActive
-                                                            ? (SCORE_COLORS[score] + ' shadow-lg border-current')
-                                                            : 'bg-white border-slate-50 text-slate-400 hover:border-slate-100 hover:bg-slate-50/50'
-                                                        }
+                                                                    ? (SCORE_COLORS[score] + ' shadow-lg border-current')
+                                                                    : 'bg-white border-slate-50 text-slate-400 hover:border-slate-100 hover:bg-slate-50/50'
+                                                                }
                                                         ${isDisabled ? 'opacity-40 grayscale cursor-not-allowed bg-slate-50' : 'active:scale-95'}
                                                         ${updateProcessing ? 'opacity-50' : ''}
                                                     `}
+                                                        >
+                                                            <span className={`transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                                                {SCORE_ICONS[score]}
+                                                            </span>
+                                                            {score}
+                                                            {isActive && (
+                                                                <div className="absolute top-1 right-1 w-1 h-1 bg-current rounded-full" />
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Set Reminder Button */}
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => {
+                                                    setReminderLeadTarget({
+                                                        id: selectedLead.id,
+                                                        name: selectedLead.name,
+                                                    });
+                                                    setReminderModalOpen(true);
+                                                }}
+                                                className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#4d0101] to-[#600202] text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:from-[#600202] hover:to-[#7a0303] transition-all shadow-lg shadow-[#4d0101]/20 active:scale-[0.98] group"
+                                            >
+                                                <Bell className="w-4 h-4 group-hover:animate-bounce" />
+                                                Set Follow-up Reminder
+                                            </button>
+
+                                            {/* Discard & Fake Actions */}
+                                            {!showDiscardReason && !showFakeReason ? (
+                                                <div className="flex w-full sm:w-auto gap-2">
+                                                    <button
+                                                        onClick={() => setShowFakeReason(true)}
+                                                        disabled={updateProcessing}
+                                                        className="flex-1 sm:flex-none px-4 py-4 bg-slate-50 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-2 active:scale-95 group disabled:opacity-50"
+                                                        title="Mark as Fake"
+                                                    >
+                                                        <AlertTriangle className="w-4 h-4 group-hover:scale-110" />
+                                                        <span className="hidden sm:inline">Fake</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowDiscardReason(true)}
+                                                        className="flex-1 sm:flex-none px-6 py-4 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-3 active:scale-95 group"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 group-hover:scale-110" />
+                                                        Discard Lead
+                                                    </button>
+                                                </div>
+                                            ) : showDiscardReason ? (
+                                                <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                    <div className="relative">
+                                                        <input
+                                                            autoFocus
+                                                            type="text"
+                                                            value={discardReason}
+                                                            onChange={(e) => setDiscardReason(e.target.value)}
+                                                            placeholder="Reason for discarding..."
+                                                            className="w-full px-5 py-4 bg-rose-50/30 border-2 border-rose-100 rounded-2xl md:rounded-3xl text-xs font-bold text-slate-800 placeholder:text-rose-300 focus:outline-none focus:border-rose-300 transition-all pr-12"
+                                                        />
+                                                        <button
+                                                            onClick={() => setShowDiscardReason(false)}
+                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-300 hover:text-rose-500"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={handleDiscardLead}
+                                                            disabled={!discardReason.trim() || updateProcessing}
+                                                            className="flex-1 px-6 py-4 bg-rose-500 text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 active:scale-95 disabled:opacity-50"
+                                                        >
+                                                            {updateProcessing ? 'Discarding...' : 'Confirm Discard'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                    <div className="relative">
+                                                        <input
+                                                            autoFocus
+                                                            type="text"
+                                                            value={fakeReason}
+                                                            onChange={(e) => setFakeReason(e.target.value)}
+                                                            placeholder="Reason for marking as fake..."
+                                                            className="w-full px-5 py-4 bg-amber-50/30 border-2 border-amber-100 rounded-2xl md:rounded-3xl text-xs font-bold text-slate-800 placeholder:text-amber-300 focus:outline-none focus:border-amber-300 transition-all pr-12"
+                                                        />
+                                                        <button
+                                                            onClick={() => setShowFakeReason(false)}
+                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-300 hover:text-amber-500"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={handleFakeLead}
+                                                            disabled={!fakeReason.trim() || updateProcessing}
+                                                            className="flex-1 px-6 py-4 bg-amber-500 text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50"
+                                                        >
+                                                            {updateProcessing ? 'Processing...' : 'Confirm Fake'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Call to Action Section */}
+                                        <div className="group relative overflow-hidden bg-slate-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl transition-all active:scale-[0.98]">
+                                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+                                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-white text-center md:text-left">
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-center md:justify-start gap-2">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Direct Contact</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-2xl md:text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase break-all">
+                                                            {String(selectedLead.phone)}
+                                                        </p>
+                                                        <p className="text-[10px] md:text-xs font-extrabold opacity-60 truncate lowercase max-w-[250px] mx-auto md:mx-0">{selectedLead.email}</p>
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={`tel:${selectedLead.phone}`}
+                                                    className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-3xl md:rounded-[2.5rem] flex items-center justify-center hover:scale-110 transition-all duration-500 shadow-xl group border-4 border-white/10"
                                                 >
-                                                    <span className={`transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                                                        {SCORE_ICONS[score]}
-                                                    </span>
-                                                    {score}
-                                                    {isActive && (
-                                                        <div className="absolute top-1 right-1 w-1 h-1 bg-current rounded-full" />
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
+                                                    <Phone className="w-8 h-8 md:w-10 md:h-10 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />
+                                                </a>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Set Reminder Button */}
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => {
-                                            setReminderLeadTarget({
-                                                id: selectedLead.id,
-                                                name: selectedLead.name,
-                                            });
-                                            setReminderModalOpen(true);
-                                        }}
-                                        className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#4d0101] to-[#600202] text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:from-[#600202] hover:to-[#7a0303] transition-all shadow-lg shadow-[#4d0101]/20 active:scale-[0.98] group"
-                                    >
-                                        <Bell className="w-4 h-4 group-hover:animate-bounce" />
-                                        Set Follow-up Reminder
-                                    </button>
-
-                                    {/* Discard & Fake Actions */}
-                                    {!showDiscardReason ? (
-                                        <div className="flex w-full sm:w-auto gap-2">
-                                            <button
-                                                onClick={handleFakeLead}
-                                                disabled={updateProcessing}
-                                                className="flex-1 sm:flex-none px-4 py-4 bg-slate-50 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-2 active:scale-95 group disabled:opacity-50"
-                                                title="Mark as Fake"
-                                            >
-                                                <AlertTriangle className="w-4 h-4 group-hover:scale-110" />
-                                                <span className="hidden sm:inline">Fake</span>
-                                            </button>
-                                            <button
-                                                onClick={() => setShowDiscardReason(true)}
-                                                className="flex-1 sm:flex-none px-6 py-4 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-3 active:scale-95 group"
-                                            >
-                                                <Trash2 className="w-4 h-4 group-hover:scale-110" />
-                                                Discard Lead
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
-                                            <div className="relative">
-                                                <input
-                                                    autoFocus
-                                                    type="text"
-                                                    value={discardReason}
-                                                    onChange={(e) => setDiscardReason(e.target.value)}
-                                                    placeholder="Reason for discarding..."
-                                                    className="w-full px-5 py-4 bg-rose-50/30 border-2 border-rose-100 rounded-2xl md:rounded-3xl text-xs font-bold text-slate-800 placeholder:text-rose-300 focus:outline-none focus:border-rose-300 transition-all pr-12"
-                                                />
-                                                <button
-                                                    onClick={() => setShowDiscardReason(false)}
-                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-300 hover:text-rose-500"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={handleDiscardLead}
-                                                    disabled={!discardReason.trim() || updateProcessing}
-                                                    className="flex-1 px-6 py-4 bg-rose-500 text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 active:scale-95 disabled:opacity-50"
-                                                >
-                                                    {updateProcessing ? 'Discarding...' : 'Confirm Discard'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Call to Action Section */}
-                                <div className="group relative overflow-hidden bg-slate-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl transition-all active:scale-[0.98]">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
-                                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-white text-center md:text-left">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-center md:justify-start gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Direct Contact</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="text-2xl md:text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase break-all">
-                                                    {String(selectedLead.phone)}
-                                                </p>
-                                                <p className="text-[10px] md:text-xs font-extrabold opacity-60 truncate lowercase max-w-[250px] mx-auto md:mx-0">{selectedLead.email}</p>
-                                            </div>
-                                        </div>
-                                        <a
-                                            href={`tel:${selectedLead.phone}`}
-                                            className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-3xl md:rounded-[2.5rem] flex items-center justify-center hover:scale-110 transition-all duration-500 shadow-xl group border-4 border-white/10"
-                                        >
-                                            <Phone className="w-8 h-8 md:w-10 md:h-10 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />
-                                        </a>
+                                {/* Right Side: Activity & Notes */}
+                                <div className="w-full md:w-[320px] lg:w-[380px] bg-slate-50/80 backdrop-blur-xl h-full md:h-auto overflow-y-auto p-6 md:p-8 flex flex-col border-t md:border-t-0 md:border-l border-slate-200">
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Lead Logs</h3>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Context & Intelligence</p>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Side: Activity & Notes */}
-                        <div className="w-full md:w-[320px] lg:w-[380px] bg-slate-50/80 backdrop-blur-xl h-full md:h-auto overflow-y-auto p-6 md:p-8 flex flex-col border-t md:border-t-0 md:border-l border-slate-200">
-                            <div className="mb-6">
-                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Lead Logs</h3>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Context & Intelligence</p>
-                            </div>
-                            <div className="flex-1">
-                                <LeadNotes leadId={selectedLead.id} />
-                            </div>
+                                    <div className="flex-1">
+                                        <LeadNotes leadId={selectedLead.id} />
+                                    </div>
                                 </div>
                             </>
                         )}

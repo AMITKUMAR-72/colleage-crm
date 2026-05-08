@@ -6,7 +6,7 @@ import { LeadService } from '@/services/leadService';
 import { CounselorService } from '@/services/counselorService';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, User, Phone, Mail, Filter, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Calendar, User, Phone, Mail, Filter, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -35,10 +35,8 @@ export default function FakeLeadsPage() {
     const [page, setPage] = useState(0);
     const [pageSize] = useState(10);
  
-    // Lead details & notes state
     const [selectedLead, setSelectedLead] = useState<LeadResponseDTO | null>(null);
     const [notes, setNotes] = useState<NoteDTO[]>([]);
-    const [notesLoading, setNotesLoading] = useState(false);
 
     useEffect(() => {
         document.title = "Fake Leads Management | Admin Portal";
@@ -71,8 +69,8 @@ export default function FakeLeadsPage() {
                 data = await LeadService.getFakeLeadsByCounselor(selectedCounselorId, page, pageSize);
             }
 
-            setLeads(data?.fakeLeads || []);
-            setTotalCount(data?.count || 0);
+            setLeads(data.content || []);
+            setTotalCount(data.totalElements || 0);
         } catch (error) {
             console.error('Failed to fetch fake leads:', error);
             toast.error('Could not load fake leads');
@@ -89,20 +87,9 @@ export default function FakeLeadsPage() {
         fetchLeads();
     }, [fetchLeads]);
  
-    const handleViewLead = async (lead: LeadResponseDTO) => {
+    const handleViewLead = (lead: LeadResponseDTO) => {
         setSelectedLead(lead);
         setNotes([]);
-        setNotesLoading(true);
-        try {
-            const data: any = await LeadService.getNotes(lead.id);
-            const list: NoteDTO[] = Array.isArray(data) ? data : data?.data ?? [];
-            setNotes(list);
-        } catch (error) {
-            console.error('Failed to fetch notes:', error);
-            toast.error('Could not load notes');
-        } finally {
-            setNotesLoading(false);
-        }
     };
 
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -257,11 +244,15 @@ export default function FakeLeadsPage() {
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 font-black text-xs">
-                                                            {lead.name?.charAt(0) || '?'}
+                                                            {lead.archivedByEmail?.charAt(0).toUpperCase() || 'F'}
                                                         </div>
                                                         <div>
-                                                            <div className="font-black text-slate-800 text-sm group-hover:text-rose-600 transition-colors uppercase tracking-tight">{lead.name || 'Anonymous'}</div>
-                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 mt-1 border border-slate-100 rounded-md px-1.5 py-0.5 bg-white w-fit">Ref: #{lead.id}</div>
+                                                            <div className="font-black text-slate-800 text-sm group-hover:text-rose-600 transition-colors uppercase tracking-tight">Fake By: {lead.archivedByEmail}</div>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest border border-slate-100 rounded-md px-1.5 py-0.5 bg-white">
+                                                                    At: {lead.archivedAt ? new Date(lead.archivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -269,7 +260,7 @@ export default function FakeLeadsPage() {
                                                     <div className="space-y-1.5">
                                                         <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
                                                             <Phone className="w-3 h-3 text-slate-400" />
-                                                            {lead.phone || 'No Phone'}
+                                                            {lead.phones?.[0] || lead.phone || 'No Phone'}
                                                         </div>
                                                         <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                                                             <Mail className="w-3 h-3 text-slate-300" />
@@ -281,7 +272,7 @@ export default function FakeLeadsPage() {
                                                     <div className="inline-flex flex-col">
                                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Academic Path</span>
                                                         <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                                                            {typeof lead.course === 'object' ? lead.course.course : lead.course || 'Unspecified'}
+                                                            {typeof lead.course === 'object' ? lead.course.course : (lead as any).courseName || lead.course || 'Unspecified'}
                                                         </span>
                                                     </div>
                                                 </td>
@@ -386,8 +377,8 @@ export default function FakeLeadsPage() {
                                         <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Lead Profile</span>
                                         <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-white rounded-xl transition-colors text-slate-400">✕</button>
                                     </div>
-                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">{selectedLead.name}</h2>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ref: #{selectedLead.id} • {selectedLead.status}</p>
+                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Fake By: {selectedLead.archivedByEmail}</h2>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ref: #{selectedLead.id} • {selectedLead.status} • {selectedLead.archivedAt ? new Date(selectedLead.archivedAt).toLocaleTimeString() : ''}</p>
                                 </div>
 
                                 {/* Slide-over Body */}
@@ -418,42 +409,24 @@ export default function FakeLeadsPage() {
                                         </h3>
                                         <div className="bg-slate-900 p-6 rounded-3xl text-white shadow-xl shadow-slate-900/10">
                                             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-2">Interested Course</p>
-                                            <p className="text-sm font-bold">{typeof selectedLead.course === 'object' ? selectedLead.course.course : selectedLead.course || 'Unspecified'}</p>
+                                            <p className="text-sm font-bold">{typeof selectedLead.course === 'object' ? selectedLead.course.course : (selectedLead as any).courseName || selectedLead.course || 'Unspecified'}</p>
                                         </div>
                                     </div>
 
-                                    {/* Notes Section */}
+                                    {/* Reason Section */}
                                     <div className="space-y-4">
                                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <Search className="w-3 h-3 text-rose-500" />
-                                            Interaction History (Notes)
+                                            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                                            Archival Reason
                                         </h3>
-                                        
-                                        <div className="space-y-4">
-                                            {notesLoading ? (
-                                                <div className="flex flex-col items-center justify-center py-10 gap-3">
-                                                    <div className="w-6 h-6 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Decrypting logs...</p>
-                                                </div>
-                                            ) : notes.length === 0 ? (
-                                                <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[32px]">
-                                                    <p className="text-xs font-bold text-slate-300 italic">No historical notes recorded</p>
-                                                </div>
-                                            ) : (
-                                                notes.map((note, i) => (
-                                                    <div key={i} className="bg-slate-50 p-5 rounded-[24px] border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all group">
-                                                        <div className="flex items-center justify-between mb-3">
-                                                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest bg-rose-50 px-2 py-0.5 rounded-full">LOG #{i + 1}</span>
-                                                            <span className="text-[9px] font-bold text-slate-300">
-                                                                {note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'Historical'}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-xs text-slate-600 font-bold leading-relaxed">{note.note}</p>
-                                                    </div>
-                                                ))
-                                            )}
+                                        <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100">
+                                            <p className="text-xs font-bold text-rose-900 leading-relaxed italic">
+                                                "{ (selectedLead as any).reason || 'No specific reason provided' }"
+                                            </p>
                                         </div>
                                     </div>
+
+
                                 </div>
 
                                 {/* Slide-over Footer */}

@@ -1,7 +1,7 @@
 import api from './api';
 import { LeadRequestDTO, LeadResponseDTO, NoteDTO, LeadStatus, PageResponse, CreateNoteRequestDTO } from '@/types/api';
 
-const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'lead', 'list', 'rows'] as const;
+const PAGE_KEYS = ['content', 'items', 'records', 'leads', 'lead', 'list', 'rows', 'fakeLeads'] as const;
 const WRAPPER_KEYS = ['data', 'result', 'response', 'responseObject', 'payload'] as const;
 
 const parseIfString = (value: unknown): unknown => {
@@ -97,7 +97,19 @@ export const LeadService = {
 
     // #9 - Find lead by phone
     getLeadByPhone: async (phone: string) => {
-        const response = await api.get<LeadResponseDTO>(`/api/leads/phone/${phone}`);
+        const response = await api.get<any>(`/api/leads/phone/${phone}`);
+        const data = response.data;
+        // Backend returns Lead_Response which has a 'lead' list (singular)
+        return data?.lead || (Array.isArray(data) ? data : (data ? [data] : []));
+    },
+
+    getLeadsByScore: async (score: string, page = 0, size = 15) => {
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/score/${score}/page/${page}/size/${size}`);
+        return response.data;
+    },
+
+    getLeadsByStatus: async (status: string, page = 0, size = 15) => {
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/status/${status}/page/${page}/size/${size}`);
         return response.data;
     },
 
@@ -177,8 +189,8 @@ export const LeadService = {
     },
 
     // Mark as fake via dedicated endpoint
-    markAsFake: async (id: string | number) => {
-        const response = await api.patch(`/api/leads/${id}/FAKE`);
+    markAsFake: async (id: string | number, reason?: string) => {
+        const response = await api.patch(`/api/leads/${id}/status/FAKE`, { reason });
         return response.data;
     },
 
@@ -197,29 +209,29 @@ export const LeadService = {
     },
 
     // #23 - Filter leads by creation date range
-    getLeadsByDateRange: async (startDate: string, endDate: string) => {
+    getLeadsByDateRange: async (startDate: string, endDate: string, page = 0, size = 15) => {
         const start = startDate.includes('T') ? startDate : `${startDate}T00:00:00`;
         const end = endDate.includes('T') ? endDate : `${endDate}T23:59:59`;
-        const response = await api.get(`/api/leads/date-range`, { params: { start, end } });
-        return toPageResponse(response.data).content;
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/date-range`, { params: { start, end, page, size } });
+        return response.data;
     },
 
     // #24 - Filter leads by campaign source
-    getLeadsBySource: async (name: string) => {
-        const response = await api.get(`/api/leads/source/${encodeURIComponent(name)}`);
-        return toPageResponse(response.data).content;
+    getLeadsBySource: async (name: string, page = 0, size = 15) => {
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/source/${encodeURIComponent(name)}`, { params: { page, size } });
+        return response.data;
     },
 
     // #25 - Filter leads by course interest
-    getLeadsByCourse: async (course: string) => {
-        const response = await api.get(`/api/leads/course/${encodeURIComponent(course)}`);
-        return toPageResponse(response.data).content;
+    getLeadsByCourse: async (course: string, page = 0, size = 15) => {
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/course/${encodeURIComponent(course)}`, { params: { page, size } });
+        return response.data;
     },
 
     // #27 - Search leads by name
-    getLeadsByName: async (name: string) => {
-        const response = await api.get(`/api/leads/search`, { params: { name } });
-        return toPageResponse(response.data).content;
+    getLeadsByName: async (name: string, page = 0, size = 15) => {
+        const response = await api.get<PageResponse<LeadResponseDTO>>(`/api/leads/search`, { params: { name, page, size } });
+        return response.data;
     },
 
     // #28 - My dashboard statistics map
@@ -254,7 +266,12 @@ export const LeadService = {
 
     // #33 - List leads marked as fake
     getFakeLeads: async (page: number = 0, size: number = 10) => {
-        const response = await api.get(`/api/leads/status/FAKE/page/${page}/size/${size}`);
+        const response = await api.get(`/api/leads/fake/${page}/${size}`);
+        return toPageResponse(response.data);
+    },
+
+    getFakeLeadsByCounselor: async (counselorId: string | number, page: number = 0, size: number = 10) => {
+        const response = await api.get(`/api/leads/fake/counselor/${counselorId}/${page}/${size}`);
         return toPageResponse(response.data);
     },
 
@@ -313,20 +330,38 @@ export const LeadService = {
                 const lead = await LeadService.getLeadByEmail(params.email);
                 return lead ? [lead] : [];
             }
-            if (params.name) return await LeadService.getLeadsByName(params.name);
-            if (params.course) return await LeadService.getLeadsByCourse(params.course);
-            if (params.campaign) return await LeadService.getLeadsBySource(params.campaign);
+            if (params.name) {
+                const res = await LeadService.getLeadsByName(params.name);
+                return res.content;
+            }
+            if (params.course) {
+                const res = await LeadService.getLeadsByCourse(params.course);
+                return res.content;
+            }
+            if (params.campaign) {
+                const res = await LeadService.getLeadsBySource(params.campaign);
+                return res.content;
+            }
+            if (params.status) {
+                if (params.status === 'FAKE') {
+                    const res = await LeadService.getFakeLeads(0, 100);
+                    return res.content;
+                }
+                const res = await LeadService.getLeadsByStatus(params.status, 0, 100);
+                return res.content;
+            }
 
             if (params.startDate && params.endDate) {
-                return await LeadService.getLeadsByDateRange(params.startDate, params.endDate);
+                const res = await LeadService.getLeadsByDateRange(params.startDate, params.endDate);
+                return res.content;
             }
             if (params.id) {
                 const lead = await LeadService.getLeadById(params.id);
                 return lead ? [lead] : [];
             }
             if (params.phone) {
-                const lead = await LeadService.getLeadByPhone(params.phone);
-                return lead ? [lead] : [];
+                const leads = await LeadService.getLeadByPhone(params.phone);
+                return leads;
             }
             return [];
         } catch (error: any) {
@@ -403,4 +438,12 @@ export const LeadService = {
         if (Array.isArray(data)) return data;
         return data?.lead || data?.content || [];
     },
+
+    // #112 - Register student (Staff)
+    registerStudent: async (formData: FormData) => {
+        const response = await api.post('/api/staff/register', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    }
 };

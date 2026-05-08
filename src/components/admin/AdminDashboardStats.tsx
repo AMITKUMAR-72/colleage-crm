@@ -219,18 +219,25 @@ export default function AdminDashboardStats() {
                     )}
                 </ChartCard>
 
-                {/* 3. City-wise — horizontal bars with both leads + applicants on hover */}
+                {/* 3. City-wise — pillar graph with name at bottom */}
                 <ChartCard title="Geographic Distribution (City-wise)" icon={MapPin}>
                     {cityStats.length === 0 ? emptyState('No city data available') : (
                         <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={cityStats} layout="vertical" barGap={6} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-                                <CartesianGrid stroke={GRID} horizontal={false} />
-                                <XAxis type="number" tick={AXIS} tickLine={false} axisLine={false} />
-                                <YAxis dataKey="city" type="category" tick={AXIS} tickLine={false} axisLine={false} width={80} />
+                            <BarChart data={cityStats} barGap={6} margin={{ top: 10, right: 12, left: 0, bottom: 40 }}>
+                                <CartesianGrid stroke={GRID} vertical={false} />
+                                <XAxis 
+                                    dataKey="city" 
+                                    tick={{ ...AXIS, textAnchor: 'end' }} 
+                                    tickLine={false} 
+                                    axisLine={false} 
+                                    angle={-35} 
+                                    dy={10} 
+                                />
+                                <YAxis tick={AXIS} tickLine={false} axisLine={false} />
                                 <Tooltip content={<CustomTooltip />} cursor={TIP_CURSOR} />
                                 <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 12 }} />
-                                <Bar dataKey="leads"      name="Leads"      fill="#f59e0b" radius={[0,4,4,0]} maxBarSize={12} />
-                                <Bar dataKey="applicants" name="Applicants" fill="#8b5cf6" radius={[0,4,4,0]} maxBarSize={12} />
+                                <Bar dataKey="leads"      name="Leads"      fill="#f59e0b" radius={[4,4,0,0]} maxBarSize={28} />
+                                <Bar dataKey="applicants" name="Applicants" fill="#8b5cf6" radius={[4,4,0,0]} maxBarSize={28} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
@@ -253,10 +260,10 @@ export default function AdminDashboardStats() {
                     )}
                 </ChartCard>
 
-                {/* 6. Counselor Daily Contact Count — full width */}
+                {/* 6. Counselor Performance — full width */}
                 <div style={{ gridColumn: '1 / -1' }}>
-                    <ChartCard title="Daily Counselor Contact Count (Today)" icon={UserCheck}>
-                        {counselorContacts.length === 0 ? emptyState('No counselor contact data for today') : (
+                    <ChartCard title="Counselor Contact Performance (Total History vs Today)" icon={UserCheck}>
+                        {counselorContacts.length === 0 ? emptyState('No counselor contact data available') : (
                             <ResponsiveContainer width="100%" height={320}>
                                 <BarChart data={counselorContacts} barGap={6} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
                                     <CartesianGrid stroke={GRID} vertical={false} />
@@ -269,8 +276,9 @@ export default function AdminDashboardStats() {
                                     <YAxis tick={AXIS} tickLine={false} axisLine={false} />
                                     <Tooltip content={<CustomTooltip />} cursor={TIP_CURSOR} />
                                     <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 12 }} />
-                                    <Bar dataKey="contactedToday" name="Contacted Today" fill="#3b82f6" radius={[5,5,0,0]} maxBarSize={28} />
-                                    <Bar dataKey="totalAssigned"  name="Total Assigned"  fill="#e2e8f0" radius={[5,5,0,0]} maxBarSize={28} />
+                                    <Bar dataKey="totalContacted" name="Total Contacted (History)" fill="#4f46e5" radius={[5,5,0,0]} maxBarSize={28} />
+                                    <Bar dataKey="contactedToday" name="Contacted Today"         fill="#10b981" radius={[5,5,0,0]} maxBarSize={28} />
+                                    <Bar dataKey="totalAssigned"  name="Total Leads Assigned"    fill="#e2e8f0" radius={[5,5,0,0]} maxBarSize={28} />
                                 </BarChart>
                             </ResponsiveContainer>
                         )}

@@ -78,6 +78,13 @@ export interface LeadResponseDTO {
     timedOutAt?: string;
     score?: LeadScore;
     createdAt?: string;
+
+    // Fake Lead archival details
+    originalLeadId?: string;
+    archivedByEmail?: string;
+    archivedAt?: string;
+    reason?: string;
+    courseName?: string;
 }
 
 // Matches backend Lead_Request_DTO.java
@@ -240,6 +247,24 @@ export interface SlaUpdateResponseDTO {
 export interface MaxCapacityUpdateResponseDTO {
     maxCapacity: number;
     message?: string;
+}
+
+export interface StudentRegistrationRequest {
+    fullName: string;
+    email: string;
+    mobileNumber: string;
+    dateOfBirth: string;
+    gender?: string;
+    address: string;
+    course: string;
+    schoolCollegeName: string;
+    fatherName: string;
+    fatherOccupation: string;
+    motherName: string;
+    motherOccupation: string;
+    tenthPercentage: number;
+    twelfthPercentage: number;
+    createdByStaffId?: string;
 }
 
 export interface LeadFilters {

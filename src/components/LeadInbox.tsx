@@ -60,38 +60,9 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
             setLoading(true);
             try {
                 const raw: any = await CounselorService.getAllCounselors();
-                let list: CounselorDTO[] = Array.isArray(raw)
+                const list: CounselorDTO[] = Array.isArray(raw)
                     ? raw
                     : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
-
-                const isCourseNull = !lead.course || (typeof lead.course === 'object' && !(lead.course as any).course);
-
-                if (!isCourseNull) {
-                    const leadCourseName = typeof lead.course === 'object' ? (lead.course as any).course : String(lead.course);
-
-                    try {
-                        const courseRes = await api.get(`/api/course/byCourse/${encodeURIComponent(leadCourseName)}`);
-                        const mappedDept = courseRes.data?.departmentName
-                            || courseRes.data?.department?.name
-                            || courseRes.data?.department
-                            || String(courseRes.data);
-
-                        if (mappedDept && mappedDept !== 'undefined' && mappedDept !== '[object Object]') {
-                            list = list.filter(c => {
-                                if (!c.departments || c.departments.length === 0) return false;
-                                return c.departments.some(d =>
-                                    d.toLowerCase() === mappedDept.toLowerCase() ||
-                                    mappedDept.toLowerCase().includes(d.toLowerCase())
-                                );
-                            });
-                        } else {
-                            list = []; // Invalid mapping
-                        }
-                    } catch (err) {
-                        console.error("Course mapping failed", err);
-                        list = [];
-                    }
-                }
 
                 setCounselors(list);
             } catch {
@@ -146,7 +117,7 @@ function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned:
                             <div className="py-4 text-center text-xs font-bold text-slate-400 animate-pulse">Loading Counselors…</div>
                         ) : counselors.length === 0 ? (
                             <div className="py-4 text-center text-xs font-bold text-slate-400">
-                                {isCourseNull ? "No counselors found" : "This department counselor not available"}
+                                No counselors available
                             </div>
                         ) : (
                             counselors.map((c, idx) => (
@@ -251,6 +222,13 @@ export default function LeadInbox() {
         setSelectedLead(lead);
         setNotes([]);
         setNoteText('');
+        
+        // Skip fetching notes for archived fake leads to avoid 404s
+        if (String(lead.status) === 'FAKE') {
+            setNotesLoading(false);
+            return;
+        }
+
         setNotesLoading(true);
         try {
             const raw: any = await LeadService.getNotes(id);
@@ -436,7 +414,9 @@ export default function LeadInbox() {
                                                 </td>
                                                 <td className="px-5 py-3">
                                                     <div className="text-slate-600 text-xs font-medium truncate max-w-[160px]" title={lead.email}>{lead.email || '—'}</div>
-                                                    <div className="text-slate-400 text-[9px] font-bold mt-0.5">{Array.isArray(lead.phones) ? lead.phones[0] : (lead.phones || "Not available")}</div>
+                                                    <div className="text-slate-400 text-[9px] font-bold mt-0.5">
+                                                        {lead.phone || (Array.isArray(lead.phones) ? lead.phones[0] : lead.phones) || "Not available"}
+                                                    </div>
                                                 </td>
                                                 <td className="px-5 py-3">
                                                     <div className="text-slate-600 text-xs font-medium max-w-[120px] truncate">{getCourseDisplay(lead)}</div>
