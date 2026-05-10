@@ -33,7 +33,7 @@ const BulkUpload = () => {
 
     const [showAssignPrompt, setShowAssignPrompt] = useState(false);
     const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
-    const [selectedCounselorIds, setSelectedCounselorIds] = useState<number[]>([]);
+    const [selectedCounselorIds, setSelectedCounselorIds] = useState<string[]>([]);
 
     const startSimulatedProgress = (startValue: number, maxValue: number, speed: number) => {
         if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
@@ -174,7 +174,7 @@ const BulkUpload = () => {
         });
     };
 
-    const handleUpload = async (uploadMode: 'AUTO' | 'MANUAL', counselorIds: number[] = []) => {
+    const handleUpload = async (uploadMode: 'AUTO' | 'MANUAL', counselorIds: string[] = []) => {
         if (!file) return;
 
         setMode(uploadMode);
@@ -541,17 +541,18 @@ const BulkUpload = () => {
                             )}
 
                             {counselors.map(c => {
-                                const isSelected = selectedCounselorIds.includes(Number(c.id));
+                                const cId = String(c.counselorId || c.id);
+                                const isSelected = selectedCounselorIds.includes(cId);
                                 return (
-                                    <label key={c.id} className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">
+                                    <label key={cId} className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">
                                         <input
                                             type="checkbox"
                                             checked={isSelected}
                                             onChange={(e) => {
                                                 if (e.target.checked) {
-                                                    setSelectedCounselorIds(prev => [...prev, Number(c.id)]);
+                                                    setSelectedCounselorIds(prev => [...prev, cId]);
                                                 } else {
-                                                    setSelectedCounselorIds(prev => prev.filter(id => id !== Number(c.id)));
+                                                    setSelectedCounselorIds(prev => prev.filter(id => id !== cId));
                                                 }
                                             }}
                                             className="w-4 h-4 text-[#4d0101] border-slate-300 rounded focus:ring-[#4d0101] cursor-pointer"

@@ -22,23 +22,20 @@ export default function LeadSearchFilters({ onFilterChange }: FilterProps) {
     const [endDate, setEndDate] = useState<string>('');
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                const [courseData, campaignData, statusData] = await Promise.all([
-                    CourseService.getAllCourses(),
-                    CampaignService.getAllSources(),
-                    EnumService.getLeadStatuses()
-                ]);
-                setCourses(courseData);
-                setCampaigns(campaignData);
-                setAvailableStatuses(statusData);
-
-            } catch (error) {
-                console.error("Failed to load filter data", error);
-            }
-        };
-        loadData();
-    }, []);
+        if (filterType === 'STATUS') {
+            EnumService.getLeadStatuses()
+                .then(res => setAvailableStatuses(Array.isArray(res) ? res : []))
+                .catch(console.error);
+        } else if (filterType === 'COURSE') {
+            CourseService.getAllCourses()
+                .then(res => setCourses(Array.isArray(res) ? res : []))
+                .catch(console.error);
+        } else if (filterType === 'CAMPAIGN') {
+            CampaignService.getAllSources()
+                .then(res => setCampaigns(Array.isArray(res) ? res : []))
+                .catch(console.error);
+        }
+    }, [filterType]);
 
     const handleApply = () => {
         const payload: LeadFilters = { email: '', status: '', course: '', campaign: '' };

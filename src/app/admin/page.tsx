@@ -8,6 +8,9 @@ import CounselorManager from '@/components/admin/CounselorManager';
 import AuditMonitor from '@/components/admin/AuditMonitor';
 import ManualLeadEntryDrawer from '@/components/admin/ManualLeadEntryDrawer';
 import { LeadService } from '@/services/leadService';
+import StudentList from '@/components/admin/StudentList';
+import PendingApplicationList from '@/components/admin/PendingApplicationList';
+import DiscardedLeadsList from '@/components/admin/DiscardedLeadsList';
 
 function AdminDashboardContent() {
     const searchParams = useSearchParams();
@@ -16,6 +19,9 @@ function AdminDashboardContent() {
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'COUNSELORS' | 'MONITOR'>(tabParam || 'OVERVIEW');
     const [leadsCount, setLeadsCount] = useState(0);
     const [fakeLeadsCount, setFakeLeadsCount] = useState(0);
+    const [studentCount, setStudentCount] = useState(0);
+    const [applicationCount, setApplicationCount] = useState(0);
+    const [discardedCount, setDiscardedCount] = useState(0);
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
     const statsFetchedRef = useRef(false);
 
@@ -56,6 +62,18 @@ function AdminDashboardContent() {
                 // Fetch Fake Leads Count
                 const fakeLeadsData = await LeadService.getFakeLeads(0, 1);
                 setFakeLeadsCount(fakeLeadsData.totalElements || 0);
+
+                // Fetch Student Count
+                const sCount = await LeadService.getStudentCount();
+                setStudentCount(sCount || 0);
+
+                // Fetch Application Count
+                const aCount = await LeadService.getApplicationCount();
+                setApplicationCount(aCount || 0);
+
+                // Fetch Discarded Count
+                const discardedLeads = await LeadService.getDiscardedLeads();
+                setDiscardedCount(discardedLeads?.length || 0);
 
             } catch (error) {
                 console.error("[AdminDashboard] Failed to fetch stats:", error);
@@ -131,7 +149,7 @@ function AdminDashboardContent() {
 
             {activeTab === 'OVERVIEW' ? (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
                             <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">Total Leads</h3>
                             <p className="text-2xl font-black text-[#4d0101]">{leadsCount}</p>
@@ -139,20 +157,32 @@ function AdminDashboardContent() {
                         </div>
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
                             <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">CONVERTED LEADS</h3>
-                            <p className="text-sm text-yellow-600 font-bold uppercase tracking-widest mt-2">On Working</p>
+                            <p className="text-2xl font-black text-emerald-600">{studentCount}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total Admissions</p>
                         </div>
-                        <div
-                            onClick={() => router.push('/admin/fake-leads')}
-                            className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group"
-                        >
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
                             <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">FAKE LEADS</h3>
                             <p className="text-2xl font-black text-rose-600">{fakeLeadsCount}</p>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Generated leads</p>
                         </div>
-
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
+                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">Pending Applicant</h3>
+                            <p className="text-2xl font-black text-indigo-600">{applicationCount}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Initial Inquiries</p>
+                        </div>
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group">
+                            <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-blue-600">DISCARDED</h3>
+                            <p className="text-2xl font-black text-slate-600">{discardedCount}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total Discarded</p>
+                        </div>
                     </div>
 
-                    <LeadInbox />
+                    <div className="flex flex-col gap-12 w-full">
+                        <LeadInbox />
+                        <StudentList />
+                        <PendingApplicationList />
+                        <DiscardedLeadsList />
+                    </div>
                 </>
             ) : activeTab === 'COUNSELORS' ? (
                 <CounselorManager />

@@ -17,7 +17,9 @@ export type LeadStatus =
     | 'REASSIGNED'
     | 'IN_A_SESSION'
     | 'QUEUED'
-    | 'FAKE';
+    | 'FAKE'
+    | 'APPLICANT_PENDING'
+    | 'APPLICANT';
     
 export type LeadScore = 'HOT' | 'WARM' | 'COLD' | 'INTERESTED' | 'DISCARDED';
 
@@ -265,6 +267,24 @@ export interface StudentRegistrationRequest {
     tenthPercentage: number;
     twelfthPercentage: number;
     createdByStaffId?: string;
+}
+
+export interface Student {
+    id: string;
+    fullName: string;
+    email: string;
+    mobileNumber: string;
+    dateOfBirth: string;
+    gender: string;
+    address: string;
+    course: string;
+    schoolCollegeName: string;
+    fatherName: string;
+    motherName: string;
+    tenthPercentage: number;
+    twelfthPercentage: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface LeadFilters {

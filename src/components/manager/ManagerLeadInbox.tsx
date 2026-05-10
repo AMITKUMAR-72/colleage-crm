@@ -146,6 +146,135 @@ function BulkAssignButton({ leadIds, allLeads, onAssigned }: { leadIds: string[]
         </div>
     );
 }
+
+// ─── Random Assign Dropdown ──────────────────────────────────────────────────
+function RandomAssignButton({ onAssigned }: { onAssigned: () => void }) {
+    const [open, setOpen] = useState(false);
+    const [count, setCount] = useState<number | ''>('');
+    const [counselors, setCounselors] = useState<CounselorDTO[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [assigning, setAssigning] = useState<string | null>(null);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+
+    const handleOpen = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const nowOpen = !open;
+        setOpen(nowOpen);
+        if (nowOpen && counselors.length === 0) {
+            setLoading(true);
+            try {
+                const raw: any = await CounselorService.getAllCounselors();
+                let list: CounselorDTO[] = Array.isArray(raw)
+                    ? raw
+                    : raw?.counselors ?? raw?.data ?? raw?.content ?? raw?.lead ?? [];
+                
+                setCounselors(list);
+            } catch {
+                toast.error('Could not load counselors');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleRandomAssign = async (e: React.MouseEvent, counselorId: string | number) => {
+        e.stopPropagation();
+        if (!count || count <= 0) {
+            toast.error('Please enter a valid number of leads');
+            return;
+        }
+        setAssigning(String(counselorId));
+        try {
+            const res = await LeadService.assignRandomLeads(counselorId, Number(count));
+            if (res && res.successCount !== undefined) {
+                toast.success(`Success: ${res.successCount}, Failed: ${res.failCount || 0}`);
+            } else {
+                toast.success(`Assigned leads successfully`);
+            }
+            setOpen(false);
+            setCount('');
+            onAssigned();
+        } catch {
+        } finally {
+            setAssigning(null);
+        }
+    };
+
+    return (
+        <div ref={ref} className="relative inline-flex items-center gap-2">
+            <input 
+                type="number" 
+                min="1"
+                placeholder="Count"
+                value={count}
+                onChange={(e) => setCount(e.target.value ? parseInt(e.target.value) : '')}
+                className="w-16 px-2 py-1.5 text-[10px] font-bold border border-slate-200 rounded-xl outline-none focus:border-indigo-500"
+            />
+            <button
+                onClick={handleOpen}
+                disabled={!count || count <= 0}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${count && count > 0
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                    }`}
+            >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M9 16l-5 5" />
+                </svg>
+                Random Assign
+            </button>
+
+            {open && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[110] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Counselor</p>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">Assign {count} leads</span>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                        {loading ? (
+                            <div className="py-6 text-center text-xs font-bold text-slate-400 animate-pulse italic">fetching counselors…</div>
+                        ) : counselors.length === 0 ? (
+                            <div className="py-6 text-center text-xs font-bold text-slate-400 italic">No counselors found</div>
+                        ) : (
+                            counselors.map((c, idx) => (
+                                <div
+                                    key={c.counselorId ?? idx}
+                                    className="w-full px-5 py-3 hover:bg-slate-50 transition border-b border-slate-50 last:border-0 flex items-center justify-between gap-3"
+                                >
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-bold text-slate-800 truncate">{c.name}</span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{c.email}</span>
+                                    </div>
+                                    <button
+                                        onClick={e => handleRandomAssign(e, c.counselorId)}
+                                        disabled={assigning === String(c.counselorId)}
+                                        className={`shrink-0 px-3 py-1.5 border rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                                            assigning === String(c.counselorId)
+                                                ? 'bg-indigo-600 text-white border-indigo-600 animate-pulse opacity-80'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600'
+                                        }`}
+                                    >
+                                        {assigning === String(c.counselorId) ? 'Assigning…' : 'Assign'}
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Single Assign Dropdown ───────────────────────────────────────────────────
 function AssignButton({ lead, onAssigned }: { lead: LeadResponseDTO; onAssigned: () => void }) {
     const [open, setOpen] = useState(false);
@@ -359,6 +488,7 @@ export default function ManagerLeadInbox() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <RandomAssignButton onAssigned={() => fetchLeads()} />
                     <BulkAssignButton
                         leadIds={selectedLeadIds}
                         allLeads={leads}

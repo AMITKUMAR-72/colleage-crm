@@ -30,6 +30,8 @@ const STATUS_COLORS: Record<string, string> = {
     TIMED_OUT: 'bg-rose-100 text-rose-700 border-rose-200',
     REASSIGNED: 'bg-pink-100 text-pink-700 border-pink-200',
     IN_A_SESSION: 'bg-violet-100 text-violet-700 border-violet-200',
+    APPLICANT_PENDING: 'bg-orange-100 text-orange-700 border-orange-200',
+    APPLICANT: 'bg-emerald-100 text-emerald-700 border-emerald-200',
 };
 
 

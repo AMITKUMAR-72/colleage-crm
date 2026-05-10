@@ -49,7 +49,7 @@ export default function Sidebar() {
         { label: 'Counselor Leaves', href: '/admin/leaves', roles: ['ADMIN', 'MANAGER'], icon: Calendar },
         { label: 'Lead information', href: '/admin', roles: ['ADMIN', 'MANAGER'], icon: Users },
         { label: 'Add Lead', action: () => setIsManualEntryOpen(true), roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: User },
-        { label: 'Applicant Form', href: '/admin/student-registration', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Upload },
+        { label: 'Registration', href: '/admin/registration', roles: ['COUNSELOR', 'MANAGER', 'ADMIN'], icon: Upload },
         { label: 'My Lead', href: '/counselor/leads', roles: ['COUNSELOR'], icon: Users },
         { label: 'My Leave', href: '/counselor/leave', roles: ['COUNSELOR'], icon: Calendar },
         { label: 'Partner Portal', href: '/affiliate', roles: ['AFFILIATE'], icon: UserSquare2 },

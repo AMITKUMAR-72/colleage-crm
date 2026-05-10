@@ -120,7 +120,7 @@ export const LeadService = {
     },
 
     // #11 - Import leads via Excel (AUTO/MANUAL)
-    bulkUploadLeads: async (file: File, mode: string = 'AUTO', counselorIds: number[] = [], onProgress?: (percent: number) => void) => {
+    bulkUploadLeads: async (file: File, mode: string = 'AUTO', counselorIds: (string | number)[] = [], onProgress?: (percent: number) => void) => {
         const formData = new FormData();
         formData.append('file', file);
         if (counselorIds && counselorIds.length > 0) {
@@ -205,6 +205,12 @@ export const LeadService = {
     // #22 - Batch assign leads to a counselor
     bulkAssignLeads: async (counselorId: number | string, leadIds?: string[]) => {
         const response = await api.post(`/api/leads/bulk-assign/${counselorId}`, leadIds ? { leadIds } : {});
+        return response.data;
+    },
+
+    // #22.1 - Random assign leads to a counselor
+    assignRandomLeads: async (counselorId: number | string, count: number) => {
+        const response = await api.post(`/api/leads/assign-random/${counselorId}?count=${count}`);
         return response.data;
     },
 
@@ -308,8 +314,8 @@ export const LeadService = {
 
     // #150 - DISCARDED leads
     getDiscardedLeads: async () => {
-        const response = await api.get('/api/leads/stages/discarded');
-        return toPageResponse(response.data).content;
+        const response = await api.get('/api/leads/stages/discard');
+        return response.data?.data ?? response.data;
     },
 
     // ─── Unified Search ───
@@ -444,6 +450,58 @@ export const LeadService = {
         const response = await api.post('/api/staff/register', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return response.data?.data ?? response.data;
+    },
+
+    submitInitialApplication: async (data: any) => {
+        const response = await api.post('/api/staff/apply', data);
+        return response.data?.data ?? response.data;
+    },
+
+    finalizeStudentRegistration: async (data: any, staffId?: string) => {
+        const response = await api.post('/api/staff/register', data, {
+            headers: staffId ? { 'X-Staff-Id': staffId } : {}
+        });
+        return response.data?.data ?? response.data;
+    },
+    
+    getStudentCount: async () => {
+        const response = await api.get('/api/staff/students/count');
+        return response.data?.data ?? response.data;
+    },
+
+    getApplicationCount: async () => {
+        const response = await api.get('/api/staff/student-applications/count');
+        return response.data?.data ?? response.data;
+    },
+
+    getAllStudentApplications: async (page = 0, size = 10) => {
+        const response = await api.get(`/api/staff/student-applications?page=${page}&size=${size}`);
+        return response.data?.data ?? response.data;
+    },
+
+    getAllStudents: async (page = 0, size = 10) => {
+        const response = await api.get(`/api/staff/students?page=${page}&size=${size}`);
+        return response.data?.data ?? response.data;
+    },
+
+    getStudentById: async (id: string) => {
+        const response = await api.get(`/api/staff/students/${id}`);
+        return response.data?.data ?? response.data;
+    },
+
+    getCounselorByEmail: async (email: string) => {
+        const response = await api.get(`/api/staff/student-applications/counselor`, { params: { email } });
+        return response.data?.data ?? response.data;
+    },
+
+    getDepartments: async () => {
+        const response = await api.get('/api/department/name');
+        return response.data;
+    },
+
+    getCourses: async () => {
+        const response = await api.get('/api/course/name');
         return response.data;
     }
 };

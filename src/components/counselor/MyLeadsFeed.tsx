@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { CounselorService } from '@/services/counselorService';
+import { useRouter } from 'next/navigation';
 import { CourseService } from '@/services/courseService';
 import { DepartmentService } from '@/services/departmentService';
 import { LeadResponseDTO, LeadStatus, CourseDTO, DepartmentDTO, LeadScore, CampaignDTO } from '@/types/api';
@@ -65,6 +66,7 @@ interface MyLeadsFeedProps {
 
 export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate, onActionComplete }: MyLeadsFeedProps) {
     const { user, role } = useAuth();
+    const router = useRouter();
     const [leads, setLeads] = useState<LeadResponseDTO[]>([]);
     const [scoreFilter, setScoreFilter] = useState<LeadScore | 'ALL' | 'CONTACTED' | 'DISCARDED_TAB'>('ALL');
     const [filterType, setFilterType] = useState<'ALL' | 'SOURCE' | 'COURSE' | 'DEPARTMENT' | 'NAME' | 'FAKE'>('ALL');
@@ -113,6 +115,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
         else if (Array.isArray(raw.content)) data = raw.content;
         else if (Array.isArray(raw.leads)) data = raw.leads;
         else if (Array.isArray(raw.fakeLeadsList)) data = raw.fakeLeadsList;
+        else if (Array.isArray(raw.fakeLeads)) data = raw.fakeLeads;
         else if (Array.isArray(raw.results)) data = raw.results;
         else if (typeof raw === 'object' && (raw.id != null || raw.leadId != null)) data = [raw];
 
@@ -157,7 +160,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                 const res = await api.get(`/api/leads/search?name=${encodeURIComponent(filterValue.trim())}`);
                 raw = res.data;
             } else if (filterType === 'FAKE') {
-                const res = await api.get(`/api/leads/fake/${page}/${PAGE_SIZE}`);
+                const res = await api.get(`/api/leads/fake/my/page/${page}/size/${PAGE_SIZE}`);
                 raw = res.data;
             } else {
                 raw = await CounselorService.getAssignedLeads(page, PAGE_SIZE);
@@ -167,8 +170,8 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
             setLeads(results);
 
             if (raw && typeof raw === 'object') {
-                const totalElements = raw.totalElements ?? (raw as any).data?.totalElements;
-                const tp = raw.totalPages ?? (raw as any).data?.totalPages ?? (totalElements ? Math.ceil(totalElements / PAGE_SIZE) : (results.length === PAGE_SIZE ? page + 2 : page + 1));
+                const totalElements = raw.totalElements ?? raw.count ?? (raw as any).data?.totalElements;
+                const tp = raw.totalPages ?? (raw as any).data?.totalPages ?? (totalElements ? Math.ceil(Number(totalElements) / PAGE_SIZE) : (results.length === PAGE_SIZE ? page + 2 : page + 1));
                 setTotalPages(tp);
             }
 
@@ -596,7 +599,10 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-3">
                                                     {filterType === 'FAKE' ? (
-                                                        <p className="text-sm font-black text-slate-900 truncate uppercase">Fake By: {lead.archivedByEmail}</p>
+                                                        <div className="flex flex-col">
+                                                            <p className="text-sm font-black text-slate-900 truncate uppercase">{lead.name}</p>
+                                                            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tight">Faked By: {lead.archivedByEmail}</p>
+                                                        </div>
                                                     ) : (
                                                         <p className="text-sm font-black text-slate-900 truncate uppercase">{lead.name}</p>
                                                     )}
@@ -628,7 +634,7 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                                         </span>
                                                     ) : (
                                                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate flex items-center gap-1">
-                                                            <BookOpen className="w-3 h-3 p-[1px]" /> {getCourseName(lead.course) || 'Unspecified'}
+                                                            <BookOpen className="w-3 h-3 p-[1px]" /> {getCourseName(lead.course) || lead.courseName || 'Unspecified'}
                                                         </span>
                                                     )}
                                                 </div>
@@ -913,124 +919,143 @@ export default function MyLeadsFeed({ counselorId, counselorTypes, onLeadsUpdate
                                             </div>
                                         </div>
 
-                                        {/* Set Reminder Button */}
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => {
-                                                    setReminderLeadTarget({
-                                                        id: selectedLead.id,
-                                                        name: selectedLead.name,
-                                                    });
-                                                    setReminderModalOpen(true);
-                                                }}
-                                                className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#4d0101] to-[#600202] text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:from-[#600202] hover:to-[#7a0303] transition-all shadow-lg shadow-[#4d0101]/20 active:scale-[0.98] group"
-                                            >
-                                                <Bell className="w-4 h-4 group-hover:animate-bounce" />
-                                                Set Follow-up Reminder
-                                            </button>
+                                        {/* Actions Grid */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex flex-col gap-3">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Lead Actions</label>
+                                                <button
+                                                    onClick={() => {
+                                                        setReminderLeadTarget({
+                                                            id: selectedLead.id,
+                                                            name: selectedLead.name,
+                                                        });
+                                                        setReminderModalOpen(true);
+                                                    }}
+                                                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#4d0101] to-[#600202] text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:from-[#600202] hover:to-[#7a0303] transition-all shadow-lg shadow-[#4d0101]/20 active:scale-[0.98] group"
+                                                >
+                                                    <Bell className="w-4 h-4 group-hover:animate-bounce" />
+                                                    Set Follow-up
+                                                </button>
 
-                                            {/* Discard & Fake Actions */}
-                                            {!showDiscardReason && !showFakeReason ? (
-                                                <div className="flex w-full sm:w-auto gap-2">
-                                                    <button
-                                                        onClick={() => setShowFakeReason(true)}
-                                                        disabled={updateProcessing}
-                                                        className="flex-1 sm:flex-none px-4 py-4 bg-slate-50 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-2 active:scale-95 group disabled:opacity-50"
-                                                        title="Mark as Fake"
-                                                    >
-                                                        <AlertTriangle className="w-4 h-4 group-hover:scale-110" />
-                                                        <span className="hidden sm:inline">Fake</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setShowDiscardReason(true)}
-                                                        className="flex-1 sm:flex-none px-6 py-4 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-3 active:scale-95 group"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 group-hover:scale-110" />
-                                                        Discard Lead
-                                                    </button>
-                                                </div>
-                                            ) : showDiscardReason ? (
-                                                <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
-                                                    <div className="relative">
-                                                        <input
-                                                            autoFocus
-                                                            type="text"
-                                                            value={discardReason}
-                                                            onChange={(e) => setDiscardReason(e.target.value)}
-                                                            placeholder="Reason for discarding..."
-                                                            className="w-full px-5 py-4 bg-rose-50/30 border-2 border-rose-100 rounded-2xl md:rounded-3xl text-xs font-bold text-slate-800 placeholder:text-rose-300 focus:outline-none focus:border-rose-300 transition-all pr-12"
-                                                        />
-                                                        <button
-                                                            onClick={() => setShowDiscardReason(false)}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-300 hover:text-rose-500"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
+                                                {!showDiscardReason && !showFakeReason ? (
                                                     <div className="flex gap-2">
                                                         <button
-                                                            onClick={handleDiscardLead}
-                                                            disabled={!discardReason.trim() || updateProcessing}
-                                                            className="flex-1 px-6 py-4 bg-rose-500 text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 active:scale-95 disabled:opacity-50"
+                                                            onClick={() => setShowFakeReason(true)}
+                                                            disabled={updateProcessing}
+                                                            className="flex-1 px-4 py-4 bg-slate-50 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-2 active:scale-95 group disabled:opacity-50"
+                                                            title="Mark as Fake"
                                                         >
-                                                            {updateProcessing ? 'Discarding...' : 'Confirm Discard'}
+                                                            <AlertTriangle className="w-4 h-4 group-hover:scale-110" />
+                                                            Fake
                                                         </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
-                                                    <div className="relative">
-                                                        <input
-                                                            autoFocus
-                                                            type="text"
-                                                            value={fakeReason}
-                                                            onChange={(e) => setFakeReason(e.target.value)}
-                                                            placeholder="Reason for marking as fake..."
-                                                            className="w-full px-5 py-4 bg-amber-50/30 border-2 border-amber-100 rounded-2xl md:rounded-3xl text-xs font-bold text-slate-800 placeholder:text-amber-300 focus:outline-none focus:border-amber-300 transition-all pr-12"
-                                                        />
                                                         <button
-                                                            onClick={() => setShowFakeReason(false)}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-300 hover:text-amber-500"
+                                                            onClick={() => setShowDiscardReason(true)}
+                                                            className="flex-1 px-6 py-4 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-100 flex items-center justify-center gap-3 active:scale-95 group"
                                                         >
-                                                            <X className="w-4 h-4" />
+                                                            <Trash2 className="w-4 h-4 group-hover:scale-110" />
+                                                            Discard
                                                         </button>
                                                     </div>
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={handleFakeLead}
-                                                            disabled={!fakeReason.trim() || updateProcessing}
-                                                            className="flex-1 px-6 py-4 bg-amber-500 text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50"
-                                                        >
-                                                            {updateProcessing ? 'Processing...' : 'Confirm Fake'}
-                                                        </button>
+                                                ) : showDiscardReason ? (
+                                                    <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                        <div className="relative">
+                                                            <input
+                                                                autoFocus
+                                                                type="text"
+                                                                value={discardReason}
+                                                                onChange={(e) => setDiscardReason(e.target.value)}
+                                                                placeholder="Reason for discarding..."
+                                                                className="w-full px-5 py-4 bg-rose-50/30 border-2 border-rose-100 rounded-2xl md:rounded-3xl text-xs font-bold text-slate-800 placeholder:text-rose-300 focus:outline-none focus:border-rose-300 transition-all pr-12"
+                                                            />
+                                                            <button
+                                                                onClick={() => setShowDiscardReason(false)}
+                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-300 hover:text-rose-500"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={handleDiscardLead}
+                                                                disabled={!discardReason.trim() || updateProcessing}
+                                                                className="flex-1 px-6 py-4 bg-rose-500 text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 active:scale-95 disabled:opacity-50"
+                                                            >
+                                                                {updateProcessing ? 'Discarding...' : 'Confirm Discard'}
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                                ) : (
+                                                    <div className="w-full space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                                        <div className="relative">
+                                                            <input
+                                                                autoFocus
+                                                                type="text"
+                                                                value={fakeReason}
+                                                                onChange={(e) => setFakeReason(e.target.value)}
+                                                                placeholder="Reason for marking as fake..."
+                                                                className="w-full px-5 py-4 bg-amber-50/30 border-2 border-amber-100 rounded-2xl md:rounded-3xl text-xs font-bold text-slate-800 placeholder:text-amber-300 focus:outline-none focus:border-amber-300 transition-all pr-12"
+                                                            />
+                                                            <button
+                                                                onClick={() => setShowFakeReason(false)}
+                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-300 hover:text-amber-500"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={handleFakeLead}
+                                                                disabled={!fakeReason.trim() || updateProcessing}
+                                                                className="flex-1 px-6 py-4 bg-amber-500 text-white rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50"
+                                                            >
+                                                                {updateProcessing ? 'Processing...' : 'Confirm Fake'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                        {/* Call to Action Section */}
-                                        <div className="group relative overflow-hidden bg-slate-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl transition-all active:scale-[0.98]">
-                                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
-                                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-white text-center md:text-left">
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center justify-center md:justify-start gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Direct Contact</p>
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <p className="text-2xl md:text-4xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase break-all">
+                                            {/* Call to Action Card */}
+                                            <div className="group relative overflow-hidden bg-slate-900 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl transition-all flex flex-col justify-center min-h-[160px]">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
+                                                <div className="relative z-10 flex items-center justify-between gap-4 text-white">
+                                                    <div className="space-y-1 flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Direct Contact</p>
+                                                        </div>
+                                                        <p className="text-xl md:text-2xl font-black tracking-tighter group-hover:text-emerald-400 transition-colors uppercase truncate">
                                                             {String(selectedLead.phone)}
                                                         </p>
-                                                        <p className="text-[10px] md:text-xs font-extrabold opacity-60 truncate lowercase max-w-[250px] mx-auto md:mx-0">{selectedLead.email}</p>
+                                                        <p className="text-[9px] font-extrabold opacity-60 truncate lowercase">{selectedLead.email}</p>
                                                     </div>
+                                                    <a
+                                                        href={`tel:${selectedLead.phone}`}
+                                                        className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-2xl md:rounded-3xl flex items-center justify-center hover:scale-110 transition-all duration-500 shadow-xl group border-2 border-white/10"
+                                                    >
+                                                        <Phone className="w-6 h-6 md:w-7 md:h-7 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />
+                                                    </a>
                                                 </div>
-                                                <a
-                                                    href={`tel:${selectedLead.phone}`}
-                                                    className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#dbb212] to-[#b89512] text-[#600202] rounded-3xl md:rounded-[2.5rem] flex items-center justify-center hover:scale-110 transition-all duration-500 shadow-xl group border-4 border-white/10"
-                                                >
-                                                    <Phone className="w-8 h-8 md:w-10 md:h-10 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" />
-                                                </a>
                                             </div>
+                                        </div>
+
+                                        {/* Registration Actions */}
+                                        <div className="space-y-3 pt-2">
+                                            <button
+                                                disabled
+                                                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-slate-100 text-slate-400 rounded-2xl md:rounded-3xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed opacity-60 border-2 border-dashed border-slate-200"
+                                            >
+                                                <Mail className="w-4 h-4" />
+                                                Send Registration Form (Disabled)
+                                            </button>
+
+                                            <button
+                                                onClick={() => router.push(`/admin/registration?email=${selectedLead.email}&name=${encodeURIComponent(selectedLead.name)}&phone=${selectedLead.phone}`)}
+                                                className="w-full flex items-center justify-center gap-3 px-6 py-5 bg-emerald-500 text-white rounded-2xl md:rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 active:scale-[0.98] group"
+                                            >
+                                                <GraduationCap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                                Start Lead Registration
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
